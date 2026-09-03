@@ -2,36 +2,45 @@ import "../bootstrap-scoped.css";
 import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { prisma } from "@/lib/db";
 
 export default async function OperatorLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session || session.user.role !== "OPERATOR") redirect("/login");
+  const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
 
   return (
     <div className="min-h-screen flex flex-col">
       <TopBar
         userName={`${session.user.firstName} ${session.user.lastName}`}
+        logoUrl={settings?.presentationLogoUrl ?? null}
       />
       <main className="flex-1">{children}</main>
     </div>
   );
 }
 
-function TopBar({ userName }: { userName: string }) {
+function TopBar({ userName, logoUrl }: { userName: string; logoUrl: string | null }) {
   return (
     <header
-      className="no-grid no-print sticky top-0 z-30 flex items-center justify-between px-6 h-14"
+      className="no-grid no-print sticky top-0 z-30 flex items-center justify-between px-6 h-16"
       style={{
         background: "var(--color-paper)",
         borderBottom: "1px solid var(--color-rule)",
       }}
     >
       <div className="flex items-center gap-8">
-        <Link href="/dashboard" className="flex items-baseline gap-2">
-          <span style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontWeight: 500, letterSpacing: "-0.01em" }}>
-            iOBRADY
+        <Link href="/dashboard" className="flex items-center gap-3">
+          {logoUrl && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={logoUrl} alt="" style={{ height: 40, width: "auto", objectFit: "contain" }} />
+          )}
+          <span className="flex items-baseline gap-2">
+            <span style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontWeight: 500, letterSpacing: "-0.01em" }}>
+              iOBRADY
+            </span>
+            <span className="eyebrow">Panel operatora</span>
           </span>
-          <span className="eyebrow">Panel operatora</span>
         </Link>
         <nav className="flex items-center gap-1 text-sm">
           <NavLink href="/dashboard">Pulpit</NavLink>

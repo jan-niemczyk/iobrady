@@ -340,3 +340,7 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
 - [x] `package.json`: `"name"` z "esog" na "iobrady".
 - [~] Dalsze kroki: przejście komponentów panelu operatora (i opcjonalnie logowania/konta/
       przewodniczącego) na klasy Bootstrapa - w kolejnych partiach.
+- [x] Logo organizacji w nagłówku operatora i radnego (wysokość 40px, ustawialne w Ustawieniach -
+      `Settings.presentationLogoUrl`, dotychczas widoczne tylko na prezentacji/transmisji).
+- [x] U radnego: nazwa organizacji kapitalikami obok herbu, wyśrodkowana w pionie względem niego
+      (flex items-center), ukryta na telefonie (`hidden sm:inline`) - logo zostaje widoczne.

@@ -1,20 +1,49 @@
 import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ThemeToggle } from "@/components/participant/ThemeToggle";
+import { prisma } from "@/lib/db";
 
 export default async function ParticipantLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session || session.user.role !== "PARTICIPANT") redirect("/login");
+  const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
 
   return (
     <div className="min-h-screen flex flex-col">
       <header
-        className="no-grid sticky top-0 z-30 flex items-center justify-between px-4 h-14 gap-2"
+        className="no-grid sticky top-0 z-30 flex items-center justify-between px-4 h-16 gap-2"
         style={{ background: "var(--color-paper)", borderBottom: "1px solid var(--color-rule)" }}
       >
-        <div className="flex items-baseline gap-2 min-w-0">
-          <span style={{ fontSize: 20, fontWeight: 600 }}>iOBRADY</span>
-          <span className="eyebrow hidden sm:inline">Panel uczestnika</span>
+        <div className="flex items-center gap-3 min-w-0">
+          {settings?.presentationLogoUrl && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={settings.presentationLogoUrl}
+              alt=""
+              style={{ height: 40, width: "auto", objectFit: "contain", flexShrink: 0 }}
+            />
+          )}
+          {settings?.organizationName && (
+            <span
+              className="hidden sm:inline truncate"
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+                color: "var(--color-ink-2)",
+                lineHeight: 1,
+              }}
+            >
+              {settings.organizationName}
+            </span>
+          )}
+          <span
+            className="eyebrow"
+            style={{ whiteSpace: "nowrap", borderLeft: "1px solid var(--color-rule-soft)", paddingLeft: 12 }}
+          >
+            iOBRADY
+          </span>
         </div>
         <div className="flex items-center gap-2 min-w-0">
           <div className="text-sm font-medium truncate hidden sm:block">
