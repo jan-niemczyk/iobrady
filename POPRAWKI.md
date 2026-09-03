@@ -322,3 +322,21 @@ Operator: czas wniosku formalnego w SEKUNDACH (był w minutach); online sortowan
 Odcinki: font Lato zamiast Roboto (przyczyna niegenerowania).
 Ustawienia domyślne: auto-otwieranie listy mówców = true, po zamknięciu tylko podsuma = true (schemat @default). Zapisz przeniesiony na dół (po porządku w autoprezentacji); checkboxy zapisują się automatycznie.
 Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/autoOpenSpeakerList @default zmienione na true.
+
+## OO. Duża przebudowa - Faza 0: fundament CSS (Bootstrap)
+- [x] Dodano `bootstrap` + `sass` (dev). Motyw `src/styles/_bs-theme.scss` zmapowany na
+      istniejącą paletę (--color-ink jako $primary, --color-yes/no/abstain, bez cieni/gradientów -
+      celowo NIE domyślny niebieski Bootstrapa).
+      `src/styles/bootstrap-scoped.scss` kompilowany skryptem `npm run build:bootstrap` (wpięty
+      przed `prisma generate && next build` w skrypcie `build`) do `src/app/bootstrap-scoped.css`
+      (plik generowany, w .gitignore).
+- [x] CSS Bootstrapa zaimportowany WYŁĄCZNIE w layoutach: `(operator)/layout.tsx` oraz nowych
+      `login/layout.tsx`, `account/layout.tsx`, `chairperson/layout.tsx`. Next.js dołącza CSS
+      zaimportowany w layoucie tylko do jego drzewa tras - zweryfikowano w
+      `.next/app-build-manifest.json`, że arkusz Bootstrapa NIE trafia do `/session`, `/display`,
+      `/overlay` (karty głosowania, prezentacja, transmisja - bez zmian).
+- [x] Zaokrąglenie `.card`/`.card-soft`/`.btn`/`.input` w `globals.css` z 2px na 6px (zgodne z
+      domyślnym zaokrągleniem Bootstrapa) - jedyna celowa zmiana dotycząca też kart głosowania.
+- [x] `package.json`: `"name"` z "esog" na "iobrady".
+- [~] Dalsze kroki: przejście komponentów panelu operatora (i opcjonalnie logowania/konta/
+      przewodniczącego) na klasy Bootstrapa - w kolejnych partiach.

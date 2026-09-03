@@ -76,12 +76,12 @@
   .card {
     background: var(--color-paper);
     border: 1px solid var(--color-rule);
-    border-radius: 2px;
+    border-radius: 6px;
   }
   .card-soft {
     background: var(--color-paper);
     border: 1px solid var(--color-rule-soft);
-    border-radius: 2px;
+    border-radius: 6px;
   }
 
   .rule { border-color: var(--color-rule); }
@@ -135,7 +135,7 @@
     font-weight: 500;
     line-height: 1;
     border: 1px solid var(--color-rule);
-    border-radius: 2px;
+    border-radius: 6px;
     background: var(--color-paper);
     color: var(--color-ink);
     cursor: pointer;
@@ -184,7 +184,7 @@
     font-size: 14px;
     background: var(--color-paper);
     border: 1px solid var(--color-rule);
-    border-radius: 2px;
+    border-radius: 6px;
     color: var(--color-ink);
   }
   .input:focus {

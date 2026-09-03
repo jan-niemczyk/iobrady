@@ -1,0 +1,52 @@
+// Motyw Bootstrapa dopasowany do istniejącej palety iOBRADY (globals.css).
+// Celowo NIE zostawiamy domyślnego niebieskiego Bootstrapa - kolory pochodzą
+// z tych samych wartości co reszta aplikacji (karty głosowania, prezentacja).
+
+// ─── kolory bazowe (te same wartości co --color-* w globals.css) ─────────
+$white:    #FFFFFF;
+$ink:      #0F172A; // --color-ink
+$ink-2:    #334155; // --color-ink-2
+$ink-3:    #64748B; // --color-ink-3
+$rule:     #0F172A; // --color-rule
+$rule-soft:#E2E8F0; // --color-rule-soft
+$paper-2:  #F1F5F9; // --color-paper-2
+
+$seal:     #B91C1C; // --color-seal
+$yes:      #15803D; // --color-yes
+$no:       #DC2626; // --color-no
+$abstain:  #CA8A04; // --color-abstain
+
+// ─── mapowanie na zmienne Bootstrapa ──────────────────────────────────────
+$primary:       $ink;
+$secondary:     $ink-2;
+$success:       $yes;
+$danger:        $no;
+$warning:       $abstain;
+$info:          $ink-3;
+$light:         $paper-2;
+$dark:          $ink;
+
+$body-bg:       $white;
+$body-color:    $ink;
+$border-color:  $rule-soft;
+
+$font-family-sans-serif: "Inter", -apple-system, system-ui, sans-serif;
+$font-family-base: $font-family-sans-serif;
+
+// Zaokrąglenie zgodne z tym, na co przechodzą karty/przyciski w reszcie aplikacji.
+$border-radius:       .375rem;
+$border-radius-sm:    .25rem;
+$border-radius-lg:    .5rem;
+
+// Stonowane, "urzędowe" akcenty - bez cieni/gradientów rodem z gotowych szablonów.
+$enable-shadows:      false;
+$enable-gradients:    false;
+$box-shadow:          none;
+$box-shadow-sm:       none;
+$box-shadow-lg:       none;
+
+$link-color:          $ink;
+$link-hover-color:    $ink-2;
+
+$card-border-color:   $rule-soft;
+$table-border-color:  $rule-soft;

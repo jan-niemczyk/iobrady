@@ -1,3 +1,4 @@
+import "../bootstrap-scoped.css";
 import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";

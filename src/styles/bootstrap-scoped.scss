@@ -1,0 +1,10 @@
+// Bootstrap dla panelu operatora, logowania, konta i ekranu przewodniczącego.
+//
+// Ten arkusz jest importowany WYŁĄCZNIE w layoutach tych sekcji (patrz
+// src/app/(operator)/layout.tsx, src/app/login/layout.tsx, src/app/account/layout.tsx,
+// src/app/chairperson/layout.tsx) - Next.js dołącza CSS zaimportowany w layoucie tylko
+// do tego drzewa tras, więc karty głosowania (/session), prezentacja (/display) i
+// transmisja (/overlay) nigdy go nie ładują. Dzięki temu Bootstrap nie koliduje z
+// klasami .btn/.card/.input z globals.css używanymi na kartach głosowania.
+@use "bs-theme" as *;
+@import "bootstrap/scss/bootstrap";
