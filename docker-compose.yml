@@ -1,0 +1,70 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-esog}
+      POSTGRES_USER: ${POSTGRES_USER:-esog}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-esog_dev_pw}
+      TZ: Europe/Warsaw
+      PGTZ: Europe/Warsaw
+    volumes:
+      - esog_db:/var/lib/postgresql/data
+    # Port 5432 NIE jest już wystawiany na świat - dostęp tylko z sieci dockera.
+    # (Jeśli potrzebujesz łączyć się z bazą z zewnątrz, odkomentuj poniżej.)
+    # ports:
+    #   - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-esog}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-esog}:${POSTGRES_PASSWORD:-esog_dev_pw}@db:5432/${POSTGRES_DB:-esog}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://glosowania.mswz.pl}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      INIT_SEED: ${INIT_SEED:-false}
+      SEED_OPERATOR_EMAIL: ${SEED_OPERATOR_EMAIL:-operator@esog.local}
+      SEED_OPERATOR_PASSWORD: ${SEED_OPERATOR_PASSWORD:-}
+      NODE_ENV: production
+      TZ: Europe/Warsaw
+    # Port 3000 NIE jest wystawiany na świat - ruch idzie przez Caddy.
+    expose:
+      - "3000"
+    volumes:
+      # Trwałe miejsce na wgrane pliki (logo prezentacji) - przetrwa redeploy
+      - esog_uploads:/app/public/uploads
+    command: >
+      sh -c "
+        npx prisma db push --accept-data-loss &&
+        if [ \"$INIT_SEED\" = \"true\" ]; then npx tsx prisma/seed.ts; fi &&
+        node server.js
+      "
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      TZ: Europe/Warsaw
+
+volumes:
+  esog_db:
+  esog_uploads:
+  caddy_data:
+  caddy_config:

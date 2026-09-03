@@ -1,0 +1,863 @@
+// Obradio - schemat bazy
+// Pokrywa sekcje 2-23 specyfikacji.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  ENUMS
+// ─────────────────────────────────────────────────────────────────
+
+enum Role {
+  OPERATOR
+  PARTICIPANT
+  CHAIRPERSON
+}
+
+enum MeetingStatus {
+  DRAFT          // projekt
+  PREPARED       // przygotowane
+  OPEN           // otwarte
+  IN_PROGRESS    // w toku
+  PAUSED         // przerwane
+  CLOSED         // zakończone
+  ARCHIVED       // zarchiwizowane
+  CANCELLED      // anulowane
+}
+
+enum AttendanceMode {
+  MANUAL              // operator potwierdza
+  SELF_CONFIRMATION   // uczestnik sam potwierdza
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+}
+
+enum AttendanceSource {
+  OPERATOR
+  PARTICIPANT
+}
+
+enum AgendaItemStatus {
+  PENDING    // jeszcze nie rozpoczęty
+  CURRENT    // aktualnie rozpatrywany
+  PAUSED     // zawieszony - można wrócić, w międzyczasie operator przeszedł do innego
+  COMPLETED  // zakończony
+  SKIPPED    // pominięty
+}
+
+enum VoteType {
+  STANDARD   // za / przeciw / wstrzymuję się
+  LIST       // głosowanie na listę kandydatów; niezaznaczenie = głos PRZECIW
+  QUORUM     // głosowanie kworum - sprawdzenie obecności, bez "za/przeciw"
+  PACKAGE    // głosowanie pakietowe - wiele pozycji, na każdą za/przeciw/wstrzym
+}
+
+enum VoteVisibility {
+  OPEN       // jawne - z imienną historią
+  SECRET     // tajne - anonimowe wyniki zbiorcze
+}
+
+enum VoteStatus {
+  DRAFT
+  READY
+  OPEN
+  CLOSED
+  CANCELLED
+  INTERRUPTED
+  IRRELEVANT
+}
+
+enum VoteChoice {
+  YES        // za
+  NO         // przeciw
+  ABSTAIN    // wstrzymał się
+}
+
+enum MajorityType {
+  SIMPLE                 // zwykła
+  ABSOLUTE               // bezwzględna
+  QUALIFIED_TWO_THIRDS   // 2/3
+  QUALIFIED_THREE_FIFTHS // 3/5
+  OF_VOTERS              // od liczby głosujących
+  OF_PRESENT             // od liczby obecnych
+  OF_FULL_BODY           // od pełnego składu
+  CUSTOM                 // własna reguła
+}
+
+/** Typ większości - WHAT (jaki próg) */
+enum MajorityKind {
+  SIMPLE                  // zwykła: ZA > PRZECIW
+  ABSOLUTE                // bezwzględna: ZA > (PRZECIW + WSTRZYMAŁO SIĘ)
+  QUALIFIED_TWO_THIRDS    // 2/3 mianownika musi być "za"
+  QUALIFIED_THREE_FIFTHS  // 3/5 mianownika musi być "za"
+}
+
+/** Mianownik - OF WHAT (od czego liczona) */
+enum MajorityBase {
+  OF_VOTERS     // od liczby oddanych głosów
+  OF_PRESENT    // od liczby obecnych z prawem głosu
+  OF_FULL_BODY  // od pełnego składu (wszystkich uprawnionych)
+}
+
+enum QuorumRule {
+  MORE_THAN_HALF
+  AT_LEAST_HALF
+  PERCENTAGE        // patrz: Meeting.quorumValue
+  COUNT             // patrz: Meeting.quorumValue
+  CUSTOM
+}
+
+enum SpeakerStatus {
+  WAITING       // oczekuje
+  SPEAKING      // przemawia
+  FINISHED      // zabrał głos
+  WITHDRAWN     // zrezygnował / wycofany
+}
+
+/**
+ * Typ wpisu na liście mówców. Wpływa na kolejność:
+ *  - AD_VOCEM (ripost na zarzut, najwyższy priorytet)
+ *  - FORMAL_MOTION (wniosek formalny - przed wpisami zwykłymi)
+ *  - REGULAR (zgłoszenie zwykłe, w kolejności zgłoszeń)
+ */
+enum SpeakerEntryType {
+  REGULAR
+  FORMAL_MOTION
+  AD_VOCEM
+}
+
+enum SpeakerListKind {
+  DISCUSSION       // zwykła lista mówców powiązana z punktem
+  FORMAL_MOTIONS   // stała kolejka wniosków formalnych (poziom posiedzenia)
+}
+
+enum DiscussionClockMode {
+  COUNT_UP    // licznik w górę (pomiar informacyjny, bez budżetu)
+  COUNT_DOWN  // odliczanie w dół od budżetu; po przekroczeniu wartości ujemne (czerwień)
+}
+
+enum DiscussionClockScope {
+  PER_AGENDA_ITEM  // reset przy zmianie punktu
+  WHOLE_MEETING    // jedna pula na całe posiedzenie
+}
+
+enum AuditAction {
+  MEETING_CREATED
+  MEETING_UPDATED
+  MEETING_OPENED
+  MEETING_CLOSED
+  MEETING_REOPENED
+  MEETING_CANCELLED
+  MEETING_DELETED
+  ATTENDANCE_OPENED
+  ATTENDANCE_CLOSED
+  ATTENDANCE_MARKED
+  ATTENDANCE_REVOKED
+  AGENDA_ITEM_STARTED
+  AGENDA_ITEM_COMPLETED
+  VOTE_CREATED
+  VOTE_UPDATED
+  VOTE_OPENED
+  VOTE_CLOSED
+  VOTE_INTERRUPTED
+  VOTE_CANCELLED
+  VOTE_DELETED
+  VOTE_RESULT_PUBLISHED
+  VOTE_RESULT_HIDDEN
+  VOTE_MAJORITY_RECOMPUTED
+  PARTICIPANT_EXCLUDED
+  PARTICIPANT_RIGHT_CHANGED
+  SETTINGS_CHANGED
+  MESSAGE_PUBLISHED
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  USERS & GROUPS
+// ─────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         Role     @default(PARTICIPANT)
+  // Funkcja/rola osoby w organie (np. „Przewodniczący", „Wiceprzewodnicząca") - pokazywana na prezentacji i transmisji.
+  functionTitle String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Domyślna przynależność (sekcja 15) - używana, gdy Settings.groupsEnabled=true
+  groupId   String?
+  group     Group?  @relation(fields: [groupId], references: [id])
+
+  participations MeetingParticipant[]
+  ballots        Ballot[]
+  speakerEntries SpeakerListEntry[]
+  auditLogs      AuditLog[]
+  templateMemberships MeetingTemplateMember[]
+
+  @@index([role])
+  @@index([active])
+}
+
+model Group {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  shortName String?
+  color     String?  // hex, do oznaczeń w UI
+  createdAt DateTime @default(now())
+
+  users User[]
+}
+
+// Globalne ustawienia aplikacji (jeden rekord)
+model Settings {
+  id                       String       @id @default("singleton")
+  organizationName         String       @default("Organizacja")
+  groupsEnabled            Boolean      @default(false)  // sekcja 15.2 - tryb bez przynależności
+  defaultQuorumRule        QuorumRule   @default(AT_LEAST_HALF)
+  defaultQuorumValue       Float?       // dla PERCENTAGE/COUNT
+  defaultMajority          MajorityType @default(SIMPLE)  // [deprecated]
+  defaultMajorityKind      MajorityKind @default(SIMPLE)
+  defaultMajorityBase      MajorityBase @default(OF_VOTERS)
+  defaultAttendanceMode    AttendanceMode @default(SELF_CONFIRMATION)
+  defaultVoteVisibility    VoteVisibility @default(OPEN)
+  autoPublishResults       Boolean      @default(false)
+  sessionTimeoutMinutes    Int          @default(60)
+  // Prezentacja - wygląd globalny
+  presentationFont         String       @default("Outfit")   // Inter/Lato/Roboto/DM Sans/Source Sans Pro
+  presentationHeaderColor  String       @default("#0B2A4A") // ciemny morski granat (nagłówek prezentacji)
+  presentationLogoUrl      String?      // opcjonalne logo zamiast paska koloru (data URL lub ścieżka)
+  // "Pierwszy głos ważny" - po oddaniu nie można zmienić. Osobno dla tajnych i jawnych.
+  firstVoteFinalOpen       Boolean      @default(false)
+  firstVoteFinalSecret     Boolean      @default(false)
+  /// Domyślne limity czasu wypowiedzi (sekundy); null = bez limitu. Zmienialne na bieżąco per wpis.
+  defaultSpeechLimitSec      Int?
+  defaultAdVocemLimitSec     Int?
+  defaultFormalMotionLimitSec Int?
+  // Automatyczne głosowanie ad hoc przy rozpoczęciu wystąpienia typu "wniosek formalny"
+  autoAdHocOnFormalMotion  Boolean      @default(true)
+  // Sygnał dźwiękowy na prezentacji przy przekroczeniu limitu czasu wypowiedzi (3 gongi)
+  speechOvertimeSound      Boolean      @default(true)
+  // ── Transmisja (nakładka OBS) - konfiguracja niezależna od prezentacji ──
+  overlayFont              String       @default("Outfit")   // osobny krój dla transmisji
+  overlayResultsMode       String       @default("BARS")    // BARS (poziome paski) | BOARD (tablica jak na prezentacji)
+  overlayBoardTiming       String       @default("FROM_START") // FROM_START (od rozpoczęcia) | AFTER_CLOSE (dopiero po zamknięciu)
+  overlayShowSpeechClock   Boolean      @default(false)      // pokazuj licznik czasu wypowiedzi na transmisji
+  // Globalne domyślne dla prezentacji głosowań (można nadpisać per głosowanie w panelu prezentacji):
+  defaultShowCastCount      Boolean     @default(true)   // pokazuj licznik oddanych głosów w trakcie
+  defaultShowByName         Boolean     @default(true)   // pokazuj imienne wyniki głosowań jawnych (tablica)
+  defaultShowIndividualVotes Boolean    @default(true)   // pokazuj indywidualne stanowiska (za/przeciw/wstrz.)
+  // Kolory teł pasków/etykiet (wspólne dla prezentacji i transmisji)
+  colorItemBar             String       @default("#1E3A8A") // punkt porządku obrad
+  colorSpeakerBar          String       @default("#f70d1a") // mówca
+  colorVoteBar             String       @default("#f70d1a") // trwa głosowanie
+  colorSessionBar          String       @default("#0B2A4A") // nazwa posiedzenia
+  updatedAt                DateTime     @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  MEETINGS
+// ─────────────────────────────────────────────────────────────────
+
+model Meeting {
+  id              String        @id @default(cuid())
+  number          String        // np. "XII/2025"
+  name            String
+  // Opcjonalna nazwa do PREZENTACJI z ręcznym łamaniem linii (znaki nowej linii = łamanie).
+  // Nie wpływa na PDF/CSV/protokoły - tam używana jest zwykła "name". Puste = użyj "name".
+  displayNameOverride String?
+  description     String?
+  meetingType     String?       // np. "sesja zwyczajna", "komisja"
+  scheduledAt     DateTime
+  openedAt        DateTime?
+  closedAt        DateTime?
+  status          MeetingStatus @default(DRAFT)
+
+  // konfiguracja
+  attendanceMode  AttendanceMode @default(MANUAL)
+  attendanceOpen  Boolean       @default(false)
+  /// Id bieżąco otwartego sprawdzenia obecności (migawki), jeśli trwa.
+  activeAttendanceCheckId String?
+  /// Czy w trakcie sprawdzenia obecności radni mogą sami potwierdzać (operator może wyłączyć).
+  attendanceSelfCheckEnabled Boolean @default(true)
+
+  /// Wnioski formalne: czy uczestnicy mogą je zgłaszać w każdej chwili (osobna kolejka).
+  allowFormalMotionsAnytime Boolean @default(true)
+  // Domyślne ustawienia listy mówców, zapamiętywane per posiedzenie (używane przy tworzeniu nowej listy punktu).
+  speakerDefaultRegular      Boolean @default(true)
+  speakerDefaultAdVocem      Boolean @default(true)
+  speakerDefaultFormalMotion Boolean @default(true)
+
+  /// Licznik netto czasu dyskusji (opcjonalny; podgląd tylko operator + przewodniczący).
+  discussionClockEnabled Boolean @default(false)
+  discussionClockMode    DiscussionClockMode @default(COUNT_UP)
+  discussionClockScope   DiscussionClockScope @default(PER_AGENDA_ITEM)
+  /// Budżet łączny dyskusji w sekundach (dla trybu odliczania w dół).
+  discussionBudgetSec    Int?
+  /// Zsumowany wykorzystany czas dyskusji (źródło prawdy, aktualizowane przy końcu wypowiedzi).
+  discussionElapsedSec   Int @default(0)
+  /// Znacznik startu bieżąco trwającej wypowiedzi (do naliczania na żywo); null gdy nikt nie mówi.
+  discussionRunningSince DateTime?
+  clubClocks   ClubClock[]
+  quorumRule      QuorumRule    @default(MORE_THAN_HALF)
+  quorumValue     Float?        // dla PERCENTAGE (0-100) lub COUNT (liczba)
+  defaultMajority MajorityType  @default(SIMPLE) // [deprecated]
+  defaultMajorityKind MajorityKind @default(SIMPLE)
+  defaultMajorityBase MajorityBase @default(OF_VOTERS)
+  publishResultsAutomatically Boolean @default(false)
+  /** Wstrzymanie automatycznego pokazania wyników po zamknięciu (operator publikuje ręcznie) */
+  holdResults                 Boolean @default(false)
+
+  // stan w trakcie posiedzenia
+  currentAgendaItemId String? @unique
+  currentAgendaItem   AgendaItem? @relation("CurrentItem", fields: [currentAgendaItemId], references: [id])
+  currentMessageId    String? @unique
+  currentMessage      Message?    @relation("CurrentMessage", fields: [currentMessageId], references: [id])
+
+  // ─── STEROWANIE WIDOKIEM PREZENTACYJNYM (ekran sali, tablice świetlne) ───
+  // displayMode: AUTO = follow automatyczne stany (aktywne głosowanie/punkt itp.),
+  // PINNED_* = operator zatrzymał konkretny widok do ręcznej zmiany.
+  // displayPinnedVoteId/displayPinnedAgendaItemId - odniesienia do wpiętego elementu.
+  // displayCustomMessage - własny tekst od operatora (np. "Przerwa do 15:00").
+  // displayShowCastCount - czy podczas głosowania pokazać licznik kart (false = ukryty).
+  displayMode             String   @default("AUTO")
+  displayPinnedVoteId     String?
+  /// Tryb „pokaż PIN": id głosowania, którego PIN + podsuma potwierdzeń jest pokazywana
+  /// na ekranie prezentacji (ma pierwszeństwo przed tablicą; NIGDY na nakładce transmisji).
+  displayPinVoteId        String?
+  displayPinnedAgendaItemId String?
+  displayCustomMessage    String?
+  /// Przerwa z licznikiem: moment planowanego wznowienia obrad (odliczanie na prezentacji).
+  breakUntil              DateTime?
+  // Czy aktualny komunikat (MESSAGE) ma być pokazany także na transmisji (nakładce OBS).
+  displayMessageOnOverlay Boolean  @default(true)
+  // Komunikat pełnoekranowy na PREZENTACJI w stylu transmisji/OBS (kolorowe tło, jak overlay).
+  displayMessageObsStyle  Boolean  @default(false)
+  displayShowCastCount    Boolean  @default(false)
+  /** Czy w widoku prezentacyjnym pokazywać imienne wyniki głosowań jawnych (tablica nazwisk) */
+  displayShowByName       Boolean  @default(false)
+  /** Tryb prezentacji: po ZAMKNIĘCIU głosowania pokazuj tylko podsumę (bez tablicy nazwisk) */
+  displaySummaryAfterClose Boolean @default(true)
+  /** W trybie imiennym - czy ujawniać konkretny wybór (za/przeciw/wstrz.) czy tylko fakt oddania głosu */
+  displayShowIndividualVotes Boolean @default(true)
+  /** Lista ID głosowań ukrytych przez operatora */
+  displayDismissedVoteIds String[] @default([])
+  /** Aktualna strona wyników listy kandydatów na prezentacji (ręczne przewijanie przez operatora) */
+  displayCandidatePage    Int      @default(0)
+  /** Sortowanie kandydatów na prezentacji: "VOTES" (wg liczby głosów) lub "ALPHA" (alfabetycznie) */
+  displayCandidateSort    String   @default("VOTES")
+  /** Po otwarciu punktu agendy automatycznie utwórz/włącz listę mówców (samodzielne zapisy) */
+  autoOpenSpeakerList     Boolean  @default(true)
+  // Tryb pokazywania porządku obrad w auto-prezentacji: "FULL" = cała lista, "SINGLE" = każdy punkt osobno
+  agendaAutoDisplayMode   String   @default("FULL")
+  displayUpdatedAt        DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants MeetingParticipant[]
+  agenda       AgendaItem[]   @relation("MeetingAgenda")
+  votes        Vote[]
+  messages     Message[]      @relation("MeetingMessages")
+  speakerLists SpeakerList[]
+  attendanceChecks AttendanceCheck[]
+  auditLogs    AuditLog[]
+
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+model MeetingParticipant {
+  id        String   @id @default(cuid())
+  meetingId String
+  userId    String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // sekcja 3 - typy uczestników
+  hasVotingRight   Boolean  @default(true)   // 3.1 vs 3.2
+  isInvitedGuest   Boolean  @default(false)  // 3.3 - gość/ekspert
+  isChairperson    Boolean  @default(false)  // przewodniczący TEGO posiedzenia (prowadzi obrady + głosuje)
+  // Prawo do zgłoszenia się do dyskusji z priorytetem (wskakuje na początek kolejki).
+  hasPriorityRight Boolean  @default(false)
+  // Dostęp do widoku mini ("wyświetlacz") - wąskie okno nakładane na stream/prezentację.
+  canUseMiniDisplay Boolean @default(false)
+  // Zakres priorytetu: null/pusta lista = globalny (cały czas); wartości = tylko w tych punktach.
+  priorityAgendaItemId String?
+  priorityAgendaItemIds String[] @default([])
+  visibleInfoMask  Int      @default(0)      // bitmask - co widzi gość
+
+  // sekcja 3.4 - wyłączenia z konkretnych głosowań
+  excludedFromVoteIds String[] @default([])
+  // wykluczenie z CAŁEGO posiedzenia (nie głosuje, nie zgłasza się do dyskusji) - punkt 34
+  excludedFromMeeting Boolean  @default(false)
+
+  attendance Attendance?
+
+  @@unique([meetingId, userId])
+  @@index([meetingId])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  AGENDA (sekcja 7)
+// ─────────────────────────────────────────────────────────────────
+
+model AgendaItem {
+  id          String           @id @default(cuid())
+  meetingId   String
+  meeting     Meeting          @relation("MeetingAgenda", fields: [meetingId], references: [id], onDelete: Cascade)
+  order       Int
+  number      String           // np. "1", "3a"
+  title       String
+  description String?
+  presenter   String?          // osoba referująca
+  committee   String?          // opinia/komisja (np. "Komisja ds. Finansów")
+  notes       String?          // uwagi operatora
+  status      AgendaItemStatus @default(PENDING)
+  /** Podpunkt - wyświetlany z wcięciem ("tabem"). Poza tym identyczny jak zwykły punkt. */
+  isSubItem   Boolean          @default(false)
+  // Pozycja bez numeru porządku (np. przerwa, sekcja) - wyświetlana jako sama nazwa,
+  // bez prefiksu „Pkt N. porz. obrad:". Nie jest numerowana w porządku obrad.
+  unnumbered  Boolean          @default(false)
+  /** Ukryty na liście porządku obrad w prezentacji (nadal działa w panelu operatora). */
+  hiddenFromDisplay Boolean    @default(false)
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  votes        Vote[]
+  speakerList  SpeakerList?
+  currentIn    Meeting?  @relation("CurrentItem")
+
+  @@unique([meetingId, order])
+  @@index([meetingId, status])
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  ATTENDANCE (sekcja 8)
+// ─────────────────────────────────────────────────────────────────
+
+model Attendance {
+  id            String             @id @default(cuid())
+  participantId String             @unique
+  participant   MeetingParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  status        AttendanceStatus
+  confirmedAt   DateTime           @default(now())
+  source        AttendanceSource
+  confirmedByUserId String?        // kto z operatorów (jeśli MANUAL)
+
+  @@index([status])
+}
+
+/// Pojedyncze sprawdzenie obecności (migawka). Każde odpalenie zeruje bieżący stan;
+/// po zamknięciu zapisuje nowy stan wyłącznie z tego sprawdzenia. Przerwanie zostawia poprzedni stan.
+model AttendanceCheck {
+  id         String                 @id @default(cuid())
+  meetingId  String
+  meeting    Meeting                @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  kind       AttendanceCheckKind    @default(CONFIRMATION)
+  status     AttendanceCheckStatus  @default(OPEN)
+  startedAt  DateTime               @default(now())
+  closedAt   DateTime?
+  // migawka liczb w chwili zamknięcia
+  presentCount  Int?
+  eligibleCount Int?
+  quorumRequired Int?
+  quorumMet      Boolean?
+  entries    AttendanceCheckEntry[]
+
+  @@index([meetingId])
+  @@index([status])
+}
+
+/// Obecność konkretnej osoby w danym sprawdzeniu (migawka).
+model AttendanceCheckEntry {
+  id       String          @id @default(cuid())
+  checkId  String
+  check    AttendanceCheck @relation(fields: [checkId], references: [id], onDelete: Cascade)
+  userId   String
+  lastName String
+  firstName String
+  clubShort String?
+  present  Boolean         @default(false)
+  markedAt DateTime?
+
+  @@unique([checkId, userId])
+  @@index([checkId])
+}
+
+enum AttendanceCheckKind {
+  CONFIRMATION   // sprawdzenie od zera (radni potwierdzają na nowo)
+  QUORUM_VOTE    // głosowanie kworum
+  INCREMENTAL    // korekta operatora zapisana jako migawka (od poprzedniego stanu)
+}
+
+enum AttendanceCheckStatus {
+  OPEN
+  CLOSED
+  INTERRUPTED
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  VOTES (sekcje 10-14)
+// ─────────────────────────────────────────────────────────────────
+
+model Vote {
+  id           String          @id @default(cuid())
+  meetingId    String
+  meeting      Meeting         @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  agendaItemId String?
+  agendaItem   AgendaItem?     @relation(fields: [agendaItemId], references: [id], onDelete: SetNull)
+
+  title       String
+  description String?
+  type        VoteType        @default(STANDARD)
+  visibility  VoteVisibility  @default(OPEN)
+  /** @deprecated - zachowane dla kompatybilności, używamy majorityKind + majorityBase */
+  majority    MajorityType    @default(SIMPLE)
+  /** Typ większości: SIMPLE / ABSOLUTE / QUALIFIED_2_3 / QUALIFIED_3_5 */
+  majorityKind MajorityKind   @default(SIMPLE)
+  /** Mianownik: OF_VOTERS / OF_PRESENT / OF_FULL_BODY */
+  majorityBase MajorityBase   @default(OF_VOTERS)
+  customMajorityFormula String? // dla CUSTOM
+  abstainCounts Boolean       @default(false) // [deprecated] w zwykłej nigdy się nie liczy
+  /** Numer porządkowy głosowania w ramach posiedzenia (1, 2, 3...) */
+  number      Int?            // wypełnia się przy tworzeniu
+  /** Czy to głosowanie ad hoc (niezwiązane z punktem porządku) */
+  adHoc       Boolean         @default(false)
+  /** Ad hoc: własny tekst kontekstu zastępujący nazwę punktu/posiedzenia w raporcie. */
+  contextLabel String?
+
+  /// PIN zabezpieczający głosowanie: radny musi go wpisać, by odblokować przyciski.
+  /// Wspólny 4-cyfrowy kod dla całego głosowania, pokazywany na ekranie prezentacji (nie na transmisji).
+  pinRequired Boolean @default(false)
+  pinCode     String?
+
+  /// Głosowanie pakietowe: czy uczestnik musi oddać głos na WSZYSTKIE pozycje przed wysłaniem.
+  requireAllPositions Boolean @default(true)
+  // Pierwszy głos ważny (nie można zmienić) dla TEGO głosowania. null = użyj ustawienia globalnego.
+  firstVoteFinal Boolean?
+
+  pinAuths    VotePinAuth[]
+
+  // dla głosowania na listę:
+  minSelections Int?           // co najmniej
+  maxSelections Int?           // co najwyżej
+
+  status     VoteStatus      @default(DRAFT)
+  createdAt  DateTime @default(now())
+  openedAt   DateTime?
+  closedAt   DateTime?
+  resultPublishedAt DateTime?
+
+  // zliczone wyniki (snapshot po zamknięciu) - dla szybkiego dostępu/raportów
+  resultEligibleCount   Int? // liczba uprawnionych
+  resultPresentCount    Int? // liczba obecnych uprawnionych
+  resultCastCount       Int? // liczba oddanych głosów
+  resultYes             Int?
+  resultNo              Int?
+  resultAbstain         Int?
+  resultInvalid         Int? // głosy nieważne (tajne: przycisk OBECNY)
+  resultPassed          Boolean?
+  resultQuorumMet       Boolean?
+
+  // ── GŁOSOWANIE TAJNE ──────────────────────────────────────────────
+  // Dla tajnych NIE zapisujemy pojedynczych ballotów z wyborem.
+  // Trzymamy wyłącznie zbiorcze liczniki (na żywo i po zamknięciu) ORAZ
+  // anonimowe markery "kto oddał głos" (bez treści wyboru) - do frekwencji
+  // i blokady podwójnego głosu. Nie da się z bazy odtworzyć kto jak głosował.
+  secretYes     Int @default(0)
+  secretNo      Int @default(0)
+  secretAbstain Int @default(0)
+  secretInvalid Int @default(0)
+
+  options VoteOption[]
+  ballots Ballot[]
+  secretMarkers SecretBallotMarker[]
+  roster        VoteRoster[]
+
+  @@index([meetingId, status])
+}
+
+// Anonimowy znacznik: dany uczestnik oddał głos w danym TAJNYM głosowaniu.
+// Celowo NIE zawiera wyboru (choice) - przechowuje tylko fakt oddania.
+model SecretBallotMarker {
+  id        String   @id @default(cuid())
+  voteId    String
+  vote      Vote     @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  userId    String
+  castAt    DateTime @default(now())
+
+  @@unique([voteId, userId])
+  @@index([voteId])
+}
+
+// Migawka składu (listy uczestników) w chwili OTWARCIA głosowania.
+// Dzięki temu ekrany historycznych głosowań pokazują skład z tamtej chwili,
+// nawet jeśli później dodano/usunięto uczestników posiedzenia.
+model VoteRoster {
+  id        String  @id @default(cuid())
+  voteId    String
+  vote      Vote    @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  userId    String?            // referencja pomocnicza (może być null po usunięciu konta)
+  lastName  String
+  firstName String
+  clubShort String?
+  hasVotingRight Boolean @default(true)
+  present   Boolean @default(false)  // czy obecny w chwili otwarcia
+  order     Int                       // kolejność (posortowana po polsku przy zapisie)
+
+  @@index([voteId])
+}
+
+model VoteOption {
+  // Kandydat / opcja na liście wyboru.
+  // Semantyka liczona w `src/lib/listVote.ts`:
+  //   liczba głosów ZA  = liczba ballotów, które MAJĄ tę opcję w BallotSelection
+  //   liczba głosów PRZECIW = liczba ballotów (głosujących), które NIE mają tej opcji
+  //   wstrzymanie się = nie oddanie żadnego głosu w ogóle (brak ballota)
+  // Próg poparcia (np. większość bezwzględna) liczy się od liczby głosujących.
+  id        String   @id @default(cuid())
+  voteId    String
+  vote      Vote     @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  order     Int
+  label     String   // np. nazwisko kandydata / nazwa opcji / tytuł pozycji pakietu
+  /// Głosowanie pakietowe: własna numeracja i opcjonalny opis pozycji.
+  positionNumber String?
+  description    String?
+  resultCount Int?   // snapshot - liczba głosów ZA po zamknięciu
+  /// Pakiet: snapshoty wyników per pozycja (za/przeciw/wstrzym) po zamknięciu.
+  resultYes     Int?
+  resultNo      Int?
+  resultAbstain Int?
+  resultPassed  Boolean?
+  // Licznik dla TAJNEGO głosowania na listę - anonimowy, inkrementowany przy oddaniu głosu,
+  // bez wiązania z osobą (analogicznie do secretYes/No/Abstain w Vote).
+  secretCount Int @default(0)
+  /// Pakiet tajny: anonimowe liczniki per pozycja.
+  secretYes     Int @default(0)
+  secretNo      Int @default(0)
+  secretAbstain Int @default(0)
+
+  ballotSelections BallotSelection[]
+
+  @@unique([voteId, order])
+}
+
+model Ballot {
+  id        String   @id @default(cuid())
+  voteId    String
+  vote      Vote     @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  // userId może być nullowy dla głosów tajnych po zamknięciu (anonimizacja).
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // wynik dla głosowania STANDARD/FORMAL:
+  choice    VoteChoice?
+  // wynik dla głosowania LIST:
+  selections BallotSelection[]
+
+  // SNAPSHOT personaliów w chwili oddania głosu (punkt 21).
+  // Dzięki temu zmiana imienia/klubu w ustawieniach NIE zmienia historycznych raportów.
+  voterFirstName String?
+  voterLastName  String?
+  voterClubName  String?
+  voterClubShort String?
+
+  castAt    DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // dla głosowań jawnych ten sam użytkownik może aktualizować ballot do czasu zamknięcia
+  @@unique([voteId, userId])
+  @@index([voteId])
+}
+
+model BallotSelection {
+  id       String     @id @default(cuid())
+  ballotId String
+  ballot   Ballot     @relation(fields: [ballotId], references: [id], onDelete: Cascade)
+  optionId String
+  option   VoteOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  /// Dla głosowania pakietowego: głos oddany na tę pozycję (za/przeciw/wstrzym).
+  /// Dla listy pozostaje null (sam fakt zaznaczenia = głos ZA).
+  choice   VoteChoice?
+
+  @@unique([ballotId, optionId])
+}
+
+/// Autoryzacja PIN-em: rekord, że dany radny wpisał poprawny PIN do danego głosowania.
+model VotePinAuth {
+  id        String   @id @default(cuid())
+  voteId    String
+  vote      Vote     @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  userId    String
+  authorizedAt DateTime @default(now())
+
+  @@unique([voteId, userId])
+  @@index([voteId])
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  SPEAKER LISTS (sekcja 16)
+// ─────────────────────────────────────────────────────────────────
+
+model SpeakerList {
+  id           String  @id @default(cuid())
+  meetingId    String
+  meeting      Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  agendaItemId String? @unique
+  agendaItem   AgendaItem? @relation(fields: [agendaItemId], references: [id], onDelete: Cascade)
+  /** Rodzaj listy: DISCUSSION - zwykła lista mówców punktu; FORMAL_MOTIONS - stała
+      kolejka wniosków formalnych na poziomie posiedzenia (agendaItemId = null). */
+  kind         SpeakerListKind @default(DISCUSSION)
+  selfSignupEnabled Boolean @default(false)
+  /** Które typy zgłoszeń są dozwolone dla uczestników (samodzielny zapis) */
+  allowRegular      Boolean @default(true)   // zwykłe zgłoszenie do dyskusji
+  allowAdVocem      Boolean @default(true)   // ad vocem
+  allowFormalMotion Boolean @default(true)   // wniosek formalny
+  visibleToParticipants Boolean @default(true)
+  defaultTimeLimitSec Int? // sekcja 17
+
+  entries SpeakerListEntry[]
+
+  @@index([meetingId])
+}
+
+model SpeakerListEntry {
+  id            String        @id @default(cuid())
+  speakerListId String
+  list          SpeakerList   @relation(fields: [speakerListId], references: [id], onDelete: Cascade)
+  // userId opcjonalny - wpis może dotyczyć GOŚCIA bez konta (z katalogu gości lub ad hoc).
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // gość z katalogu (bez konta uczestnika)
+  guestId       String?
+  guest         Guest?        @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  // SNAPSHOT wyświetlanej tożsamości w chwili dodania (punkt 21 + goście ad hoc).
+  // Dla gości ad hoc to jedyne źródło nazwy. Dla radnych zamraża imię/klub z chwili zgłoszenia.
+  speakerName   String?       // pełna nazwa do wyświetlenia (np. "Jan Kowalski" lub "Gość: dyr. X")
+  speakerClubShort String?    // skrót klubu/koła w chwili zgłoszenia
+  speakerRole   String?       // opcjonalna funkcja/stanowisko gościa (np. "Dyrektor Wydziału")
+  order         Int
+  /** Typ zgłoszenia - REGULAR (zwykły), FORMAL_MOTION (wniosek formalny), AD_VOCEM (ripost) */
+  entryType     SpeakerEntryType @default(REGULAR)
+  /** Priorytet w dyskusji - wpis oznaczony przez operatora, wskakuje wyżej w kolejce mówców. */
+  priority      Boolean       @default(false)
+  status        SpeakerStatus @default(WAITING)
+  timeLimitSec  Int?
+  /** Liczba sekund dodanych/odjętych dynamicznie przez operatora po starcie */
+  timeAdjustmentSec Int      @default(0)
+  startedAt     DateTime?
+  endedAt       DateTime?
+  consumedSec   Int?
+
+  @@unique([speakerListId, order])
+  @@index([userId])
+  @@index([guestId])
+}
+
+/// Licznik czasu dyskusji dla pojedynczego klubu/koła (per posiedzenie).
+/// Limit ustawiany osobno dla każdego klubu; elapsed to zsumowany wykorzystany czas.
+model ClubClock {
+  id         String  @id @default(cuid())
+  meetingId  String
+  meeting    Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  clubShort  String
+  budgetSec  Int?    // limit (dla trybu odliczania w dół); null = brak limitu dla tego klubu
+  elapsedSec Int     @default(0)
+
+  @@unique([meetingId, clubShort])
+  @@index([meetingId])
+}
+
+// Katalog gości - osoby zabierające głos bez konta i bez prawa głosu
+// (np. dyrektorzy wydziałów, zaproszeni eksperci). Nie są uczestnikami posiedzenia.
+model Guest {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  role      String?  // funkcja/stanowisko, np. "Dyrektor Wydziału Edukacji"
+  clubShort String?  // opcjonalnie, jeśli reprezentuje jakiś podmiot
+  createdAt DateTime @default(now())
+
+  speakerEntries SpeakerListEntry[]
+
+  @@index([lastName])
+}
+
+// Szablon składu posiedzenia (punkt: grupy posiedzeń).
+// Predefiniowany zestaw uczestników, który można hurtowo dodać do posiedzenia.
+// Przy tworzeniu posiedzenia operator wybiera 1+ szablonów; osoby z różnych
+// szablonów liczą się raz (deduplikacja po userId).
+model MeetingTemplate {
+  id        String   @id @default(cuid())
+  name      String   @unique          // np. "Rada Miasta - pełny skład"
+  description String?
+  createdAt DateTime @default(now())
+
+  members   MeetingTemplateMember[]
+
+  @@index([name])
+}
+
+model MeetingTemplateMember {
+  id         String          @id @default(cuid())
+  templateId String
+  template   MeetingTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // domyślne prawo głosu w ramach tego szablonu (np. przewodniczący/goście bez głosu)
+  hasVotingRight Boolean     @default(true)
+
+  @@unique([templateId, userId])
+  @@index([templateId])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  MESSAGES (sekcja 18)
+// ─────────────────────────────────────────────────────────────────
+
+model Message {
+  id        String   @id @default(cuid())
+  meetingId String
+  meeting   Meeting  @relation("MeetingMessages", fields: [meetingId], references: [id], onDelete: Cascade)
+  content   String
+  visibleToAll Boolean @default(true)
+  visibleGroupIds String[] @default([])
+  publishedAt DateTime @default(now())
+  hiddenAt    DateTime?
+  currentIn   Meeting? @relation("CurrentMessage")
+
+  @@index([meetingId])
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  AUDIT LOG (sekcja 20)
+// ─────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String      @id @default(cuid())
+  meetingId String?
+  meeting   Meeting?    @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    AuditAction
+  description String
+  metadata  Json?
+  createdAt DateTime    @default(now())
+
+  @@index([meetingId, createdAt])
+  @@index([action])
+}

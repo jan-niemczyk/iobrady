@@ -1,0 +1,273 @@
+@import "tailwindcss";
+
+@theme {
+  /* ─── kolory ─────────────────────────────────────────────────── */
+  --color-paper:        #FFFFFF;   /* tło - czyste białe */
+  --color-paper-2:      #F1F5F9;   /* sekundarne tło / hover - chłodny jasnoszary */
+  --color-ink:          #0F172A;   /* tekst główny - granatowy grafit */
+  --color-ink-2:        #334155;   /* tekst sekundarny */
+  --color-ink-3:        #64748B;   /* tekst tertiary / etykiety */
+  --color-rule:         #0F172A;   /* linie rozdzielające */
+  --color-rule-soft:    #E2E8F0;   /* subtelne linie - chłodny szary */
+
+  --color-seal:         #B91C1C;   /* czerwony akcent */
+  --color-seal-dark:    #991B1B;
+  --color-seal-bg:      #FEE2E2;
+
+  --color-yes:          #15803D;   /* za - żywsza zieleń */
+  --color-yes-bg:       #DCFCE7;
+  --color-no:           #DC2626;   /* przeciw - żywsza czerwień */
+  --color-no-bg:        #FEE2E2;
+  --color-abstain:      #CA8A04;   /* wstrzymał się - złoty */
+  --color-abstain-bg:   #FEF9C3;
+
+  --color-live:         #E11D48;   /* "live" / głosowanie trwa */
+  --color-quorum-ok:    #15803D;
+  --color-quorum-bad:   #DC2626;
+
+  /* ─── typografia ────────────────────────────────────────────── */
+  --font-serif: "Inter", -apple-system, system-ui, sans-serif;
+  --font-sans:  "Inter", -apple-system, system-ui, sans-serif;
+  --font-mono:  "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  html, body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* zachowane dla zgodności - pierwotnie ukrywało kratkę, teraz nic nie robi */
+  .no-grid { background-image: none; }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--color-ink);
+  }
+
+  /* liczby zawsze tabularne */
+  .num, .mono {
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
+  }
+  code, kbd {
+    font-family: var(--font-mono);
+  }
+
+  /* focus widoczny dla a11y */
+  *:focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+}
+
+@layer components {
+  /* karta - biała powierzchnia na siatce */
+  .card {
+    background: var(--color-paper);
+    border: 1px solid var(--color-rule);
+    border-radius: 2px;
+  }
+  .card-soft {
+    background: var(--color-paper);
+    border: 1px solid var(--color-rule-soft);
+    border-radius: 2px;
+  }
+
+  .rule { border-color: var(--color-rule); }
+  .rule-soft { border-color: var(--color-rule-soft); }
+
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-ink-3);
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    border: 1px solid var(--color-rule);
+    border-radius: 999px;
+    font-size: 11px;
+    line-height: 18px;
+    background: var(--color-paper);
+  }
+
+  .pill-live {
+    border-color: var(--color-live);
+    background: var(--color-paper);
+    color: var(--color-live);
+  }
+  .pill-live::before {
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--color-live);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+
+  .pill-ok { border-color: var(--color-yes); color: var(--color-yes); background: var(--color-yes-bg); }
+  .pill-bad { border-color: var(--color-no); color: var(--color-no); background: var(--color-no-bg); }
+  .pill-neutral { border-color: var(--color-rule-soft); color: var(--color-ink-2); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    border: 1px solid var(--color-rule);
+    border-radius: 2px;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    cursor: pointer;
+    transition: background 80ms ease, transform 60ms ease;
+    user-select: none;
+  }
+  /* Hover tylko na urządzeniach ze wskaźnikiem (mysz). Na ekranach dotykowych
+     przeglądarki utrzymują :hover po tapnięciu, co zostawiało przycisk w złym
+     kolorze ("odwrócone kolory") aż do tapnięcia gdzie indziej. */
+  @media (hover: hover) {
+    .btn:hover { background: var(--color-paper-2); }
+    .btn-primary:hover { background: #1a1f2e; }
+    .btn-danger:hover { background: var(--color-seal-dark); }
+    /* Kolorowe przyciski przyciemniają się, NIE wybielają */
+    .btn-yes:hover { background: #18632F; border-color: #18632F; }
+    .btn-no:hover  { background: #A40D26; border-color: #A40D26; }
+    .btn-abstain:hover { background: #9C720A; border-color: #9C720A; }
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .btn-primary {
+    background: var(--color-ink);
+    color: var(--color-paper);
+    border-color: var(--color-ink);
+  }
+
+  .btn-danger {
+    background: var(--color-seal);
+    color: #FFFFFF;
+    border-color: var(--color-seal);
+  }
+
+  .btn-yes { background: var(--color-yes); color: #FFFFFF; border-color: var(--color-yes); }
+  .btn-no  { background: var(--color-no);  color: #FFFFFF; border-color: var(--color-no);  }
+  .btn-abstain { background: var(--color-abstain); color: #FFFFFF; border-color: var(--color-abstain); }
+
+  .btn-lg { padding: 18px 24px; font-size: 15px; }
+  .btn-xl { padding: 28px 32px; font-size: 18px; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  .input {
+    width: 100%;
+    padding: 10px 12px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    background: var(--color-paper);
+    border: 1px solid var(--color-rule);
+    border-radius: 2px;
+    color: var(--color-ink);
+  }
+  .input:focus {
+    outline: 2px solid var(--color-ink);
+    outline-offset: -1px;
+  }
+
+  .label {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-ink-3);
+    margin-bottom: 6px;
+  }
+
+  /* "stempel" - duży licznik na tablicy wyników */
+  .stat {
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
+    font-size: 56px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--color-ink);
+  }
+  .stat-md { font-size: 36px; }
+  .stat-sm { font-size: 24px; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.slide-in { animation: slide-in 180ms ease-out; }
+
+/* ─── TRYB CZARNY (aplikacja uczestnika) ─────────────────────────────
+   Włączany atrybutem data-theme="dark" na <html>. Czarne tło, biały tekst
+   i białe obramowania. Kolory głosów rozjaśnione dla kontrastu. */
+[data-theme="dark"] {
+  --color-paper:      #000000;
+  --color-paper-2:    #111318;
+  --color-ink:        #FFFFFF;
+  --color-ink-2:      #D7DAE0;
+  --color-ink-3:      #9BA1AC;
+  --color-rule:       #FFFFFF;
+  --color-rule-soft:  #3A3F49;
+  --color-yes:        #37C871;
+  --color-yes-bg:     #10331F;
+  --color-no:         #FF5C5C;
+  --color-no-bg:      #3A1414;
+  --color-abstain:    #E5B93C;
+  --color-abstain-bg: #3A2F0E;
+  --color-seal:       #FF5C5C;
+  --color-seal-bg:    #3A1414;
+  --color-live:       #FF4D6A;
+}
+[data-theme="dark"] body { background: #000000; color: #FFFFFF; }
+[data-theme="dark"] .btn {
+  background: #000000; color: #FFFFFF; border-color: #FFFFFF;
+}
+@media (hover: hover) {
+  [data-theme="dark"] .btn:hover { background: #1A1D23; }
+}
+[data-theme="dark"] .btn-primary {
+  background: #FFFFFF; color: #000000; border-color: #FFFFFF;
+}
+[data-theme="dark"] .card,
+[data-theme="dark"] .input {
+  background: #000000; color: #FFFFFF; border-color: #FFFFFF;
+}
+/* Kolorowe przyciski głosowania: jawne tło, biały tekst - NIE mogą być czarne */
+[data-theme="dark"] .btn-yes {
+  background: #2E9E58 !important; color: #FFFFFF !important; border-color: #2E9E58 !important;
+}
+[data-theme="dark"] .btn-no {
+  background: #D23148 !important; color: #FFFFFF !important; border-color: #D23148 !important;
+}
+[data-theme="dark"] .btn-abstain {
+  background: #C9971F !important; color: #FFFFFF !important; border-color: #C9971F !important;
+}

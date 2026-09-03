@@ -1,0 +1,24 @@
+# Caddy automatycznie pobiera i odnawia certyfikat Let's Encrypt dla tej domeny.
+glosowania.mswz.pl {
+	# Reverse proxy do aplikacji Next.js w kontenerze "app" (port 3000 w sieci dockera)
+	reverse_proxy app:3000
+
+	# Nagłówki bezpieczeństwa
+	header {
+		Strict-Transport-Security "max-age=31536000;"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	encode gzip zstd
+
+	# SSE (Server-Sent Events) dla widoku radnego/prezentacji - bez buforowania
+	@sse {
+		path /api/meetings/*/stream
+	}
+	reverse_proxy @sse app:3000 {
+		flush_interval -1
+	}
+}
