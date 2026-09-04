@@ -381,3 +381,12 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
 - [x] Usunięto nagłówek "Protokół z posiedzenia" (zostaje sama nazwa posiedzenia z datą);
       "Porządek obrad" (wariant bez głosowań) bez zmian.
 - [x] "Lista imienna" -> "Wyniki imienne" (PDF i DOCX).
+
+## SS. Duża przebudowa - Faza 4: nowy "Raport wystąpień" PDF/DOCX
+- [x] Nowy plik `src/lib/generateSpeechesReport.ts` + endpoint
+      `api/meetings/[id]/speeches-report`. Wystąpienia pogrupowane wg punktów, w kolejności
+      zabrania głosu: nazwisko i imię, typ (zwykłe/ad vocem/wniosek formalny), początek, koniec,
+      czas trwania, limit. Ta sama zasada dopasowania chronologicznego co w protokole (Faza 3) -
+      wniosek formalny przerywający punkt trafia w jego obręb, reszta - "poza porządkiem obrad"
+      we właściwym miejscu chronologicznie.
+      Przyciski eksportu (PDF/DOCX) obok eksportu protokołu w panelu posiedzenia.

@@ -15,6 +15,7 @@ import { MeetingSettingsPanel } from "@/components/operator/MeetingSettingsPanel
 import { IconClose, IconChevronDown, IconChevronRight, IconUsers } from "@/components/ui/Icon";
 import { downloadReportsPdf, downloadReportsZip, downloadSignatureList, downloadAttendanceMergedList, downloadAttendanceLog, downloadCheckReportPdf } from "@/lib/generatePdf";
 import { downloadAgendaPdf, downloadAgendaDocx, downloadProtocolPdf, downloadProtocolDocx, type ProtocolData } from "@/lib/generateProtocol";
+import { downloadSpeechesReportPdf, downloadSpeechesReportDocx, type SpeechesReportData } from "@/lib/generateSpeechesReport";
 import type { ReportData } from "@/lib/reportTypes";
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -201,6 +202,22 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
       else if (kind === "agenda-docx") await downloadAgendaDocx(data, base);
       else if (kind === "protocol-pdf") await downloadProtocolPdf(data, baseP);
       else await downloadProtocolDocx(data, baseP);
+    } catch {
+      alert("Błąd generowania dokumentu.");
+    } finally {
+      setPdfBusy(null);
+    }
+  }
+
+  async function exportSpeechesReport(kind: "pdf" | "docx") {
+    setPdfBusy(`speeches-${kind}`);
+    try {
+      const r = await fetch(`/api/meetings/${state.id}/speeches-report`);
+      if (!r.ok) { alert("Nie udało się pobrać danych wystąpień."); return; }
+      const data = await r.json() as SpeechesReportData;
+      const base = `raport-wystapien-${state.number}`;
+      if (kind === "pdf") await downloadSpeechesReportPdf(data, base);
+      else await downloadSpeechesReportDocx(data, base);
     } catch {
       alert("Błąd generowania dokumentu.");
     } finally {
@@ -616,6 +633,12 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                 </button>
                 <button type="button" className="block w-full text-left px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" disabled={pdfBusy === "protocol-docx"} onClick={() => exportProtocol("protocol-docx")}>
                   <div>{pdfBusy === "protocol-docx" ? "Generowanie…" : "Protokół - projekt (DOCX)"}</div>
+                </button>
+                <button type="button" className="block w-full text-left px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" disabled={pdfBusy === "speeches-pdf"} onClick={() => exportSpeechesReport("pdf")}>
+                  <div>{pdfBusy === "speeches-pdf" ? "Generowanie…" : "Raport wystąpień (PDF)"}</div>
+                </button>
+                <button type="button" className="block w-full text-left px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" disabled={pdfBusy === "speeches-docx"} onClick={() => exportSpeechesReport("docx")}>
+                  <div>{pdfBusy === "speeches-docx" ? "Generowanie…" : "Raport wystąpień (DOCX)"}</div>
                 </button>
                 <button
                   type="button"
