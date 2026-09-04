@@ -361,3 +361,23 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
 - [x] Usunięto TYLKO interfejs: `src/app/(operator)/audit/page.tsx`,
       `src/app/api/audit/csv/route.ts`. Model `AuditLog` i wszystkie wywołania `audit(...)` w
       API zostają bez zmian, nadal piszą w tle.
+
+## RR. Duża przebudowa - Faza 3: przebudowa protokołu PDF/DOCX
+- [x] Usunięto widok HTML do druku (`MeetingProtocolView.tsx` + `meetings/[id]/protocol/page.tsx`
+      + link "Protokół posiedzenia" w panelu). Jedyny protokół to eksport PDF/DOCX
+      (`generateProtocol.ts` + `protocol-data/route.ts`).
+- [x] Dodano godziny otwarcia/zamknięcia posiedzenia (`Meeting.openedAt/closedAt`) i każdego
+      punktu (`AgendaItem.startedAt/completedAt`).
+- [x] Dodano listę obecności (obecni/nieobecni, z klubem gdy włączone) PRZED porządkiem obrad.
+- [x] Wyniki imienne dla WSZYSTKICH głosowań, także LIST i PACKAGE - per kandydat/pozycja
+      (kto był za/przeciw przy każdej pozycji z osobna), nie tylko zbiorcze liczby.
+- [x] Wnioski formalne i głosowania ad hoc umieszczane chronologicznie w obrębie punktu, który
+      przerwały (dopasowanie po czasie do okna `startedAt..completedAt` punktu), albo - jeśli nie
+      mieszczą się w żadnym punkcie - w sekcji "Poza porządkiem obrad" wstawionej we właściwym
+      miejscu dokumentu (nie zawsze na końcu), wyznaczonym przez moment wystąpienia względem
+      startu kolejnych punktów.
+- [x] Typ wystąpienia pokazywany, gdy inny niż zwykłe ("(ad vocem)"); wnioski formalne - osobna
+      linia "Wniosek formalny: ...".
+- [x] Usunięto nagłówek "Protokół z posiedzenia" (zostaje sama nazwa posiedzenia z datą);
+      "Porządek obrad" (wariant bez głosowań) bez zmian.
+- [x] "Lista imienna" -> "Wyniki imienne" (PDF i DOCX).

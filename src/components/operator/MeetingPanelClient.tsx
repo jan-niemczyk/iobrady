@@ -580,9 +580,6 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                 <a className="block px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" href={`/chairperson/${state.id}`} target="_blank" rel="noreferrer">
                   <div>Widok przewodniczącego</div>
                 </a>
-                <a className="block px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" href={`/meetings/${state.id}/protocol`} target="_blank" rel="noreferrer">
-                  <div>Protokół posiedzenia</div>
-                </a>
                 <button
                   type="button"
                   className="block w-full text-left px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]"
