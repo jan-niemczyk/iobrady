@@ -4,20 +4,11 @@ import { audit } from "@/lib/audit";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { randomPassword } from "@/lib/randomPassword";
 
 const schema = z.object({
   userIds: z.array(z.string()).min(1),
 });
-
-// Alfabet bez znaków mylących (0/O, 1/l/I) - hasło łatwe do przepisania z odcinka.
-const ALPHABET = "23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
-function randomPassword(len = 8): string {
-  let out = "";
-  const arr = new Uint32Array(len);
-  crypto.getRandomValues(arr);
-  for (let i = 0; i < len; i++) out += ALPHABET[arr[i] % ALPHABET.length];
-  return out;
-}
 
 /**
  * POST /api/users/reset-passwords

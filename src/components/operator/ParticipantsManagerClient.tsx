@@ -266,6 +266,29 @@ export function ParticipantsManagerClient({
           groups={groups}
           onClose={() => setShowUserModal(null)}
           onSave={(method, payload) => {
+            const p = payload as Record<string, unknown>;
+            if (showUserModal === "new" && p.autoGenerate) {
+              startTransition(async () => {
+                const r = await fetch("/api/users", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload),
+                });
+                if (!r.ok) { alert(await r.text()); return; }
+                const res = await r.json().catch(() => ({}));
+                await refetch();
+                if (res.password) {
+                  const { downloadLoginCards } = await import("@/lib/loginCards");
+                  const loginUrl = `${window.location.origin}/login`;
+                  await downloadLoginCards(
+                    [{ name: `${p.firstName} ${p.lastName}`.trim(), email: String(p.email), password: res.password }],
+                    loginUrl, "odcinek-logowania",
+                  );
+                }
+              });
+              setShowUserModal(null);
+              return;
+            }
             act(method, showUserModal === "new" ? "/api/users" : `/api/users/${(showUserModal as User).id}`, payload);
             setShowUserModal(null);
           }}
@@ -559,6 +582,7 @@ function UserModal({ user, groups, onClose, onSave, onDelete, pending }: {
   const [role, setRole] = useState<Role>(user?.role ?? "PARTICIPANT");
   const [groupId, setGroupId] = useState(user?.groupId ?? "");
   const [password, setPassword] = useState("");
+  const [autoGenerate, setAutoGenerate] = useState(false);
   const [active, setActive] = useState(user?.active ?? true);
   const isNew = !user;
 
@@ -570,7 +594,8 @@ function UserModal({ user, groups, onClose, onSave, onDelete, pending }: {
       groupId: groupId || null, active,
     };
     if (isNew) {
-      payload.password = password;
+      if (autoGenerate) payload.autoGenerate = true;
+      else payload.password = password;
       onSave("POST", payload);
     } else {
       if (password) payload.password = password;
@@ -617,13 +642,26 @@ function UserModal({ user, groups, onClose, onSave, onDelete, pending }: {
           </div>
         </div>
         <div>
-          <label className="label">{isNew ? "Hasło" : "Nowe hasło (zostaw puste, jeśli bez zmiany)"}</label>
+          <div className="flex items-center justify-between">
+            <label className="label" style={{ marginBottom: 0 }}>{isNew ? "Hasło" : "Nowe hasło (zostaw puste, jeśli bez zmiany)"}</label>
+            {isNew && (
+              <label className="flex items-center gap-1.5 cursor-pointer text-xs" style={{ color: "var(--color-ink-2)" }}>
+                <input type="checkbox" checked={autoGenerate} onChange={(e) => setAutoGenerate(e.target.checked)} />
+                Wygeneruj hasło
+              </label>
+            )}
+          </div>
           <input
             type="password" className="input"
-            required={isNew} minLength={6}
+            required={isNew && !autoGenerate} minLength={6}
+            disabled={isNew && autoGenerate}
             value={password} onChange={(e) => setPassword(e.target.value)}
-            placeholder={isNew ? "min. 6 znaków" : "min. 6 znaków"}
+            placeholder={isNew && autoGenerate ? "zostanie wygenerowane automatycznie" : "min. 6 znaków"}
+            style={{ marginTop: 6 }}
           />
+          {isNew && autoGenerate && (
+            <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>Po utworzeniu konta pobierze się PDF z odcinkiem logowania (login, hasło, adres, QR).</p>
+          )}
         </div>
         {!isNew && (
           <label className="flex items-center gap-2 cursor-pointer">

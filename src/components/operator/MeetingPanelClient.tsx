@@ -2499,26 +2499,37 @@ function BulkImportModal({ meetingId, agenda, onClose, onDone }: {
   onClose: () => void;
   onDone: () => void;
 }) {
+  const [mode, setMode] = useState<"text" | "agenda">("text");
   const [text, setText] = useState("");
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
   const [visibility, setVisibility] = useState<"OPEN" | "SECRET">("OPEN");
   const [majorityKind, setMajorityKind] = useState<"SIMPLE" | "ABSOLUTE" | "QUALIFIED_2_3">("SIMPLE");
   const [majorityBase, setMajorityBase] = useState<"OF_VOTERS" | "OF_PRESENT" | "OF_STATUTORY">("OF_VOTERS");
+  const [voteType, setVoteType] = useState<"STANDARD" | "QUORUM">("STANDARD");
   const [agendaItemId, setAgendaItemId] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const lines = text.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
 
+  const toggleItem = (id: string) => {
+    setSelectedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
   const submit = async () => {
     setBusy(true); setError(null);
-    const r = await fetch(`/api/meetings/${meetingId}/votes/bulk`, {
+    const url = mode === "text" ? `/api/meetings/${meetingId}/votes/bulk` : `/api/meetings/${meetingId}/votes/bulk-by-agenda`;
+    const body = mode === "text"
+      ? { text, type: "STANDARD", visibility, majorityKind, majorityBase, adHoc: agendaItemId === "", agendaItemId: agendaItemId || null }
+      : { agendaItemIds: Array.from(selectedItems), type: voteType, visibility, majorityKind, majorityBase };
+    const r = await fetch(url, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text, type: "STANDARD", visibility, majorityKind, majorityBase,
-        adHoc: agendaItemId === "",
-        agendaItemId: agendaItemId || null,
-      }),
+      body: JSON.stringify(body),
     });
     setBusy(false);
     if (!r.ok) { setError(await r.text()); return; }
@@ -2529,18 +2540,49 @@ function BulkImportModal({ meetingId, agenda, onClose, onDone }: {
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
       <div className="card" style={{ width: "100%", maxWidth: 560, maxHeight: "88vh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
         <div className="px-5 py-3 border-b border-[var(--color-rule-soft)]">
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Import głosowań z tekstu</h3>
-          <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>Jedna linia = jedno głosowanie. Ustawienia poniżej dotyczą wszystkich zaimportowanych głosowań.</p>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Hurtowe tworzenie głosowań</h3>
+          <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>
+            {mode === "text" ? "Jedna linia = jedno głosowanie." : "Po jednym głosowaniu na każdy zaznaczony punkt, z nazwą punktu."}
+            {" "}Ustawienia poniżej dotyczą wszystkich utworzonych głosowań.
+          </p>
+          <div className="flex gap-1 mt-3">
+            <button type="button" className="btn btn-sm" style={mode === "text" ? { background: "var(--color-ink)", color: "var(--color-paper)" } : undefined} onClick={() => setMode("text")}>Import z tekstu</button>
+            <button type="button" className="btn btn-sm" style={mode === "agenda" ? { background: "var(--color-ink)", color: "var(--color-paper)" } : undefined} onClick={() => setMode("agenda")}>Dla wybranych punktów</button>
+          </div>
         </div>
         <div className="p-5 space-y-4">
-          <textarea
-            className="input" rows={8}
-            placeholder={"np.\nUchwała w sprawie budżetu\nUchwała w sprawie planu zagospodarowania\nUchwała w sprawie zmiany statutu"}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            style={{ fontSize: 13, fontFamily: "inherit" }}
-          />
-          <div className="text-xs" style={{ color: "var(--color-ink-3)" }}>Rozpoznano głosowań: <b>{lines.length}</b></div>
+          {mode === "text" ? (
+            <>
+              <textarea
+                className="input" rows={8}
+                placeholder={"np.\nUchwała w sprawie budżetu\nUchwała w sprawie planu zagospodarowania\nUchwała w sprawie zmiany statutu"}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                style={{ fontSize: 13, fontFamily: "inherit" }}
+              />
+              <div className="text-xs" style={{ color: "var(--color-ink-3)" }}>Rozpoznano głosowań: <b>{lines.length}</b></div>
+            </>
+          ) : (
+            <>
+              <div className="card-soft" style={{ maxHeight: 240, overflowY: "auto" }}>
+                {agenda.length === 0 && <div className="px-3 py-3 text-sm" style={{ color: "var(--color-ink-3)" }}>Brak punktów porządku.</div>}
+                {agenda.map((a) => (
+                  <label key={a.id} className="flex items-center gap-2 px-3 py-2 text-sm border-b border-[var(--color-rule-soft)] cursor-pointer">
+                    <input type="checkbox" checked={selectedItems.has(a.id)} onChange={() => toggleItem(a.id)} />
+                    <span>{a.number}. {a.title}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="text-xs" style={{ color: "var(--color-ink-3)" }}>Zaznaczono punktów: <b>{selectedItems.size}</b></div>
+              <div>
+                <label className="label">Rodzaj głosowania</label>
+                <select className="input" value={voteType} onChange={(e) => setVoteType(e.target.value as "STANDARD" | "QUORUM")}>
+                  <option value="STANDARD">Zwykłe</option>
+                  <option value="QUORUM">Kworum</option>
+                </select>
+              </div>
+            </>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -2568,21 +2610,29 @@ function BulkImportModal({ meetingId, agenda, onClose, onDone }: {
             </div>
           </div>
 
-          <div>
-            <label className="label">Punkt porządku (opcjonalnie)</label>
-            <select className="input" value={agendaItemId} onChange={(e) => setAgendaItemId(e.target.value)}>
-              <option value="">Bez punktu (ad hoc)</option>
-              {agenda.map((a) => <option key={a.id} value={a.id}>{a.number}. {a.title}</option>)}
-            </select>
-          </div>
+          {mode === "text" && (
+            <div>
+              <label className="label">Punkt porządku (opcjonalnie)</label>
+              <select className="input" value={agendaItemId} onChange={(e) => setAgendaItemId(e.target.value)}>
+                <option value="">Bez punktu (ad hoc)</option>
+                {agenda.map((a) => <option key={a.id} value={a.id}>{a.number}. {a.title}</option>)}
+              </select>
+            </div>
+          )}
 
           {error && <div className="text-sm" style={{ color: "var(--color-no)" }}>{error}</div>}
 
           <div className="flex justify-end gap-2 pt-2">
             <button className="btn" onClick={onClose} disabled={busy}>Anuluj</button>
-            <button className="btn btn-primary" onClick={submit} disabled={busy || lines.length === 0}>
-              {busy ? "Importuję…" : `Importuj ${lines.length} głosowań`}
-            </button>
+            {mode === "text" ? (
+              <button className="btn btn-primary" onClick={submit} disabled={busy || lines.length === 0}>
+                {busy ? "Tworzę…" : `Importuj ${lines.length} głosowań`}
+              </button>
+            ) : (
+              <button className="btn btn-primary" onClick={submit} disabled={busy || selectedItems.size === 0}>
+                {busy ? "Tworzę…" : `Utwórz ${selectedItems.size} głosowań`}
+              </button>
+            )}
           </div>
         </div>
       </div>

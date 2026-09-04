@@ -390,3 +390,17 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       wniosek formalny przerywający punkt trafia w jego obręb, reszta - "poza porządkiem obrad"
       we właściwym miejscu chronologicznie.
       Przyciski eksportu (PDF/DOCX) obok eksportu protokołu w panelu posiedzenia.
+
+## TT. Duża przebudowa - Faza 5: drobniejsze usprawnienia
+- [x] 5a. Nowy endpoint `votes/bulk-by-agenda` - po jednym głosowaniu (zwykłe/kworum) na każdy
+      zaznaczony punkt porządku, z nazwą = tytuł punktu. `BulkImportModal` dostał przełącznik
+      trybu "Import z tekstu" / "Dla wybranych punktów" (checkboxy punktów zamiast pojedynczego
+      selecta).
+- [x] 5b. Lista do podpisu: czcionka tabeli 12pt -> 11pt (`FS_TABLE` w `generatePdf.ts`), wysokość
+      wiersza bez zmian; nagłówek tabeli wyśrodkowany w pionie w swoim 24-punktowym wierszu
+      (przeliczany margines wg wzoru zamiast sztywnej wartości dobranej pod stary rozmiar fontu).
+- [x] 5c. Skonsolidowano dwie prawie identyczne implementacje generatora haseł do
+      `src/lib/randomPassword.ts` (wariant `crypto.getRandomValues`). `POST /api/users` przyjmuje
+      `autoGenerate` - hasło generowane po stronie serwera i zwracane w odpowiedzi. W formularzu
+      nowego konta: checkbox "Wygeneruj hasło" (blokuje pole hasła); po utworzeniu automatycznie
+      pobiera się PDF z odcinkiem logowania (ten sam mechanizm co przy imporcie/resecie haseł).

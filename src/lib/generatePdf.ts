@@ -489,18 +489,21 @@ export async function downloadSignatureList(data: {
 }, fileName: string) {
   const pdfMake = await loadPdfMake();
   const withClub = data.groupsEnabled;
-  const FS_TABLE = 12;
+  const FS_TABLE = 11;
   const PER_PAGE = 20;
   // A4 = 842 pt. Marginesy góra 60 + dół 40 = 100. Tytuł/nagłówki dokumentu ~70.
   // Pozostaje ~672 pt na tabelę. Nagłówek tabeli ~1 wiersz + 20 wierszy danych = 21.
   // Wysokość wiersza dobrana tak, by 20 dużych wierszy wypełniło stronę i NIE ucinało się w połowie.
   const ROW_HEIGHT = 30;
 
+  // Wyśrodkowanie nagłówka w pionie w jego stałym 24-punktowym wierszu (heights() niżej).
+  const HEADER_ROW_HEIGHT = 24;
+  const headerTopMargin = Math.round((HEADER_ROW_HEIGHT - FS_TABLE * 1.15) / 2);
   const makeHeader = () => [
-    { text: "Lp.", bold: true, fontSize: FS_TABLE, alignment: "center", margin: [0, 8, 0, 0] },
-    { text: "Nazwisko i imię", bold: true, fontSize: FS_TABLE, margin: [0, 8, 0, 0] },
-    ...(withClub ? [{ text: "Klub", bold: true, fontSize: FS_TABLE, margin: [0, 8, 0, 0] }] : []),
-    { text: "Podpis", bold: true, fontSize: FS_TABLE, margin: [0, 8, 0, 0] },
+    { text: "Lp.", bold: true, fontSize: FS_TABLE, alignment: "center", margin: [0, headerTopMargin, 0, 0] },
+    { text: "Nazwisko i imię", bold: true, fontSize: FS_TABLE, margin: [0, headerTopMargin, 0, 0] },
+    ...(withClub ? [{ text: "Klub", bold: true, fontSize: FS_TABLE, margin: [0, headerTopMargin, 0, 0] }] : []),
+    { text: "Podpis", bold: true, fontSize: FS_TABLE, margin: [0, headerTopMargin, 0, 0] },
   ];
   const makeRow = (p: { lastName: string; firstName: string; groupShort?: string | null }, i: number) => [
     { text: String(i + 1), fontSize: FS_TABLE, alignment: "center", margin: [0, 9, 0, 0] },
@@ -522,7 +525,7 @@ export async function downloadSignatureList(data: {
   pages.forEach((pagePeople, pageIdx) => {
     if (pageIdx > 0) content.push({ text: "", pageBreak: "before" });
     // wysokości: nagłówek tabeli 24, każdy wiersz ROW_HEIGHT (stała) - gwarantuje wypełnienie strony
-    const heights = (row: number) => (row === 0 ? 24 : ROW_HEIGHT);
+    const heights = (row: number) => (row === 0 ? HEADER_ROW_HEIGHT : ROW_HEIGHT);
     content.push(
       { text: data.organization, fontSize: FS + 1, bold: true, alignment: "center" },
       { text: "Lista obecności", fontSize: FS + 3, bold: true, alignment: "center", margin: [0, 4, 0, 2] },

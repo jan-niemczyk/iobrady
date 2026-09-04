@@ -4,6 +4,7 @@ import { audit } from "@/lib/audit";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { randomPassword } from "@/lib/randomPassword";
 
 /**
  * POST /api/users/import
@@ -28,16 +29,6 @@ const rowSchema = z.object({
 const schema = z.object({
   rows: z.array(rowSchema).min(1),
 });
-
-function randomPassword(): string {
-  // 10 znaków: cyfry + litery (bez 0/O/1/l/I aby ułatwić odczyt)
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-  let p = "";
-  for (let i = 0; i < 10; i++) {
-    p += alphabet[Math.floor(Math.random() * alphabet.length)];
-  }
-  return p;
-}
 
 export async function POST(req: Request) {
   const session = await auth();

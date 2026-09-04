@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
+import { randomPassword } from "@/lib/randomPassword";
 
 const schema = z.object({
   email: z.string().email().toLowerCase(),
@@ -12,8 +13,12 @@ const schema = z.object({
   functionTitle: z.string().max(120).nullable().optional(),
   role: z.nativeEnum(Role).default(Role.PARTICIPANT),
   groupId: z.string().nullable().optional(),
-  password: z.string().min(6).max(200),
+  password: z.string().min(6).max(200).optional(),
+  autoGenerate: z.boolean().optional().default(false),
   active: z.boolean().optional().default(true),
+}).refine((d) => d.autoGenerate || (d.password && d.password.length >= 6), {
+  message: "Podaj hasło lub wybierz automatyczne generowanie.",
+  path: ["password"],
 });
 
 export async function GET() {
@@ -46,6 +51,7 @@ export async function POST(req: Request) {
   const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
   if (existing) return new NextResponse("Użytkownik z tym e-mailem już istnieje", { status: 400 });
 
+  const password = parsed.data.autoGenerate ? randomPassword() : parsed.data.password!;
   const u = await prisma.user.create({
     data: {
       email: parsed.data.email,
@@ -54,9 +60,9 @@ export async function POST(req: Request) {
       functionTitle: parsed.data.functionTitle ?? null,
       role: parsed.data.role,
       groupId: parsed.data.groupId ?? null,
-      passwordHash: await bcrypt.hash(parsed.data.password, 10),
+      passwordHash: await bcrypt.hash(password, 10),
       active: parsed.data.active ?? true,
     },
   });
-  return NextResponse.json({ ok: true, id: u.id });
+  return NextResponse.json({ ok: true, id: u.id, password: parsed.data.autoGenerate ? password : undefined });
 }
