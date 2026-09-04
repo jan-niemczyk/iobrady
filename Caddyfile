@@ -1,5 +1,6 @@
 # Caddy automatycznie pobiera i odnawia certyfikat Let's Encrypt dla tej domeny.
-glosowania.mswz.pl {
+# Ustaw zmienną środowiskową DOMAIN (patrz docker-compose.yml/.env) na swoją domenę.
+{$DOMAIN:localhost} {
 	# Reverse proxy do aplikacji Next.js w kontenerze "app" (port 3000 w sieci dockera)
 	reverse_proxy app:3000
 

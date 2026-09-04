@@ -1,11 +1,21 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
+// Uwaga: middleware działa w środowisku Edge (bez dostępu do Prisma/Postgresa przez zwykłe
+// TCP), więc bramka "czy kreator /setup został ukończony" NIE jest tu sprawdzana - żyje w
+// poszczególnych layoutach (Server Components, zwykły Node.js) - patrz src/lib/setup.ts,
+// wywoływane w (operator)/layout.tsx, (participant)/layout.tsx, login, account, chairperson.
+
 export default auth((req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
   const role = req.auth?.user?.role;
   const path = nextUrl.pathname;
+
+  // Kreator pierwszego uruchomienia - dostępny zawsze, nawet przed zalogowaniem.
+  if (path.startsWith("/setup") || path.startsWith("/api/setup")) {
+    return NextResponse.next();
+  }
 
   // strony publiczne (display - widok prezentacyjny dla sali)
   if (path === "/login" || path.startsWith("/api/auth") || path.startsWith("/display") || path.startsWith("/api/display")) {

@@ -3,10 +3,13 @@ import { redirect } from "next/navigation";
 import { ThemeToggle } from "@/components/participant/ThemeToggle";
 import { prisma } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function ParticipantLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session || session.user.role !== "PARTICIPANT") redirect("/login");
   const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
+  if (!settings?.setupComplete) redirect("/setup");
 
   return (
     <div className="min-h-screen flex flex-col">

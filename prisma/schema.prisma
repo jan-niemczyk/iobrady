@@ -238,6 +238,9 @@ model Group {
 // Globalne ustawienia aplikacji (jeden rekord)
 model Settings {
   id                       String       @id @default("singleton")
+  // Czy kreator pierwszego uruchomienia (/setup) został ukończony - dopóki false, middleware
+  // przekierowuje każde żądanie na /setup (poza samym /setup i /api/setup).
+  setupComplete            Boolean      @default(false)
   organizationName         String       @default("Organizacja")
   groupsEnabled            Boolean      @default(false)  // sekcja 15.2 - tryb bez przynależności
   defaultQuorumRule        QuorumRule   @default(AT_LEAST_HALF)

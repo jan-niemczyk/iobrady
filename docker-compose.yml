@@ -3,11 +3,11 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-esog}
-      POSTGRES_USER: ${POSTGRES_USER:-esog}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-esog_dev_pw}
-      TZ: Europe/Warsaw
-      PGTZ: Europe/Warsaw
+      POSTGRES_DB: ${POSTGRES_DB:-iobrady}
+      POSTGRES_USER: ${POSTGRES_USER:-iobrady}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-iobrady_dev_pw}
+      TZ: ${TZ:-Europe/Warsaw}
+      PGTZ: ${TZ:-Europe/Warsaw}
     volumes:
       - esog_db:/var/lib/postgresql/data
     # Port 5432 NIE jest już wystawiany na świat - dostęp tylko z sieci dockera.
@@ -15,7 +15,7 @@ services:
     # ports:
     #   - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-esog}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-iobrady}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -27,14 +27,17 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-esog}:${POSTGRES_PASSWORD:-esog_dev_pw}@db:5432/${POSTGRES_DB:-esog}
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://glosowania.mswz.pl}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-iobrady}:${POSTGRES_PASSWORD:-iobrady_dev_pw}@db:5432/${POSTGRES_DB:-iobrady}
+      # Adres, pod którym aplikacja jest dostępna publicznie - ustaw na swoją domenę (https://...)
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      # Zakładanie pierwszego konta operatora odbywa się przez kreator (/setup) po pierwszym
+      # uruchomieniu - poniższe zmienne są opcjonalną, zapasową ścieżką dla wdrożeń automatycznych.
       INIT_SEED: ${INIT_SEED:-false}
-      SEED_OPERATOR_EMAIL: ${SEED_OPERATOR_EMAIL:-operator@esog.local}
+      SEED_OPERATOR_EMAIL: ${SEED_OPERATOR_EMAIL:-operator@example.local}
       SEED_OPERATOR_PASSWORD: ${SEED_OPERATOR_PASSWORD:-}
       NODE_ENV: production
-      TZ: Europe/Warsaw
+      TZ: ${TZ:-Europe/Warsaw}
     # Port 3000 NIE jest wystawiany na świat - ruch idzie przez Caddy.
     expose:
       - "3000"
@@ -61,8 +64,13 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     environment:
-      TZ: Europe/Warsaw
+      # Domena, dla której Caddy pobierze certyfikat Let's Encrypt (patrz Caddyfile).
+      # "localhost" (wartość domyślna) działa bez certyfikatu - do testów lokalnych.
+      DOMAIN: ${DOMAIN:-localhost}
+      TZ: ${TZ:-Europe/Warsaw}
 
+# Nazwy wolumenów zostają "esog_*" ze względów wstecznej kompatybilności (zmiana złamałaby
+# istniejące instalacje - dane pozostałyby w starym, "osieroconym" wolumenie).
 volumes:
   esog_db:
   esog_uploads:

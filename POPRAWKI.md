@@ -404,3 +404,31 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       `autoGenerate` - hasło generowane po stronie serwera i zwracane w odpowiedzi. W formularzu
       nowego konta: checkbox "Wygeneruj hasło" (blokuje pole hasła); po utworzeniu automatycznie
       pobiera się PDF z odcinkiem logowania (ten sam mechanizm co przy imporcie/resecie haseł).
+
+## UU. Duża przebudowa - Faza 6: uniezależnienie od serwera + kreator instalacji
+- [x] Wyczyszczono twarde odniesienia: `Caddyfile` (domena -> `{$DOMAIN:localhost}`, placeholder
+      Caddy), `docker-compose.yml` (`NEXTAUTH_URL` domyślnie `http://localhost:3000` zamiast
+      realnej domeny; `esog`->`iobrady` w domyślnych nazwach DB/usera; `TZ`/`DOMAIN` jako zmienne;
+      nazwy wolumenów Dockera CELOWO zostają `esog_*` - zmiana zgubiłaby dane istniejących
+      instalacji), `.env.example`, `prisma/seed.ts`, `clean-seed.sql`, `docs/OPERATOR.md`,
+      `reset-data.sql` (esog/eSOG -> iobrady/iOBRADY/example.local). `CLAUDE.md`/`DEPLOY.md` z
+      prawdziwym IP/ścieżką serwera to dokumenty wewnętrzne - nie wchodzą do publicznej
+      dystrybucji (kwestia pakowania, nie kodu).
+- [x] Kreator pierwszego uruchomienia (`/setup`): nowe pole `Settings.setupComplete`
+      (domyślnie false). Strona `src/app/setup/page.tsx` + `SetupWizardClient.tsx` (nazwa
+      organizacji, logo, dane pierwszego konta operatora) + `api/setup` (tworzy operatora,
+      zapisuje ustawienia, `setupComplete=true`) + `api/setup/logo` (oba samo-wyłączają się po
+      ukończeniu). Eliminuje wymóg ręcznego ustawiania `SEED_OPERATOR_EMAIL`/`_PASSWORD`/
+      `INIT_SEED` przed pierwszym uruchomieniem (te zmienne zostają jako opcjonalna, zapasowa
+      ścieżka dla wdrożeń automatycznych).
+- [x] Bramka `requireSetupComplete()` (`src/lib/setup.ts`) wywoływana z layoutów
+      (login/account/chairperson/operator/participant) - przekierowuje na `/setup`, dopóki
+      konfiguracja nie jest ukończona. Middleware (Edge) NIE sprawdza tego bezpośrednio - brak
+      dostępu do Prisma w Edge runtime; próba włączenia eksperymentalnej flagi `nodeMiddleware`
+      okazała się niestabilna w Next 15.5 (ostrzeżenie + błąd typów) - odrzucona na rzecz
+      sprawdzenia w poszczególnych layoutach (zwykły Node.js runtime, tak jak reszta aplikacji).
+      Layouty bez własnego wcześniejszego `auth()` dostały `export const dynamic =
+      "force-dynamic"`, żeby Next nie próbował ich statycznie prerenderować (Prisma bez
+      DATABASE_URL w trakcie builda wysypywało build - naprawione).
+- [x] `INSTRUKCJA-DEPLOY.md` zaktualizowana pod kreator (Krok 3 bez danych operatora w `.env`,
+      Krok 5 opisuje `/setup` zamiast ręcznego zakładania konta).

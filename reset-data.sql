@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════
--- eSOG - czyszczenie danych przed produkcją
+-- iOBRADY - czyszczenie danych przed produkcją
 -- Zostawia: konto(a) z rolą OPERATOR i globalne Settings.
 -- Kasuje: posiedzenia (kaskadowo: agendy, głosowania, ballots, listy
 --          mówców, obecności, komunikaty), konta radnych/gości, grupy,

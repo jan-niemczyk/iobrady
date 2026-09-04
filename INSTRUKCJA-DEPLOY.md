@@ -54,7 +54,8 @@ cd iobrady
 
 ## Krok 3. Utwórz plik konfiguracyjny `.env`
 
-To jedyny plik, który wypełniasz własnymi danymi:
+To jedyny plik, który wypełniasz własnymi danymi - tylko dane bazy i adres, BEZ konta operatora
+(to konto zakłada się w przeglądarce, patrz Krok 5):
 
 ```bash
 cat > .env << 'EOF'
@@ -70,12 +71,8 @@ DATABASE_URL=postgresql://iobrady:ZMIEN_NA_MOCNE_HASLO_BAZY@db:5432/iobrady
 NEXTAUTH_URL=https://TWOJA-DOMENA
 NEXTAUTH_SECRET=ZMIEN_NA_DLUGI_LOSOWY_CIAG
 
-# Konto operatora tworzone przy pierwszym uruchomieniu
-SEED_OPERATOR_EMAIL=operator@twoja-domena
-SEED_OPERATOR_PASSWORD=ZMIEN_NA_HASLO_MIN_8_ZNAKOW
-
-# Utworz konto operatora przy pierwszym starcie (potem ustaw na false)
-INIT_SEED=true
+# Domena dla Caddy (certyfikat HTTPS) - taka sama jak w NEXTAUTH_URL, bez "https://"
+DOMAIN=TWOJA-DOMENA
 EOF
 ```
 
@@ -87,7 +84,7 @@ Wygeneruj mocny `NEXTAUTH_SECRET` i wklej go do `.env` (np. edytorem `nano .env`
 openssl rand -base64 32
 ```
 
-Zmień też hasła bazy i operatora na własne.
+Zmień też hasło bazy na własne.
 
 ---
 
@@ -103,16 +100,16 @@ Struktura bazy tworzy się automatycznie przy pierwszym starcie.
 
 ---
 
-## Krok 5. Zaloguj się i wyłącz tworzenie konta
+## Krok 5. Kreator pierwszego uruchomienia
 
-Wejdź na adres z `NEXTAUTH_URL` i zaloguj się danymi operatora z `.env`. Następnie:
+Wejdź na adres z `NEXTAUTH_URL` - aplikacja sama przekieruje na krótki kreator (`/setup`).
+Podaj nazwę organizacji, opcjonalnie logo oraz dane pierwszego konta operatora (e-mail, hasło).
+Po zapisaniu zostaniesz przekierowany na ekran logowania. Gotowe - żadnych dodatkowych zmiennych
+środowiskowych ani ręcznego zakładania konta.
 
-```bash
-sed -i 's/INIT_SEED=true/INIT_SEED=false/' .env
-docker compose up -d
-```
-
-Gotowe.
+*(Alternatywa dla wdrożeń automatycznych/skryptowych: zmienne `INIT_SEED=true` +
+`SEED_OPERATOR_EMAIL`/`SEED_OPERATOR_PASSWORD` w `.env` zakładają konto operatora od razu przy
+starcie kontenera, pomijając kreator - patrz `.env.example`.)*
 
 ---
 
@@ -191,8 +188,10 @@ cd /root/iobrady && docker compose down                     # zatrzymanie
 
 ## Najczęstsze problemy
 
-- **Złe hasło przy logowaniu** - sprawdz `SEED_OPERATOR_EMAIL` / `SEED_OPERATOR_PASSWORD`
-  w `.env` i czy pierwszy start mial `INIT_SEED=true`.
+- **Nie widać kreatora `/setup`, tylko ekran logowania** - konto operatora już istnieje
+  (np. z wcześniejszego `INIT_SEED=true`) - zaloguj się tymi danymi zamiast zakładać nowe.
+- **Zapomniane hasło operatora ustawione przez `INIT_SEED`** - sprawdz `SEED_OPERATOR_EMAIL` /
+  `SEED_OPERATOR_PASSWORD` w `.env`, jeśli z nich korzystałeś zamiast kreatora.
 - **Brak HTTPS** - sprawdz rekord DNS `A` i porty 80/443. Certyfikat pojawia sie w ciagu
   minuty od poprawnego skierowania domeny.
 - **Blad polaczenia z baza** - haslo w `POSTGRES_PASSWORD` i `DATABASE_URL` musi byc identyczne.

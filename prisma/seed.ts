@@ -8,26 +8,30 @@ const prisma = new PrismaClient();
  * Bez przykładowych radnych, gości, klubów ani posiedzeń.
  *
  * Konto operatora:
- *   e-mail: SEED_OPERATOR_EMAIL   (domyślnie: operator@esog.local)
+ *   e-mail: SEED_OPERATOR_EMAIL   (domyślnie: operator@example.local)
  *   hasło:  SEED_OPERATOR_PASSWORD (WYMAGANE - brak wartości = przerwij, bez tworzenia konta z hasłem domyślnym)
  * Zmień hasło po pierwszym logowaniu.
+ *
+ * Alternatywa: kreator /setup uruchamiany przy pierwszym wejściu do aplikacji, jeśli ten skrypt
+ * nie został odpalony (Settings.setupComplete=false) - patrz src/app/setup.
  */
 async function main() {
   await prisma.settings.upsert({
     where: { id: "singleton" },
     create: {
       id: "singleton",
-      organizationName: "System Obsługi Głosowań",
+      organizationName: "Organizacja",
       groupsEnabled: true,
       defaultQuorumRule: QuorumRule.MORE_THAN_HALF,
       defaultMajorityKind: MajorityKind.SIMPLE,
       defaultMajorityBase: MajorityBase.OF_VOTERS,
       defaultAttendanceMode: AttendanceMode.MANUAL,
+      setupComplete: true,
     },
-    update: {},
+    update: { setupComplete: true },
   });
 
-  const email = process.env.SEED_OPERATOR_EMAIL ?? "operator@esog.local";
+  const email = process.env.SEED_OPERATOR_EMAIL ?? "operator@example.local";
   const password = process.env.SEED_OPERATOR_PASSWORD;
   if (!password || password.length < 8) {
     console.error("BŁĄD: ustaw SEED_OPERATOR_PASSWORD (min. 8 znaków). Konto operatora NIE zostało utworzone.");

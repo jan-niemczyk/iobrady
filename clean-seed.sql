@@ -5,9 +5,9 @@ BEGIN;
 -- Posiedzenie inauguracyjne z seeda (kaskadowo: agenda, głosowania, uczestnicy, listy)
 DELETE FROM "Meeting" WHERE name = 'I sesja Rady Miasta';
 
--- Testowi radni i gość z seeda (po wzorcu email @esog.local, oprócz operatora)
+-- Testowi radni i gość z seeda (po wzorcu email @example.local, oprócz operatora)
 DELETE FROM "User"
-WHERE email LIKE '%@esog.local'
+WHERE email LIKE '%@example.local'
   AND role <> 'OPERATOR';
 
 -- Testowe kluby z seeda (tylko jeśli nie mają już żadnych użytkowników)

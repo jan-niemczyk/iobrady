@@ -1,4 +1,4 @@
-# Podręcznik operatora eSOG
+# Podręcznik operatora iOBRADY
 
 Ten dokument opisuje typową ścieżkę pracy operatora podczas posiedzenia organu kolegialnego.
 
@@ -250,4 +250,4 @@ Obecnie wszystkie akcje są dostępne myszką. Skróty klawiszowe operatora są 
 
 ---
 
-*Dokument odpowiada wersji eSOG zawierającej iteracje 1-6.*
+*Dokument odpowiada wersji iOBRADY zawierającej iteracje 1-6.*

@@ -4,10 +4,13 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function OperatorLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session || session.user.role !== "OPERATOR") redirect("/login");
   const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
+  if (!settings?.setupComplete) redirect("/setup");
 
   return (
     <div className="min-h-screen flex flex-col">
