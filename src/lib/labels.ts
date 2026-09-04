@@ -1,4 +1,10 @@
-import { MeetingStatus, VoteStatus, AttendanceStatus, AgendaItemStatus, SpeakerStatus } from "@prisma/client";
+import { MeetingStatus, VoteStatus, AttendanceStatus, AgendaItemStatus, SpeakerStatus, Role } from "@prisma/client";
+
+export const ROLE_LABEL: Record<Role, string> = {
+  OPERATOR: "Operator",
+  PARTICIPANT: "Radny",
+  CHAIRPERSON: "Przewodniczący",
+};
 
 export const MEETING_STATUS_LABEL: Record<MeetingStatus, string> = {
   DRAFT: "Projekt",

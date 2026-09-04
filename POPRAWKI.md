@@ -350,3 +350,14 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       Next" jako podstawowa, oryginalna jako fallback), IBM Plex Sans do `fontStack()` w
       `DisplayClient.tsx` i `OverlayClient.tsx`, do linków Google Fonts w `display/layout.tsx` i
       `overlay/layout.tsx` oraz do selektorów czcionki prezentacji/transmisji w `SettingsForm.tsx`.
+
+## QQ. Duża przebudowa - Faza 2: log logowań zamiast rejestru czynności
+- [x] Nowy model `LoginEvent` (userId, role, at) w schemacie - dodatkowy, bezpieczny (bez utraty
+      danych przy `db push`).
+- [x] Zapis w `src/lib/auth.ts` w `authorize()` po udanej weryfikacji hasła (`try/catch`
+      nieblokujący logowania).
+- [x] Nowa strona `/login-log` (lista + CSV) zastępująca `/audit` w nawigacji operatora i w
+      `middleware.ts`.
+- [x] Usunięto TYLKO interfejs: `src/app/(operator)/audit/page.tsx`,
+      `src/app/api/audit/csv/route.ts`. Model `AuditLog` i wszystkie wywołania `audit(...)` w
+      API zostają bez zmian, nadal piszą w tle.

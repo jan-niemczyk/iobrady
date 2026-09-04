@@ -206,9 +206,23 @@ model User {
   speakerEntries SpeakerListEntry[]
   auditLogs      AuditLog[]
   templateMemberships MeetingTemplateMember[]
+  loginEvents    LoginEvent[]
 
   @@index([role])
   @@index([active])
+}
+
+// Log logowań (kto, kiedy, jaka rola) - zastępuje widoczność "rejestru czynności" (AuditLog
+// zostaje w tle bez zmian, patrz sekcja audytu poniżej).
+model LoginEvent {
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role
+  at     DateTime @default(now())
+
+  @@index([userId])
+  @@index([at])
 }
 
 model Group {

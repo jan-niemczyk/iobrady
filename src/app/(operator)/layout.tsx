@@ -48,7 +48,7 @@ function TopBar({ userName, logoUrl }: { userName: string; logoUrl: string | nul
           <NavLink href="/participants">Uczestnicy</NavLink>
           <NavLink href="/guests">Goście</NavLink>
           <NavLink href="/templates">Szablony</NavLink>
-          <NavLink href="/audit">Rejestr</NavLink>
+          <NavLink href="/login-log">Logowania</NavLink>
           <NavLink href="/settings">Ustawienia</NavLink>
         </nav>
       </div>

@@ -60,6 +60,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) return null;
 
+        // Log logowania - nigdy nie blokuje sesji, nawet jeśli zapis się nie powiedzie.
+        prisma.loginEvent.create({ data: { userId: user.id, role: user.role } }).catch(() => {});
+
         return {
           id: user.id,
           email: user.email,

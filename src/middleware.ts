@@ -23,7 +23,7 @@ export default auth((req) => {
   }
 
   // ochrona zakresów po roli
-  const operatorOnly = ["/dashboard", "/meetings", "/participants", "/archive", "/settings", "/votes", "/audit"];
+  const operatorOnly = ["/dashboard", "/meetings", "/participants", "/archive", "/settings", "/votes", "/login-log"];
   const participantOnly = ["/session"];
 
   if (operatorOnly.some((p) => path.startsWith(p)) && role !== "OPERATOR") {
