@@ -52,6 +52,10 @@ function fontStack(name: string): string {
     "Outfit": `'Outfit', system-ui, sans-serif`,
     "Open Sans": `'Open Sans', system-ui, sans-serif`,
     "Segoe UI": `'Segoe UI', 'Inter', system-ui, sans-serif`,
+    "Fira Sans": `'Fira Sans', system-ui, sans-serif`,
+    "Plus Jakarta Sans": `'Plus Jakarta Sans', system-ui, sans-serif`,
+    "Atkinson Hyperlegible": `'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif`,
+    "IBM Plex Sans": `'IBM Plex Sans', system-ui, sans-serif`,
   };
   return map[name] ?? map["Inter"];
 }

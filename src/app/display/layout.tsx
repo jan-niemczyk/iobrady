@@ -22,7 +22,7 @@ export default function DisplayLayout({ children }: { children: React.ReactNode 
         crossOrigin="anonymous"
       />
       <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Lato:wght@400;700;900&family=Roboto:wght@400;500;700&family=DM+Sans:wght@400;500;700&family=Source+Sans+3:wght@400;600;700&family=Open+Sans:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Lato:wght@400;700;900&family=Roboto:wght@400;500;700&family=DM+Sans:wght@400;500;700&family=Source+Sans+3:wght@400;600;700&family=Open+Sans:wght@400;500;600;700&family=Fira+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
         rel="stylesheet"
       />
       {children}

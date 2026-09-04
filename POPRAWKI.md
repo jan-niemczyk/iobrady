@@ -344,3 +344,9 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       `Settings.presentationLogoUrl`, dotychczas widoczne tylko na prezentacji/transmisji).
 - [x] U radnego: nazwa organizacji kapitalikami obok herbu, wyśrodkowana w pionie względem niego
       (flex items-center), ukryta na telefonie (`hidden sm:inline`) - logo zostaje widoczne.
+
+## PP. Duża przebudowa - Faza 1: fonty prezentacji/transmisji
+- [x] Dodano Fira Sans, Plus Jakarta Sans, Atkinson Hyperlegible (+ nowsza "Atkinson Hyperlegible
+      Next" jako podstawowa, oryginalna jako fallback), IBM Plex Sans do `fontStack()` w
+      `DisplayClient.tsx` i `OverlayClient.tsx`, do linków Google Fonts w `display/layout.tsx` i
+      `overlay/layout.tsx` oraz do selektorów czcionki prezentacji/transmisji w `SettingsForm.tsx`.

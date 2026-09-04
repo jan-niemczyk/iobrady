@@ -108,6 +108,10 @@ function fontStack(name: string): string {
     "Open Sans": `'Open Sans', system-ui, sans-serif`,
     // Segoe UI: systemowy w Windows; poza Windows Inter (z Google Fonts) jako zastępstwo.
     "Segoe UI": `'Segoe UI', 'Inter', system-ui, sans-serif`,
+    "Fira Sans": `'Fira Sans', system-ui, sans-serif`,
+    "Plus Jakarta Sans": `'Plus Jakarta Sans', system-ui, sans-serif`,
+    "Atkinson Hyperlegible": `'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif`,
+    "IBM Plex Sans": `'IBM Plex Sans', system-ui, sans-serif`,
   };
   return map[name] ?? map["Inter"];
 }

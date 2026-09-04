@@ -195,6 +195,10 @@ export function SettingsForm({ initial }: { initial: Settings }) {
               <option value="Outfit">Outfit</option>
               <option value="Open Sans">Open Sans</option>
               <option value="Segoe UI">Segoe UI (Windows)</option>
+              <option value="Fira Sans">Fira Sans</option>
+              <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+              <option value="Atkinson Hyperlegible">Atkinson Hyperlegible</option>
+              <option value="IBM Plex Sans">IBM Plex Sans</option>
             </select>
           </div>
           <div>
@@ -272,6 +276,10 @@ export function SettingsForm({ initial }: { initial: Settings }) {
               <option value="Outfit">Outfit</option>
               <option value="Open Sans">Open Sans</option>
               <option value="Segoe UI">Segoe UI (Windows)</option>
+              <option value="Fira Sans">Fira Sans</option>
+              <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+              <option value="Atkinson Hyperlegible">Atkinson Hyperlegible</option>
+              <option value="IBM Plex Sans">IBM Plex Sans</option>
             </select>
             <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>Niezależna od czcionki prezentacji.</p>
           </div>
