@@ -190,7 +190,7 @@ export function AttendanceCheckPanel({
                   <span>Radni potwierdzają sami</span>
                 </label>
               </div>
-              <input className="input mb-2" placeholder="Wyszukaj…" value={filter} onChange={(e) => setFilter(e.target.value)} style={{ fontSize: 12 }} />
+              <input className="form-control mb-2" placeholder="Wyszukaj…" value={filter} onChange={(e) => setFilter(e.target.value)} style={{ fontSize: 12 }} />
             </div>
             <div style={{ overflowY: "auto", flex: 1 }} className="px-4">
               {active.entries
@@ -247,7 +247,7 @@ function SnapshotEditor({ check, meetingId, onSaved }: { check: Check; meetingId
     <div className="mt-3 pt-3 border-t border-[var(--color-rule-soft)]">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs" style={{ color: "var(--color-ink-3)" }}>Obecnych: <b>{presentCount}</b> / {rows.length}</span>
-        <input className="input" placeholder="Szukaj…" value={q} onChange={(e) => setQ(e.target.value)} style={{ fontSize: 11, width: 140 }} />
+        <input className="form-control" placeholder="Szukaj…" value={q} onChange={(e) => setQ(e.target.value)} style={{ fontSize: 11, width: 140 }} />
       </div>
       <div style={{ maxHeight: 220, overflowY: "auto" }} className="border border-[var(--color-rule-soft)]">
         {rows.filter((x) => x.name.toLowerCase().includes(q.toLowerCase())).map((x) => (

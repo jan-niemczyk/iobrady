@@ -221,7 +221,7 @@ export function FormalMotionsPanel({
 
         {listId && (
           <div className="flex items-center gap-1 mt-3 pt-3 border-t border-[var(--color-rule-soft)]">
-            <select className="input" style={{ fontSize: 14, flex: 1 }} value={addUser} onChange={(e) => setAddUser(e.target.value)}>
+            <select className="form-select" style={{ fontSize: 14, flex: 1 }} value={addUser} onChange={(e) => setAddUser(e.target.value)}>
               <option value="">- dopisz do wniosków -</option>
               {participants.map((p) => <option key={p.userId} value={p.userId}>{p.name}{!p.hasVotingRight && " (bez prawa)"}</option>)}
             </select>

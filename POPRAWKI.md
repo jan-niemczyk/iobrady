@@ -555,3 +555,8 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
 - [x] `PrintButton.tsx` - sprawdzony, bez zmian: jedyny interaktywny element to
       `<button className="btn btn-primary">`, który już renderuje się jako Bootstrap dzięki
       kaskadzie; reszta pliku to logika generowania PDF (pdfmake), bez `.input`/`.label`/`.card`.
+- [x] `AttendanceCheckPanel.tsx`, `MeetingParticipantsClient.tsx`, `FormalMotionsPanel.tsx` -
+      pola `.input`→`form-control`/`form-select`; reszta układu (siatka, checkboxy w etykietach
+      `flex items-center gap-2`, kolorowe `.pill` z niestandardową logiką aktywności) zostawiona
+      bez zmian - konwersja skomplikowałaby istniejący układ bez korzyści wizualnej, zgodnie z
+      zasadą "nie zmieniać checkboxów/`.pill`, gdy to komplikuje układ".

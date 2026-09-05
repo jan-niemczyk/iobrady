@@ -242,7 +242,7 @@ export function MeetingParticipantsClient({
             </button>
           </div>
           <input
-            className="input mb-3"
+            className="form-control mb-3"
             placeholder="Wyszukaj…"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
