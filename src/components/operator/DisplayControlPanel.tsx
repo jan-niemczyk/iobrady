@@ -253,7 +253,7 @@ export function DisplayControlPanel({
         {/* KOMUNIKAT TEKSTOWY - osobny tryb */}
         <div>
           <textarea
-            className="input"
+            className="form-control"
             placeholder="Treść komunikatu (np. Zaraz wznawiamy obrady)"
             value={msgDraft}
             onChange={(e) => setMsgDraft(e.target.value)}
@@ -386,7 +386,7 @@ function BreakControl({
       </div>
       <div className="flex items-center gap-1 mb-2">
         <input
-          className="input"
+          className="form-control"
           placeholder="do godz. GG:MM"
           value={customTime}
           onChange={(e) => onTimeChange(e.target.value)}
@@ -397,7 +397,7 @@ function BreakControl({
       </div>
       <div className="flex items-center gap-1 mb-2">
         <input
-          className="input"
+          className="form-control"
           placeholder="minut z palca"
           value={customMin}
           onChange={(e) => setCustomMin(e.target.value.replace(/\D/g, "").slice(0, 3))}

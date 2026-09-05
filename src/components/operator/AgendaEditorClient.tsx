@@ -122,7 +122,7 @@ export function AgendaEditorClient({
                     <button className="btn" style={{ padding: "4px 8px", fontSize: 11 }} disabled={pending || idx === 0} onClick={() => act("POST", `/api/agenda/${a.id}/move`, { direction: "up" })} title="W górę"><IconArrowUp size={13} /></button>
                     <button className="btn" style={{ padding: "4px 8px", fontSize: 11 }} disabled={pending || idx === agenda.length - 1} onClick={() => act("POST", `/api/agenda/${a.id}/move`, { direction: "down" })} title="W dół"><IconArrowDown size={13} /></button>
                     <select
-                      className="input"
+                      className="form-select"
                       style={{ padding: "3px 6px", fontSize: 11, width: "auto", maxWidth: 150 }}
                       value=""
                       disabled={pending}
@@ -251,7 +251,7 @@ function ImportAgendaModal({
             </span>
           </p>
           <textarea
-            className="input mono"
+            className="form-control mono"
             style={{ minHeight: 220, fontSize: 12 }}
             placeholder={`Otwarcie posiedzenia\nProjekt uchwały w sprawie budżetu\n  - autopoprawka nr 1\n  - autopoprawka nr 2\nSprawy różne`}
             value={text}
@@ -313,21 +313,21 @@ function ItemEditor({
     <form onSubmit={submit} className="space-y-3">
       <div className="grid grid-cols-[80px_1fr] gap-3">
         <div>
-          <label className="label">Numer</label>
-          <input className="input" required={!unnumbered} disabled={unnumbered} value={unnumbered ? "" : number} onChange={(e) => setNumber(e.target.value)} placeholder={unnumbered ? "-" : "np. 3a"} />
+          <label className="form-label">Numer</label>
+          <input className="form-control" required={!unnumbered} disabled={unnumbered} value={unnumbered ? "" : number} onChange={(e) => setNumber(e.target.value)} placeholder={unnumbered ? "-" : "np. 3a"} />
         </div>
         <div>
-          <label className="label">Tytuł</label>
-          <input className="input" required value={title} onChange={(e) => setTitle(e.target.value)} />
+          <label className="form-label">Tytuł</label>
+          <input className="form-control" required value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
       </div>
       <div>
-        <label className="label">Referent (opcjonalnie)</label>
-        <input className="input" value={presenter} onChange={(e) => setPresenter(e.target.value)} placeholder="np. Burmistrz Miasta" />
+        <label className="form-label">Referent (opcjonalnie)</label>
+        <input className="form-control" value={presenter} onChange={(e) => setPresenter(e.target.value)} placeholder="np. Burmistrz Miasta" />
       </div>
       <div>
-        <label className="label">Komisja / opinia (opcjonalnie)</label>
-        <input className="input" value={committee} onChange={(e) => setCommittee(e.target.value)} placeholder="np. Komisja ds. Finansów" />
+        <label className="form-label">Komisja / opinia (opcjonalnie)</label>
+        <input className="form-control" value={committee} onChange={(e) => setCommittee(e.target.value)} placeholder="np. Komisja ds. Finansów" />
       </div>
       <label className="flex items-center gap-2 text-sm cursor-pointer">
         <input type="checkbox" checked={unnumbered} onChange={(e) => setUnnumbered(e.target.checked)} />

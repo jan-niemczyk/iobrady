@@ -181,7 +181,7 @@ export function SpeakersPanel({
             <input
               type="number"
               min={0}
-              className="input"
+              className="form-control"
               style={{ width: 70, padding: "2px 6px", fontSize: 12 }}
               value={list.defaultTimeLimitSec ?? ""}
               onChange={(e) => {
@@ -252,7 +252,7 @@ export function SpeakersPanel({
                   <input
                     type="number"
                     min={0}
-                    className="input mono"
+                    className="form-control mono"
                     style={{ width: 60, padding: "1px 4px", fontSize: 11 }}
                     defaultValue={e.timeLimitSec ?? ""}
                     onBlur={(ev) => {
@@ -280,7 +280,7 @@ export function SpeakersPanel({
       <div className="px-5 py-3 border-t border-[var(--color-rule-soft)] bg-[var(--color-paper-2)]">
         <div className="flex items-center gap-2 mb-2">
           <select
-            className="input"
+            className="form-select"
             value={addingUserId}
             onChange={(e) => setAddingUserId(e.target.value)}
           >
@@ -342,7 +342,7 @@ export function SpeakersPanel({
 
         {guests.length > 0 && (
           <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[var(--color-rule-soft)]">
-            <select className="input" style={{ flex: 1 }} value={addingGuestId} onChange={(e) => setAddingGuestId(e.target.value)}>
+            <select className="form-select" style={{ flex: 1 }} value={addingGuestId} onChange={(e) => setAddingGuestId(e.target.value)}>
               <option value="">- dopisz gościa z katalogu -</option>
               {guests.map((g) => (
                 <option key={g.id} value={g.id}>{g.lastName} {g.firstName}{g.role ? ` (${g.role})` : ""}</option>

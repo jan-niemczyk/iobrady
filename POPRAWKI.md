@@ -560,3 +560,9 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       `flex items-center gap-2`, kolorowe `.pill` z niestandardową logiką aktywności) zostawiona
       bez zmian - konwersja skomplikowałaby istniejący układ bez korzyści wizualnej, zgodnie z
       zasadą "nie zmieniać checkboxów/`.pill`, gdy to komplikuje układ".
+- [x] `AgendaEditorClient.tsx`, `DisplayControlPanel.tsx`, `SpeakersPanel.tsx` - pola
+      `.input`/`.label`→`form-control`/`form-select`/`form-label` (selecty przenoszenia punktu,
+      pola edytora punktu, textarea komunikatu i przerwy, limity czasu mówców, selecty dodawania
+      mówcy/gościa). `VoteReport.tsx` sprawdzony - celowo bez zmian: komponent jest w całości
+      czarno-biały i drukowalny (inline style, zero klas `.input`/`.label`/`.card`), zgodnie z
+      zastrzeżeniem w planie o zachowaniu wyglądu wydruku.
