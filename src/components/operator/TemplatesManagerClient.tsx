@@ -93,7 +93,7 @@ export function TemplatesManagerClient({ initialTemplates, allUsers }: { initial
             ))}
           </div>
           <div className="flex gap-2">
-            <input className="input" placeholder="Nazwa nowego szablonu" value={newName} onChange={(e) => setNewName(e.target.value)} style={{ fontSize: 13 }} />
+            <input className="form-control" placeholder="Nazwa nowego szablonu" value={newName} onChange={(e) => setNewName(e.target.value)} style={{ fontSize: 13 }} />
             <button className="btn btn-primary" disabled={pending || !newName.trim()} onClick={createTemplate}>Utwórz</button>
           </div>
         </div>
@@ -107,7 +107,7 @@ export function TemplatesManagerClient({ initialTemplates, allUsers }: { initial
               <div className="card p-4">
                 <div className="flex items-center justify-between">
                   <input
-                    className="input"
+                    className="form-control"
                     value={selected.name}
                     onChange={(e) => setTemplates((ts) => ts.map((t) => t.id === selected.id ? { ...t, name: e.target.value } : t))}
                     onBlur={(e) => patchTemplate({ name: e.target.value.trim() })}
@@ -142,7 +142,7 @@ export function TemplatesManagerClient({ initialTemplates, allUsers }: { initial
               {/* Dodawanie */}
               <div className="card p-4">
                 <div className="eyebrow mb-2">Dodaj uczestników</div>
-                <input className="input mb-2" placeholder="Wyszukaj osobę…" value={addFilter} onChange={(e) => setAddFilter(e.target.value)} style={{ fontSize: 13 }} />
+                <input className="form-control mb-2" placeholder="Wyszukaj osobę…" value={addFilter} onChange={(e) => setAddFilter(e.target.value)} style={{ fontSize: 13 }} />
                 <div style={{ maxHeight: 200, overflowY: "auto", border: "1px solid var(--color-rule-soft)" }}>
                   {addable.slice(0, 50).map((u) => (
                     <button key={u.id} className="w-full text-left px-3 py-2 text-sm border-b border-[var(--color-rule-soft)] last:border-0 hover:bg-[var(--color-paper-2)]"

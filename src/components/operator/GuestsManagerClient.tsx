@@ -52,7 +52,7 @@ export function GuestsManagerClient({ initialGuests }: { initialGuests: Guest[] 
         Goście to osoby zabierające głos bez konta i bez prawa głosu (np. dyrektorzy wydziałów, zaproszeni eksperci). Katalog pozwala szybko dodać ich do listy mówców na posiedzeniu.
       </p>
 
-      <input className="input mb-4" placeholder="Wyszukaj gościa…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+      <input className="form-control mb-4" placeholder="Wyszukaj gościa…" value={filter} onChange={(e) => setFilter(e.target.value)} />
 
       {(adding || editing) && (
         <GuestForm
@@ -121,22 +121,22 @@ function GuestForm({ guest, pending, onCancel, onSaved }: {
       <div className="text-sm font-semibold">{guest ? "Edytuj gościa" : "Nowy gość"}</div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="label">Nazwisko</label>
-          <input className="input" value={lastName} onChange={(e) => setLastName(e.target.value)} required autoFocus />
+          <label className="form-label">Nazwisko</label>
+          <input className="form-control" value={lastName} onChange={(e) => setLastName(e.target.value)} required autoFocus />
         </div>
         <div>
-          <label className="label">Imię</label>
-          <input className="input" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+          <label className="form-label">Imię</label>
+          <input className="form-control" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="label">Funkcja / stanowisko</label>
-          <input className="input" value={role} onChange={(e) => setRole(e.target.value)} placeholder="np. Dyrektor Wydziału Edukacji" />
+          <label className="form-label">Funkcja / stanowisko</label>
+          <input className="form-control" value={role} onChange={(e) => setRole(e.target.value)} placeholder="np. Dyrektor Wydziału Edukacji" />
         </div>
         <div>
-          <label className="label">Podmiot (skrót, opcjonalnie)</label>
-          <input className="input" value={clubShort} onChange={(e) => setClubShort(e.target.value)} />
+          <label className="form-label">Podmiot (skrót, opcjonalnie)</label>
+          <input className="form-control" value={clubShort} onChange={(e) => setClubShort(e.target.value)} />
         </div>
       </div>
       <div className="flex gap-2">

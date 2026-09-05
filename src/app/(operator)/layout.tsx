@@ -13,39 +13,29 @@ export default async function OperatorLayout({ children }: { children: React.Rea
   if (!settings?.setupComplete) redirect("/setup");
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="d-flex flex-column min-vh-100">
       <TopBar
         userName={`${session.user.firstName} ${session.user.lastName}`}
         logoUrl={settings?.presentationLogoUrl ?? null}
       />
-      <main className="flex-1">{children}</main>
+      <main className="flex-grow-1">{children}</main>
     </div>
   );
 }
 
 function TopBar({ userName, logoUrl }: { userName: string; logoUrl: string | null }) {
   return (
-    <header
-      className="no-grid no-print sticky top-0 z-30 flex items-center justify-between px-6 h-16"
-      style={{
-        background: "var(--color-paper)",
-        borderBottom: "1px solid var(--color-rule)",
-      }}
-    >
-      <div className="flex items-center gap-8">
-        <Link href="/dashboard" className="flex items-center gap-3">
+    <nav className="navbar navbar-expand-lg sticky-top border-bottom bg-white no-print">
+      <div className="container-fluid px-4">
+        <Link href="/dashboard" className="navbar-brand d-flex align-items-center gap-2">
           {logoUrl && (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={logoUrl} alt="" style={{ height: 40, width: "auto", objectFit: "contain" }} />
+            <img src={logoUrl} alt="" style={{ height: 36, width: "auto", objectFit: "contain" }} />
           )}
-          <span className="flex items-baseline gap-2">
-            <span style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontWeight: 500, letterSpacing: "-0.01em" }}>
-              iOBRADY
-            </span>
-            <span className="eyebrow">Panel operatora</span>
-          </span>
+          <span style={{ fontFamily: "var(--font-serif)", fontWeight: 500 }}>iOBRADY</span>
+          <span className="text-body-secondary small d-none d-md-inline">Panel operatora</span>
         </Link>
-        <nav className="flex items-center gap-1 text-sm">
+        <div className="d-flex flex-wrap align-items-center gap-1">
           <NavLink href="/dashboard">Pulpit</NavLink>
           <NavLink href="/meetings">Posiedzenia</NavLink>
           <NavLink href="/participants">Uczestnicy</NavLink>
@@ -53,33 +43,29 @@ function TopBar({ userName, logoUrl }: { userName: string; logoUrl: string | nul
           <NavLink href="/templates">Szablony</NavLink>
           <NavLink href="/login-log">Logowania</NavLink>
           <NavLink href="/settings">Ustawienia</NavLink>
-        </nav>
-      </div>
-      <div className="flex items-center gap-4">
-        <div className="text-right">
-          <div className="text-xs" style={{ color: "var(--color-ink-3)" }}>Zalogowano jako</div>
-          <div className="text-sm font-medium">{userName}</div>
         </div>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/login" });
-          }}
-        >
-          <button className="btn" type="submit">Wyloguj</button>
-        </form>
+        <div className="d-flex align-items-center gap-3 ms-3">
+          <div className="text-end d-none d-sm-block">
+            <div className="text-body-secondary" style={{ fontSize: 11 }}>Zalogowano jako</div>
+            <div className="small fw-medium">{userName}</div>
+          </div>
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/login" });
+            }}
+          >
+            <button className="btn btn-outline-secondary btn-sm" type="submit">Wyloguj</button>
+          </form>
+        </div>
       </div>
-    </header>
+    </nav>
   );
 }
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link
-      href={href}
-      className="px-3 py-1.5 rounded-sm hover:bg-[var(--color-paper-2)]"
-      style={{ textDecoration: "none" }}
-    >
+    <Link href={href} className="nav-link px-2 py-1 small">
       {children}
     </Link>
   );

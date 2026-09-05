@@ -79,8 +79,8 @@ export function SettingsForm({ initial }: { initial: Settings }) {
   return (
     <form onSubmit={(e) => { e.preventDefault(); save(); }} className="card p-8 space-y-6">
       <div>
-        <label className="label">Nazwa organizacji</label>
-        <input className="input" value={s.organizationName} onChange={(e) => update("organizationName", e.target.value)} />
+        <label className="form-label">Nazwa organizacji</label>
+        <input className="form-control" value={s.organizationName} onChange={(e) => update("organizationName", e.target.value)} />
         <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>Wyświetlana w nagłówkach raportów i protokołów.</p>
       </div>
 
@@ -99,16 +99,16 @@ export function SettingsForm({ initial }: { initial: Settings }) {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="label">Reguła kworum</label>
-            <select className="input" value={s.defaultQuorumRule} onChange={(e) => update("defaultQuorumRule", e.target.value as QuorumRule)}>
+            <label className="form-label">Reguła kworum</label>
+            <select className="form-control" value={s.defaultQuorumRule} onChange={(e) => update("defaultQuorumRule", e.target.value as QuorumRule)}>
               {Object.entries(QUORUM_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>
           <div>
-            <label className="label">Wartość (% lub liczba)</label>
+            <label className="form-label">Wartość (% lub liczba)</label>
             <input
               type="number"
-              className="input"
+              className="form-control"
               value={s.defaultQuorumValue ?? ""}
               onChange={(e) => update("defaultQuorumValue", e.target.value === "" ? null : parseFloat(e.target.value))}
               placeholder="dla PERCENTAGE / COUNT"
@@ -118,8 +118,8 @@ export function SettingsForm({ initial }: { initial: Settings }) {
 
         <div className="grid grid-cols-2 gap-4 mt-4">
           <div>
-            <label className="label">Domyślny typ większości</label>
-            <select className="input" value={s.defaultMajorityKind} onChange={(e) => update("defaultMajorityKind", e.target.value as MajorityKind)}>
+            <label className="form-label">Domyślny typ większości</label>
+            <select className="form-control" value={s.defaultMajorityKind} onChange={(e) => update("defaultMajorityKind", e.target.value as MajorityKind)}>
               <option value="SIMPLE">Zwykła</option>
               <option value="ABSOLUTE">Bezwzględna</option>
               <option value="QUALIFIED_TWO_THIRDS">Kwalifikowana 2/3</option>
@@ -127,9 +127,9 @@ export function SettingsForm({ initial }: { initial: Settings }) {
             </select>
           </div>
           <div>
-            <label className="label">Domyślny mianownik</label>
+            <label className="form-label">Domyślny mianownik</label>
             <select
-              className="input"
+              className="form-control"
               value={s.defaultMajorityBase}
               onChange={(e) => update("defaultMajorityBase", e.target.value as MajorityBase)}
               disabled={s.defaultMajorityKind === "SIMPLE"}
@@ -143,8 +143,8 @@ export function SettingsForm({ initial }: { initial: Settings }) {
 
         <div className="grid grid-cols-2 gap-4 mt-4">
           <div>
-            <label className="label">Domyślna widoczność głosowań</label>
-            <select className="input" value={s.defaultVoteVisibility} onChange={(e) => update("defaultVoteVisibility", e.target.value as VoteVisibility)}>
+            <label className="form-label">Domyślna widoczność głosowań</label>
+            <select className="form-control" value={s.defaultVoteVisibility} onChange={(e) => update("defaultVoteVisibility", e.target.value as VoteVisibility)}>
               <option value="OPEN">Jawne</option>
               <option value="SECRET">Tajne</option>
             </select>
@@ -154,8 +154,8 @@ export function SettingsForm({ initial }: { initial: Settings }) {
 
         <div className="grid grid-cols-2 gap-4 mt-4">
           <div>
-            <label className="label">Tryb listy obecności</label>
-            <select className="input" value={s.defaultAttendanceMode} onChange={(e) => update("defaultAttendanceMode", e.target.value as AttendanceMode)}>
+            <label className="form-label">Tryb listy obecności</label>
+            <select className="form-control" value={s.defaultAttendanceMode} onChange={(e) => update("defaultAttendanceMode", e.target.value as AttendanceMode)}>
               <option value="MANUAL">Operator ręcznie</option>
               <option value="SELF_CONFIRMATION">Samodzielne potwierdzenie</option>
             </select>
@@ -193,8 +193,8 @@ export function SettingsForm({ initial }: { initial: Settings }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="label">Czcionka prezentacji</label>
-            <select className="input" value={s.presentationFont} onChange={(e) => update("presentationFont", e.target.value)}>
+            <label className="form-label">Czcionka prezentacji</label>
+            <select className="form-control" value={s.presentationFont} onChange={(e) => update("presentationFont", e.target.value)}>
               <option value="Inter">Inter</option>
               <option value="Lato">Lato</option>
               <option value="Roboto">Roboto</option>
@@ -210,7 +210,7 @@ export function SettingsForm({ initial }: { initial: Settings }) {
             </select>
           </div>
           <div>
-            <label className="label">Kolor nagłówka</label>
+            <label className="form-label">Kolor nagłówka</label>
             <div className="flex items-center gap-2">
               <input
                 type="color"
@@ -219,7 +219,7 @@ export function SettingsForm({ initial }: { initial: Settings }) {
                 style={{ width: 44, height: 38, padding: 2, border: "1px solid var(--color-rule)", borderRadius: 4, cursor: "pointer" }}
               />
               <input
-                className="input" style={{ maxWidth: 130 }}
+                className="form-control" style={{ maxWidth: 130 }}
                 value={s.presentationHeaderColor}
                 onChange={(e) => update("presentationHeaderColor", e.target.value)}
                 placeholder="#0B2A4A"
@@ -233,7 +233,7 @@ export function SettingsForm({ initial }: { initial: Settings }) {
         </div>
 
         <div className="mt-4">
-          <label className="label">Logo w nagłówku (opcjonalne)</label>
+          <label className="form-label">Logo w nagłówku (opcjonalne)</label>
           <div className="flex items-center gap-3">
             {s.presentationLogoUrl && (
               <img src={s.presentationLogoUrl} alt="logo" style={{ height: 40, width: "auto", objectFit: "contain", border: "1px solid var(--color-rule-soft)", borderRadius: 4, padding: 2 }} />
@@ -274,8 +274,8 @@ export function SettingsForm({ initial }: { initial: Settings }) {
         <h2 className="text-sm font-semibold mb-4">Transmisja (nakładka OBS)</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="label">Czcionka transmisji</label>
-            <select className="input" value={s.overlayFont} onChange={(e) => update("overlayFont", e.target.value)}>
+            <label className="form-label">Czcionka transmisji</label>
+            <select className="form-control" value={s.overlayFont} onChange={(e) => update("overlayFont", e.target.value)}>
               <option value="Inter">Inter</option>
               <option value="Lato">Lato</option>
               <option value="Roboto">Roboto</option>
@@ -292,16 +292,16 @@ export function SettingsForm({ initial }: { initial: Settings }) {
             <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>Niezależna od czcionki prezentacji.</p>
           </div>
           <div>
-            <label className="label">Wyniki głosowania na transmisji</label>
-            <select className="input" value={s.overlayResultsMode} onChange={(e) => update("overlayResultsMode", e.target.value)}>
+            <label className="form-label">Wyniki głosowania na transmisji</label>
+            <select className="form-control" value={s.overlayResultsMode} onChange={(e) => update("overlayResultsMode", e.target.value)}>
               <option value="BARS">Poziome paski (podsuma)</option>
               <option value="BOARD">Tablica jak na prezentacji</option>
             </select>
             <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>Sposób pokazywania wyników po zamknięciu głosowania.</p>
           </div>
           <div>
-            <label className="label">Tablica na transmisji - kiedy</label>
-            <select className="input" value={s.overlayBoardTiming} onChange={(e) => update("overlayBoardTiming", e.target.value)}>
+            <label className="form-label">Tablica na transmisji - kiedy</label>
+            <select className="form-control" value={s.overlayBoardTiming} onChange={(e) => update("overlayBoardTiming", e.target.value)}>
               <option value="AFTER_CLOSE">Dopiero po zamknięciu głosowania</option>
               <option value="FROM_START">Już od rozpoczęcia głosowania</option>
             </select>
@@ -317,7 +317,7 @@ export function SettingsForm({ initial }: { initial: Settings }) {
         </label>
 
         <div className="mt-5">
-          <label className="label">Kolory teł pasków (prezentacja i transmisja)</label>
+          <label className="form-label">Kolory teł pasków (prezentacja i transmisja)</label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-1">
             {([
               ["colorSessionBar", "Nazwa posiedzenia"],
@@ -329,7 +329,7 @@ export function SettingsForm({ initial }: { initial: Settings }) {
                 <div className="text-xs mb-1" style={{ color: "var(--color-ink-3)" }}>{lbl}</div>
                 <div className="flex items-center gap-2">
                   <input type="color" value={s[key]} onChange={(e) => update(key, e.target.value)} style={{ width: 40, height: 32, padding: 0, border: "none", background: "none", cursor: "pointer" }} />
-                  <input className="input" style={{ fontSize: 12 }} value={s[key]} onChange={(e) => update(key, e.target.value)} />
+                  <input className="form-control" style={{ fontSize: 12 }} value={s[key]} onChange={(e) => update(key, e.target.value)} />
                 </div>
               </div>
             ))}
@@ -370,25 +370,25 @@ export function SettingsForm({ initial }: { initial: Settings }) {
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label className="label">Przemówienie</label>
+            <label className="form-label">Przemówienie</label>
             <input
-              className="input" type="number" min={0} placeholder="bez limitu"
+              className="form-control" type="number" min={0} placeholder="bez limitu"
               value={s.defaultSpeechLimitSec ?? ""}
               onChange={(e) => update("defaultSpeechLimitSec", e.target.value === "" ? null : Number(e.target.value))}
             />
           </div>
           <div>
-            <label className="label">Ad vocem</label>
+            <label className="form-label">Ad vocem</label>
             <input
-              className="input" type="number" min={0} placeholder="bez limitu"
+              className="form-control" type="number" min={0} placeholder="bez limitu"
               value={s.defaultAdVocemLimitSec ?? ""}
               onChange={(e) => update("defaultAdVocemLimitSec", e.target.value === "" ? null : Number(e.target.value))}
             />
           </div>
           <div>
-            <label className="label">Wniosek formalny</label>
+            <label className="form-label">Wniosek formalny</label>
             <input
-              className="input" type="number" min={0} placeholder="bez limitu"
+              className="form-control" type="number" min={0} placeholder="bez limitu"
               value={s.defaultFormalMotionLimitSec ?? ""}
               onChange={(e) => update("defaultFormalMotionLimitSec", e.target.value === "" ? null : Number(e.target.value))}
             />
@@ -448,24 +448,24 @@ function SmtpSection({ s, update }: {
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="label">Host SMTP</label>
-          <input className="input" placeholder="smtp.example.com" value={s.smtpHost ?? ""} onChange={(e) => update("smtpHost", e.target.value || null)} />
+          <label className="form-label">Host SMTP</label>
+          <input className="form-control" placeholder="smtp.example.com" value={s.smtpHost ?? ""} onChange={(e) => update("smtpHost", e.target.value || null)} />
         </div>
         <div>
-          <label className="label">Port</label>
-          <input className="input" type="number" placeholder="587" value={s.smtpPort ?? ""} onChange={(e) => update("smtpPort", e.target.value === "" ? null : Number(e.target.value))} />
+          <label className="form-label">Port</label>
+          <input className="form-control" type="number" placeholder="587" value={s.smtpPort ?? ""} onChange={(e) => update("smtpPort", e.target.value === "" ? null : Number(e.target.value))} />
         </div>
         <div>
-          <label className="label">Użytkownik</label>
-          <input className="input" value={s.smtpUser ?? ""} onChange={(e) => update("smtpUser", e.target.value || null)} />
+          <label className="form-label">Użytkownik</label>
+          <input className="form-control" value={s.smtpUser ?? ""} onChange={(e) => update("smtpUser", e.target.value || null)} />
         </div>
         <div>
-          <label className="label">Hasło</label>
-          <input className="input" type="password" value={s.smtpPassword ?? ""} onChange={(e) => update("smtpPassword", e.target.value || null)} />
+          <label className="form-label">Hasło</label>
+          <input className="form-control" type="password" value={s.smtpPassword ?? ""} onChange={(e) => update("smtpPassword", e.target.value || null)} />
         </div>
         <div>
-          <label className="label">Adres nadawcy</label>
-          <input className="input" placeholder="iobrady@twoja-domena.pl" value={s.smtpFrom ?? ""} onChange={(e) => update("smtpFrom", e.target.value || null)} />
+          <label className="form-label">Adres nadawcy</label>
+          <input className="form-control" placeholder="iobrady@twoja-domena.pl" value={s.smtpFrom ?? ""} onChange={(e) => update("smtpFrom", e.target.value || null)} />
         </div>
         <div className="flex items-end">
           <label className="flex items-center gap-2 cursor-pointer mb-2.5">

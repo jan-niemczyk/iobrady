@@ -521,3 +521,22 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       dane liczone server-side przez `buildVoteReportData()` wprost na stronie).
 - [x] Wysyłka linku mailem: opcja "Dołącz link do widoku publicznego" w modalu e-maila
       posiedzenia (Faza 11) - działa tylko gdy `meeting.publicEnabled`.
+
+## AAB. Bootstrap - pierwsza tura przemalowania paneli operatora
+- [x] `(operator)/layout.tsx` - pasek nawigacji przepisany na `navbar` Bootstrapa.
+- [x] `(operator)/dashboard/page.tsx`, `archive/page.tsx`, `login-log/page.tsx` - pełne przejście
+      na siatkę/komponenty Bootstrapa (`container`, `row`/`col`, `card`+`card-body`, `table`,
+      `list-group`, `badge`).
+- [x] `SettingsForm.tsx`, `GuestsManagerClient.tsx`, `TemplatesManagerClient.tsx` - pola
+      formularzy (`.input`→`form-control`, `.label`→`form-label`); reszta układu (siatka,
+      odstępy) zostaje na Tailwindzie - działa równolegle z Bootstrapem bez konfliktu, bo to inne
+      nazwy klas.
+- [ ] **Pozostało (świadomie odłożone, duży zakres):** `MeetingPanelClient.tsx` (~2700 linii -
+      główny "pokój sterowania" posiedzeniem), `ParticipantsManagerClient.tsx`,
+      `AgendaEditorClient.tsx`, `SpeakersPanel.tsx`, `FormalMotionsPanel.tsx`,
+      `DisplayControlPanel.tsx`, `AttendanceCheckPanel.tsx`, `MeetingParticipantsClient.tsx`,
+      `VoteReport.tsx`, `DiscussionClockPanel.tsx`, strony `meetings/`, `votes/[id]/report`.
+      Zasada `.btn`/`.card` (te same nazwy w obu systemach, Bootstrap ładowany później więc
+      wygrywa w kaskadzie) już częściowo "przemalowuje" te ekrany bez zmian w kodzie - ale
+      `.input`/`.label`/`.pill`/`.eyebrow` tam zostają w starym stylu, dopóki nie przejdą tej
+      samej konwersji.

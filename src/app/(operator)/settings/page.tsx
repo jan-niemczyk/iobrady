@@ -12,11 +12,11 @@ export default async function SettingsPage() {
   });
 
   return (
-    <div className="px-6 py-8 max-w-[900px] mx-auto">
-      <header className="border-b border-[var(--color-rule)] pb-6 mb-8">
-        <div className="eyebrow mb-2">Konfiguracja</div>
-        <h1 style={{ fontSize: 32, lineHeight: 1.05 }}>Ustawienia globalne</h1>
-        <p className="text-sm mt-3" style={{ color: "var(--color-ink-2)" }}>
+    <div className="container py-4" style={{ maxWidth: 800 }}>
+      <header className="border-bottom pb-3 mb-4">
+        <div className="text-uppercase text-body-secondary small mb-1" style={{ letterSpacing: "0.06em" }}>Konfiguracja</div>
+        <h1 className="mb-2" style={{ fontSize: 30 }}>Ustawienia globalne</h1>
+        <p className="text-body-secondary small mb-0">
           Wartości domyślne stosowane przy tworzeniu nowych posiedzeń.
         </p>
       </header>
@@ -62,9 +62,9 @@ export default async function SettingsPage() {
         smtpFrom: s.smtpFrom,
       }} />
 
-      <section className="mt-12 border-t border-[var(--color-rule)] pt-8">
-        <div className="eyebrow mb-2">Konto</div>
-        <h2 style={{ fontSize: 22, lineHeight: 1.1, marginBottom: 16 }}>Zmiana hasła</h2>
+      <section className="mt-5 border-top pt-4">
+        <div className="text-uppercase text-body-secondary small mb-1" style={{ letterSpacing: "0.06em" }}>Konto</div>
+        <h2 className="mb-3" style={{ fontSize: 20 }}>Zmiana hasła</h2>
         <ChangePasswordForm />
       </section>
     </div>
