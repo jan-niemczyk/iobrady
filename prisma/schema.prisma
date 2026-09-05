@@ -178,6 +178,9 @@ enum AuditAction {
   PARTICIPANT_RIGHT_CHANGED
   SETTINGS_CHANGED
   MESSAGE_PUBLISHED
+  EMAIL_SENT
+  ATTACHMENT_UPLOADED
+  ATTACHMENT_DELETED
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -207,6 +210,8 @@ model User {
   auditLogs      AuditLog[]
   templateMemberships MeetingTemplateMember[]
   loginEvents    LoginEvent[]
+  uploadedAttachments Attachment[]
+  agendaItemNotes AgendaItemNote[]
 
   @@index([role])
   @@index([active])
@@ -281,6 +286,19 @@ model Settings {
   colorSpeakerBar          String       @default("#f70d1a") // mówca
   colorVoteBar             String       @default("#f70d1a") // trwa głosowanie
   colorSessionBar          String       @default("#0B2A4A") // nazwa posiedzenia
+
+  // Materiały/załączniki posiedzeń - wartości domyślne przy wgrywaniu (edytowalne per plik)
+  defaultMaterialsVisibleToParticipants Boolean @default(true)
+  defaultMaterialsPublic                Boolean @default(false)
+
+  // Moduł e-mail (SMTP) - konfiguracja w całości w bazie, edytowalna w Ustawieniach
+  smtpHost     String?
+  smtpPort     Int?    @default(587)
+  smtpSecure   Boolean @default(true)
+  smtpUser     String?
+  smtpPassword String?
+  smtpFrom     String?
+
   updatedAt                DateTime     @updatedAt
 }
 
@@ -337,6 +355,10 @@ model Meeting {
   /** Wstrzymanie automatycznego pokazania wyników po zamknięciu (operator publikuje ręcznie) */
   holdResults                 Boolean @default(false)
 
+  /** Widok publiczny (bez logowania) porządku obrad, materiałów publicznych i wyników jawnych
+      głosowań - operator włącza świadomie per posiedzenie (domyślnie wyłączony). */
+  publicEnabled Boolean @default(false)
+
   // stan w trakcie posiedzenia
   currentAgendaItemId String? @unique
   currentAgendaItem   AgendaItem? @relation("CurrentItem", fields: [currentAgendaItemId], references: [id])
@@ -391,6 +413,8 @@ model Meeting {
   speakerLists SpeakerList[]
   attendanceChecks AttendanceCheck[]
   auditLogs    AuditLog[]
+  attachments  Attachment[]
+  emailLogs    EmailLog[]
 
   @@index([status])
   @@index([scheduledAt])
@@ -457,9 +481,69 @@ model AgendaItem {
   votes        Vote[]
   speakerList  SpeakerList?
   currentIn    Meeting?  @relation("CurrentItem")
+  attachments  Attachment[]
+  notesByUser  AgendaItemNote[]
 
   @@unique([meetingId, order])
   @@index([meetingId, status])
+}
+
+// Załącznik/materiał - albo do całego posiedzenia (agendaItemId=null), albo do konkretnego
+// punktu porządku. Plik leży POZA katalogiem "public/" (patrz src/lib/attachments.ts) - jedyny
+// dostęp do treści to autoryzowany endpoint api/attachments/[id]/download.
+model Attachment {
+  id            String   @id @default(cuid())
+  meetingId     String
+  meeting       Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  agendaItemId  String?
+  agendaItem    AgendaItem? @relation(fields: [agendaItemId], references: [id], onDelete: SetNull)
+
+  fileName      String   // oryginalna nazwa do wyświetlenia/pobrania
+  storedName    String   // losowa nazwa na dysku (bez kolizji, bez path traversal)
+  mimeType      String
+  sizeBytes     Int
+
+  visibleToParticipants Boolean @default(true)
+  visibleToPublic       Boolean @default(false)
+
+  uploadedByUserId String?
+  uploadedBy       User?   @relation(fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+  createdAt        DateTime @default(now())
+
+  @@index([meetingId])
+  @@index([agendaItemId])
+}
+
+// Prywatna notatka radnego do punktu porządku - widoczna WYŁĄCZNIE dla jej autora. Nie mylić
+// z AgendaItem.notes (uwagi operatora, współdzielone).
+model AgendaItemNote {
+  id           String   @id @default(cuid())
+  agendaItemId String
+  agendaItem   AgendaItem @relation(fields: [agendaItemId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content      String
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([agendaItemId, userId])
+}
+
+// Dziennik wysłanych e-maili (moduł e-mail, sekcja poniżej) - niezależny od AuditLog, żeby
+// łatwo zobaczyć historię wysyłek per posiedzenie/operację.
+model EmailLog {
+  id             String   @id @default(cuid())
+  meetingId      String?
+  meeting        Meeting? @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  sentByUserId   String?
+  subject        String
+  recipientCount Int
+  kind           String   // "welcome" | "password_reset" | "meeting_adhoc" | "public_link" | "custom"
+  success        Boolean  @default(true)
+  error          String?
+  createdAt      DateTime @default(now())
+
+  @@index([meetingId])
+  @@index([createdAt])
 }
 
 // ─────────────────────────────────────────────────────────────────
