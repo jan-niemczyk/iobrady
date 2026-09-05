@@ -486,3 +486,21 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       kliknięciu "Wyniki" przy głosowaniu. Dla `isSecret` pokazuje tylko liczby zbiorcze
       (+ ew. listę obecnych przy kworum) z wyraźnym oznaczeniem "Głosowanie tajne", bez
       wyników imiennych.
+
+## YY. Faza 11: moduł e-mail (SMTP)
+- [x] `nodemailer` + `@types/nodemailer`. `src/lib/mail.ts` - `sendMail()` buduje transport NA
+      ŻĄDANIE z bieżącej `Settings` (działa od razu po zmianie w UI), zawsze zapisuje `EmailLog`
+      + `audit("EMAIL_SENT")` niezależnie od wyniku. `src/lib/mailTemplates.ts` - szablony
+      powitalny/reset hasła/ogólny (posiedzenie + opcjonalny link publiczny).
+- [x] Ustawienia: sekcja SMTP (host/port/TLS/user/hasło/nadawca) w `SettingsForm.tsx` +
+      `api/settings/route.ts` (zod) + `api/settings/test-email` (wysyła testowy e-mail na adres
+      zalogowanego operatora).
+- [x] Hooki opt-in (operator decyduje za każdym razem): `POST /api/users` (`sendEmail`) - e-mail
+      powitalny po utworzeniu konta; `POST /api/users/import` (`sendEmails`) - powitalny per
+      utworzony wiersz; `POST /api/users/reset-passwords` (`sendEmails`, pytanie `window.confirm`
+      przy hurtowym resecie) - e-mail z nowym hasłem. Checkboxy w `UserModal` i modalu importu CSV.
+- [x] E-mail ad hoc: `POST /api/meetings/[id]/email` (wybór odbiorców z uczestników posiedzenia,
+      temat, treść, opcjonalny link do widoku publicznego) - nowy przycisk "Wyślij e-mail do
+      uczestników" + modal w `MeetingPanelClient.tsx`. `POST /api/email/send` (dowolni odbiorcy,
+      niezwiązane z posiedzeniem) - przycisk "Wyślij e-mail" przy zaznaczonych kontach w
+      `ParticipantsManagerClient.tsx`.

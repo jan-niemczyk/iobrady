@@ -32,6 +32,7 @@ export function ParticipantsManagerClient({
   const [showUserModal, setShowUserModal] = useState<User | "new" | null>(null);
   const [showGroupModal, setShowGroupModal] = useState<Group | "new" | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   async function refetch() {
     const [u, g] = await Promise.all([
@@ -97,11 +98,12 @@ export function ParticipantsManagerClient({
       "UWAGA: hasła zostaną USTAWIONE NA NOWE (system nie przechowuje starych haseł). " +
       "Dotychczasowe hasła tych osób przestaną działać. Nowe hasła znajdą się na odcinkach PDF.";
     if (!window.confirm(msg)) return;
+    const sendEmails = window.confirm("Wysłać też e-mail z nowym hasłem do każdej z tych osób?");
     startTransition(async () => {
       const r = await fetch("/api/users/reset-passwords", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userIds: selectedIds }),
+        body: JSON.stringify({ userIds: selectedIds, sendEmails }),
       });
       if (!r.ok) { alert(await r.text()); return; }
       const res = await r.json().catch(() => ({ cards: [] }));
@@ -170,6 +172,8 @@ export function ParticipantsManagerClient({
                 </select>
                 <button className="btn" style={{ padding: "4px 10px", fontSize: 11 }}
                   onClick={bulkLoginCards} title="Zresetuj hasła zaznaczonym i pobierz PDF z odcinkami (login, hasło, adres, QR)">Odcinki logowania</button>
+                <button className="btn" style={{ padding: "4px 10px", fontSize: 11 }}
+                  onClick={() => setShowEmailModal(true)}>Wyślij e-mail</button>
                 <button className="btn" style={{ padding: "4px 10px", fontSize: 11, color: "var(--color-no)" }}
                   onClick={bulkDelete}>Usuń zaznaczone</button>
               </div>
@@ -267,7 +271,7 @@ export function ParticipantsManagerClient({
           onClose={() => setShowUserModal(null)}
           onSave={(method, payload) => {
             const p = payload as Record<string, unknown>;
-            if (showUserModal === "new" && p.autoGenerate) {
+            if (showUserModal === "new" && (p.autoGenerate || p.sendEmail)) {
               startTransition(async () => {
                 const r = await fetch("/api/users", {
                   method: "POST",
@@ -277,6 +281,7 @@ export function ParticipantsManagerClient({
                 if (!r.ok) { alert(await r.text()); return; }
                 const res = await r.json().catch(() => ({}));
                 await refetch();
+                if (res.emailError) alert(res.emailError);
                 if (res.password) {
                   const { downloadLoginCards } = await import("@/lib/loginCards");
                   const loginUrl = `${window.location.origin}/login`;
@@ -327,6 +332,55 @@ export function ParticipantsManagerClient({
           if (typeof window !== "undefined") window.location.reload();
         }} />
       )}
+
+      {showEmailModal && (
+        <SendEmailModal userIds={selectedIds} onClose={() => setShowEmailModal(false)} onSent={() => { setShowEmailModal(false); setSelectedIds([]); }} />
+      )}
+    </div>
+  );
+}
+
+function SendEmailModal({ userIds, onClose, onSent }: { userIds: string[]; onClose: () => void; onSent: () => void }) {
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setBusy(true); setError(null);
+    const r = await fetch("/api/email/send", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userIds, subject, body }),
+    });
+    setBusy(false);
+    if (!r.ok) { setError(await r.text()); return; }
+    onSent();
+  }
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
+      <div className="card" style={{ width: "100%", maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+        <div className="px-5 py-3 border-b border-[var(--color-rule-soft)]">
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Wyślij e-mail do zaznaczonych ({userIds.length})</h3>
+        </div>
+        <div className="p-5 space-y-3">
+          <div>
+            <label className="label">Temat</label>
+            <input className="input" value={subject} onChange={(e) => setSubject(e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Treść</label>
+            <textarea className="input" rows={6} value={body} onChange={(e) => setBody(e.target.value)} />
+          </div>
+          {error && <div className="text-sm" style={{ color: "var(--color-no)" }}>{error}</div>}
+          <div className="flex justify-end gap-2 pt-2">
+            <button className="btn" onClick={onClose} disabled={busy}>Anuluj</button>
+            <button className="btn btn-primary" onClick={submit} disabled={busy || !subject.trim() || !body.trim()}>
+              {busy ? "Wysyłam…" : "Wyślij"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -341,6 +395,7 @@ function ImportCsvModal({
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sendEmails, setSendEmails] = useState(false);
   const [results, setResults] = useState<{ email: string; name: string; password: string | null; status: string; error?: string }[] | null>(null);
 
   // Bardzo prosty parser CSV (zakładamy `,` lub `;` jako separator, opcjonalne cudzysłowy)
@@ -409,7 +464,7 @@ function ImportCsvModal({
     const r = await fetch("/api/users/import", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rows }),
+      body: JSON.stringify({ rows, sendEmails }),
     });
     setSubmitting(false);
     if (!r.ok) { setError(await r.text()); return; }
@@ -485,6 +540,10 @@ Maria,Wiśniewska,m.wisniewska@rada.pl,CHAIRPERSON,,`}
                   {error}
                 </div>
               )}
+              <label className="flex items-center gap-2 cursor-pointer mt-3">
+                <input type="checkbox" checked={sendEmails} onChange={(e) => setSendEmails(e.target.checked)} />
+                <span className="text-sm">Wyślij e-mail z danymi logowania do każdego utworzonego konta</span>
+              </label>
               <div className="mt-4 flex justify-end gap-2">
                 <button className="btn" onClick={onClose}>Anuluj</button>
                 <button
@@ -583,6 +642,7 @@ function UserModal({ user, groups, onClose, onSave, onDelete, pending }: {
   const [groupId, setGroupId] = useState(user?.groupId ?? "");
   const [password, setPassword] = useState("");
   const [autoGenerate, setAutoGenerate] = useState(false);
+  const [sendEmail, setSendEmail] = useState(false);
   const [active, setActive] = useState(user?.active ?? true);
   const isNew = !user;
 
@@ -596,6 +656,7 @@ function UserModal({ user, groups, onClose, onSave, onDelete, pending }: {
     if (isNew) {
       if (autoGenerate) payload.autoGenerate = true;
       else payload.password = password;
+      if (sendEmail) payload.sendEmail = true;
       onSave("POST", payload);
     } else {
       if (password) payload.password = password;
@@ -663,6 +724,12 @@ function UserModal({ user, groups, onClose, onSave, onDelete, pending }: {
             <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>Po utworzeniu konta pobierze się PDF z odcinkiem logowania (login, hasło, adres, QR).</p>
           )}
         </div>
+        {isNew && (
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} />
+            <span className="text-sm">Wyślij e-mail z danymi logowania</span>
+          </label>
+        )}
         {!isNew && (
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />

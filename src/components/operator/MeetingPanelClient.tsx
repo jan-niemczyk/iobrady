@@ -154,6 +154,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
   const evtRef = useRef<EventSource | null>(null);
   const [composerMode, setComposerMode] = useState<"item" | "adhoc" | "plan" | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [justClosedId, setJustClosedId] = useState<string | null>(null);
   const [resultsModal, setResultsModal] = useState<VoteState | null>(null);
   // Reasumpcja: przechowuje głosowanie, z którego kopiujemy ustawienia do nowego (ad hoc).
@@ -975,8 +976,23 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
               <AttachmentsManager meetingId={state.id} />
             </div>
           </div>
+
+          <div className="card p-4">
+            <SectionHeader title="E-mail" />
+            <div className="mt-2">
+              <button className="btn btn-sm" onClick={() => setEmailModalOpen(true)}>Wyślij e-mail do uczestników</button>
+            </div>
+          </div>
         </div>
       </div>
+
+      {emailModalOpen && (
+        <EmailMeetingModal
+          meetingId={state.id}
+          participants={state.participants.map((p) => ({ userId: p.userId, name: p.name, hasVotingRight: p.hasVotingRight }))}
+          onClose={() => setEmailModalOpen(false)}
+        />
+      )}
 
       {/* Composer głosowania (modal) */}
       {resultsModal && (
@@ -2642,6 +2658,78 @@ function BulkImportModal({ meetingId, agenda, onClose, onDone }: {
                 {busy ? "Tworzę…" : `Utwórz ${selectedItems.size} głosowań`}
               </button>
             )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmailMeetingModal({ meetingId, participants, onClose }: {
+  meetingId: string;
+  participants: { userId: string; name: string; hasVotingRight: boolean }[];
+  onClose: () => void;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set(participants.filter((p) => p.hasVotingRight).map((p) => p.userId)));
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [includePublicLink, setIncludePublicLink] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const toggle = (id: string) => setSelected((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+
+  async function submit() {
+    setBusy(true); setError(null);
+    const r = await fetch(`/api/meetings/${meetingId}/email`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userIds: Array.from(selected), subject, body, includePublicLink }),
+    });
+    setBusy(false);
+    if (!r.ok) { setError(await r.text()); return; }
+    onClose();
+  }
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
+      <div className="card" style={{ width: "100%", maxWidth: 560, maxHeight: "88vh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
+        <div className="px-5 py-3 border-b border-[var(--color-rule-soft)]">
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Wyślij e-mail do uczestników</h3>
+        </div>
+        <div className="p-5 space-y-3">
+          <div>
+            <label className="label">Odbiorcy ({selected.size})</label>
+            <div className="card-soft" style={{ maxHeight: 160, overflowY: "auto" }}>
+              {participants.map((p) => (
+                <label key={p.userId} className="flex items-center gap-2 px-3 py-1.5 text-sm border-b border-[var(--color-rule-soft)] cursor-pointer">
+                  <input type="checkbox" checked={selected.has(p.userId)} onChange={() => toggle(p.userId)} />
+                  {p.name}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="label">Temat</label>
+            <input className="input" value={subject} onChange={(e) => setSubject(e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Treść</label>
+            <textarea className="input" rows={6} value={body} onChange={(e) => setBody(e.target.value)} />
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={includePublicLink} onChange={(e) => setIncludePublicLink(e.target.checked)} />
+            <span className="text-sm">Dołącz link do widoku publicznego (jeśli włączony dla tego posiedzenia)</span>
+          </label>
+          {error && <div className="text-sm" style={{ color: "var(--color-no)" }}>{error}</div>}
+          <div className="flex justify-end gap-2 pt-2">
+            <button className="btn" onClick={onClose} disabled={busy}>Anuluj</button>
+            <button className="btn btn-primary" onClick={submit} disabled={busy || selected.size === 0 || !subject.trim() || !body.trim()}>
+              {busy ? "Wysyłam…" : "Wyślij"}
+            </button>
           </div>
         </div>
       </div>

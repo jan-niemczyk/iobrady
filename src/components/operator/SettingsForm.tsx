@@ -35,6 +35,14 @@ interface Settings {
   colorSpeakerBar: string;
   colorVoteBar: string;
   colorSessionBar: string;
+  defaultMaterialsVisibleToParticipants: boolean;
+  defaultMaterialsPublic: boolean;
+  smtpHost: string | null;
+  smtpPort: number | null;
+  smtpSecure: boolean;
+  smtpUser: string | null;
+  smtpPassword: string | null;
+  smtpFrom: string | null;
 }
 
 const QUORUM_LABELS: Record<QuorumRule, string> = {
@@ -388,6 +396,25 @@ export function SettingsForm({ initial }: { initial: Settings }) {
         </div>
       </div>
 
+      <div className="border-t border-[var(--color-rule-soft)] pt-6">
+        <h3 className="text-sm font-semibold mb-3">Materiały posiedzeń</h3>
+        <p className="text-xs mb-3" style={{ color: "var(--color-ink-3)" }}>
+          Wartości domyślne przy wgrywaniu materiału - edytowalne indywidualnie przy każdym pliku.
+        </p>
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={s.defaultMaterialsVisibleToParticipants} onChange={(e) => update("defaultMaterialsVisibleToParticipants", e.target.checked)} />
+            <span className="text-sm">Domyślnie widoczne dla radnych</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={s.defaultMaterialsPublic} onChange={(e) => update("defaultMaterialsPublic", e.target.checked)} />
+            <span className="text-sm">Domyślnie publiczne (widok publiczny posiedzenia)</span>
+          </label>
+        </div>
+      </div>
+
+      <SmtpSection s={s} update={update} />
+
       <div className="border-t border-[var(--color-rule-soft)] pt-6 flex items-center justify-end gap-3">
         {saved && <span className="text-sm" style={{ color: "var(--color-yes)" }}>✓ Zapisano</span>}
         <button type="submit" className="btn btn-primary" disabled={pending}>
@@ -395,5 +422,68 @@ export function SettingsForm({ initial }: { initial: Settings }) {
         </button>
       </div>
     </form>
+  );
+}
+
+function SmtpSection({ s, update }: {
+  s: Settings;
+  update: <K extends keyof Settings>(k: K, v: Settings[K]) => void;
+}) {
+  const [testBusy, setTestBusy] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
+
+  async function sendTest() {
+    setTestBusy(true); setTestResult(null);
+    const r = await fetch("/api/settings/test-email", { method: "POST" });
+    setTestBusy(false);
+    setTestResult(r.ok ? "Wysłano testowy e-mail." : await r.text());
+  }
+
+  return (
+    <div className="border-t border-[var(--color-rule-soft)] pt-6">
+      <h3 className="text-sm font-semibold mb-1">Poczta e-mail (SMTP)</h3>
+      <p className="text-xs mb-3" style={{ color: "var(--color-ink-3)" }}>
+        Konfiguracja skrzynki używanej do wysyłki e-maili (założenie konta, reset hasła na
+        żądanie, wiadomości dotyczące posiedzeń).
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="label">Host SMTP</label>
+          <input className="input" placeholder="smtp.example.com" value={s.smtpHost ?? ""} onChange={(e) => update("smtpHost", e.target.value || null)} />
+        </div>
+        <div>
+          <label className="label">Port</label>
+          <input className="input" type="number" placeholder="587" value={s.smtpPort ?? ""} onChange={(e) => update("smtpPort", e.target.value === "" ? null : Number(e.target.value))} />
+        </div>
+        <div>
+          <label className="label">Użytkownik</label>
+          <input className="input" value={s.smtpUser ?? ""} onChange={(e) => update("smtpUser", e.target.value || null)} />
+        </div>
+        <div>
+          <label className="label">Hasło</label>
+          <input className="input" type="password" value={s.smtpPassword ?? ""} onChange={(e) => update("smtpPassword", e.target.value || null)} />
+        </div>
+        <div>
+          <label className="label">Adres nadawcy</label>
+          <input className="input" placeholder="iobrady@twoja-domena.pl" value={s.smtpFrom ?? ""} onChange={(e) => update("smtpFrom", e.target.value || null)} />
+        </div>
+        <div className="flex items-end">
+          <label className="flex items-center gap-2 cursor-pointer mb-2.5">
+            <input type="checkbox" checked={s.smtpSecure} onChange={(e) => update("smtpSecure", e.target.checked)} />
+            <span className="text-sm">Połączenie szyfrowane (TLS/SSL)</span>
+          </label>
+        </div>
+      </div>
+      <div className="mt-3 flex items-center gap-3">
+        <button type="button" className="btn btn-sm" disabled={testBusy || !s.smtpHost} onClick={sendTest}>
+          {testBusy ? "Wysyłanie…" : "Wyślij testowy e-mail"}
+        </button>
+        {testResult && <span className="text-xs" style={{ color: "var(--color-ink-2)" }}>{testResult}</span>}
+      </div>
+      <p className="text-xs mt-2" style={{ color: "var(--color-ink-3)" }}>
+        Uwaga: przycisk testowy wysyła na podstawie aktualnie WPISANYCH powyżej wartości dopiero
+        po zapisaniu formularza - zapisz ustawienia przed testem.
+      </p>
+    </div>
   );
 }

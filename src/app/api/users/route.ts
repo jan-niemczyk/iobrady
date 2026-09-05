@@ -5,6 +5,8 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 import { randomPassword } from "@/lib/randomPassword";
+import { sendMail, MailNotConfiguredError } from "@/lib/mail";
+import { welcomeEmail } from "@/lib/mailTemplates";
 
 const schema = z.object({
   email: z.string().email().toLowerCase(),
@@ -16,6 +18,7 @@ const schema = z.object({
   password: z.string().min(6).max(200).optional(),
   autoGenerate: z.boolean().optional().default(false),
   active: z.boolean().optional().default(true),
+  sendEmail: z.boolean().optional().default(false),
 }).refine((d) => d.autoGenerate || (d.password && d.password.length >= 6), {
   message: "Podaj hasło lub wybierz automatyczne generowanie.",
   path: ["password"],
@@ -64,5 +67,20 @@ export async function POST(req: Request) {
       active: parsed.data.active ?? true,
     },
   });
-  return NextResponse.json({ ok: true, id: u.id, password: parsed.data.autoGenerate ? password : undefined });
+  let emailError: string | undefined;
+  if (parsed.data.sendEmail) {
+    try {
+      const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
+      const { subject, html } = welcomeEmail({
+        orgName: settings?.organizationName ?? "iOBRADY",
+        firstName: u.firstName, lastName: u.lastName, email: u.email, password,
+        loginUrl: `${new URL(req.url).origin}/login`,
+      });
+      await sendMail({ to: u.email, subject, html, kind: "welcome", sentByUserId: session.user.id });
+    } catch (e) {
+      emailError = e instanceof MailNotConfiguredError ? e.message : "Nie udało się wysłać e-maila powitalnego.";
+    }
+  }
+
+  return NextResponse.json({ ok: true, id: u.id, password: parsed.data.autoGenerate ? password : undefined, emailError });
 }

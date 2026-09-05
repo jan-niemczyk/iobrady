@@ -5,6 +5,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { randomPassword } from "@/lib/randomPassword";
+import { sendMail } from "@/lib/mail";
+import { welcomeEmail } from "@/lib/mailTemplates";
 
 /**
  * POST /api/users/import
@@ -28,6 +30,7 @@ const rowSchema = z.object({
 
 const schema = z.object({
   rows: z.array(rowSchema).min(1),
+  sendEmails: z.boolean().optional().default(false),
 });
 
 export async function POST(req: Request) {
@@ -40,6 +43,8 @@ export async function POST(req: Request) {
   if (!parsed.success) return new NextResponse(`Bad request: ${parsed.error.message}`, { status: 400 });
 
   const results: { email: string; name: string; password: string | null; status: "created" | "skipped" | "error"; error?: string }[] = [];
+  const settings = parsed.data.sendEmails ? await prisma.settings.findUnique({ where: { id: "singleton" } }) : null;
+  const loginUrl = `${new URL(req.url).origin}/login`;
 
   for (const row of parsed.data.rows) {
     try {
@@ -87,6 +92,14 @@ export async function POST(req: Request) {
         password,
         status: "created",
       });
+
+      if (parsed.data.sendEmails) {
+        const { subject, html } = welcomeEmail({
+          orgName: settings?.organizationName ?? "iOBRADY",
+          firstName: row.firstName, lastName: row.lastName, email: row.email, password, loginUrl,
+        });
+        await sendMail({ to: row.email, subject, html, kind: "welcome", sentByUserId: session.user.id }).catch(() => {});
+      }
     } catch (e) {
       results.push({
         email: row.email,

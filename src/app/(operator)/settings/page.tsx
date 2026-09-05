@@ -52,6 +52,14 @@ export default async function SettingsPage() {
         colorSpeakerBar: s.colorSpeakerBar,
         colorVoteBar: s.colorVoteBar,
         colorSessionBar: s.colorSessionBar,
+        defaultMaterialsVisibleToParticipants: s.defaultMaterialsVisibleToParticipants,
+        defaultMaterialsPublic: s.defaultMaterialsPublic,
+        smtpHost: s.smtpHost,
+        smtpPort: s.smtpPort,
+        smtpSecure: s.smtpSecure,
+        smtpUser: s.smtpUser,
+        smtpPassword: s.smtpPassword,
+        smtpFrom: s.smtpFrom,
       }} />
 
       <section className="mt-12 border-t border-[var(--color-rule)] pt-8">

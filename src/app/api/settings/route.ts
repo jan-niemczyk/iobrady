@@ -37,6 +37,14 @@ const schema = z.object({
   colorSpeakerBar: z.string().max(20).optional(),
   colorVoteBar: z.string().max(20).optional(),
   colorSessionBar: z.string().max(20).optional(),
+  defaultMaterialsVisibleToParticipants: z.boolean().optional(),
+  defaultMaterialsPublic: z.boolean().optional(),
+  smtpHost: z.string().max(200).nullable().optional(),
+  smtpPort: z.number().int().min(1).max(65535).nullable().optional(),
+  smtpSecure: z.boolean().optional(),
+  smtpUser: z.string().max(200).nullable().optional(),
+  smtpPassword: z.string().max(500).nullable().optional(),
+  smtpFrom: z.string().max(200).nullable().optional(),
 });
 
 export async function PATCH(req: Request) {

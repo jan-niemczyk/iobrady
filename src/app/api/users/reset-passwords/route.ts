@@ -5,9 +5,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { randomPassword } from "@/lib/randomPassword";
+import { sendMail } from "@/lib/mail";
+import { passwordResetEmail } from "@/lib/mailTemplates";
 
 const schema = z.object({
   userIds: z.array(z.string()).min(1),
+  sendEmails: z.boolean().optional().default(false),
 });
 
 /**
@@ -31,11 +34,21 @@ export async function POST(req: Request) {
   });
 
   const cards: { name: string; email: string; password: string }[] = [];
+  const settings = parsed.data.sendEmails ? await prisma.settings.findUnique({ where: { id: "singleton" } }) : null;
+  const loginUrl = `${new URL(req.url).origin}/login`;
   for (const u of users) {
     const password = randomPassword();
     const passwordHash = await bcrypt.hash(password, 10);
     await prisma.user.update({ where: { id: u.id }, data: { passwordHash } });
     cards.push({ name: `${u.firstName} ${u.lastName}`.trim(), email: u.email, password });
+
+    if (parsed.data.sendEmails) {
+      const { subject, html } = passwordResetEmail({
+        orgName: settings?.organizationName ?? "iOBRADY",
+        firstName: u.firstName, lastName: u.lastName, email: u.email, password, loginUrl,
+      });
+      await sendMail({ to: u.email, subject, html, kind: "password_reset", sentByUserId: session.user.id }).catch(() => {});
+    }
   }
 
   await audit({
