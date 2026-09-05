@@ -305,6 +305,12 @@ export function ParticipantSessionClient({ initial }: { initial: InitialState })
         </div>
       )}
 
+      <div className="mb-6">
+        <a href={`/session/archive/${state.meetingId}`} className="btn btn-sm">
+          Pełny porządek obrad, materiały i wyniki głosowań
+        </a>
+      </div>
+
       {/* KOMUNIKATY OPERATORA */}
       {state.messages && state.messages.length > 0 && (
         <div className="card mb-6" style={{ borderColor: "var(--color-seal)", borderLeftWidth: 4 }}>

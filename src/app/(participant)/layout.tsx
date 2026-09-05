@@ -1,5 +1,6 @@
 import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { ThemeToggle } from "@/components/participant/ThemeToggle";
 import { prisma } from "@/lib/db";
 
@@ -47,6 +48,11 @@ export default async function ParticipantLayout({ children }: { children: React.
           >
             iOBRADY
           </span>
+          <nav className="hidden md:flex items-center gap-3 text-sm ml-2">
+            <Link href="/session" className="hover:underline">Bieżące</Link>
+            <Link href="/session/archive" className="hover:underline">Archiwum</Link>
+            <Link href="/session/upcoming" className="hover:underline">Nadchodzące</Link>
+          </nav>
         </div>
         <div className="flex items-center gap-2 min-w-0">
           <div className="text-sm font-medium truncate hidden sm:block">

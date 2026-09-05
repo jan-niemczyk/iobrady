@@ -459,3 +459,30 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       (karta "Materiały posiedzenia", załączniki całego posiedzenia).
 - [x] `docker-compose.yml` - nowy wolumen `iobrady_attachments:/app/storage/attachments`
       (przetrwa redeploy, tak jak `esog_uploads`).
+
+## XX. Faza 9+10: archiwum/nadchodzące radnego, notatki prywatne, wyniki imienne
+- [x] Trasy radnego: `/session/archive` (lista, scoped po istnieniu `MeetingParticipant` -
+      **bez filtra po `excludedFromMeeting`**, wykluczenie nie ukrywa historii), `/session/archive/
+      [meetingId]` (porządek, materiały widoczne dla radnych, głosowania z przyciskiem "Wyniki"),
+      `/session/upcoming` + `/session/upcoming/[meetingId]` (analogicznie, bez głosowań - jeszcze
+      się nie odbyły). **Uwaga:** trasy NIE mogą nazywać się `/archive`/`/upcoming` wprost - to by
+      kolidowało z istniejącą stroną operatora `(operator)/archive` pod tym samym URL-em (Next.js
+      nie pozwala na dwie różne strony pod tą samą ścieżką) - stąd zagnieżdżenie pod `/session/`.
+  - `src/lib/participantAccess.ts` - `getMeetingParticipant()`, reużywany helper dostępu.
+  - Link "Pełny porządek obrad, materiały i wyniki głosowań" w `ParticipantSessionClient.tsx`
+    (widok BIEŻĄCEGO posiedzenia) prowadzi do TEJ SAMEJ strony `/session/archive/[meetingId]` -
+    działa identycznie dla posiedzenia w toku i zakończonego (dostęp sprawdzany wyłącznie po
+    `MeetingParticipant`, nie po statusie posiedzenia).
+- [x] Notatki prywatne: model `AgendaItemNote` (Faza 7), `GET/PUT /api/agenda/[id]/note` -
+      zawsze scoped do `session.user.id` z sesji (nigdy z parametru requestu - nie da się
+      odczytać/nadpisać cudzej notatki). Komponent `MyAgendaItemNote.tsx` (zwijany, zapis z
+      debounce 600ms) użyty w widoku archiwum/bieżącym.
+- [x] Wyniki imienne dla radnego - nowy `GET /api/votes/[id]/participant-report` (autoryzacja:
+      operator zawsze, radny tylko z `MeetingParticipant` na posiedzeniu głosowania) zwraca
+      `buildVoteReportData()` **bez zmian** - ta funkcja już samodzielnie chroni tajność (dla
+      `isSecret` per-osoba ma tylko obecność, nigdy treść głosu). Nowy komponent
+      `VoteResultsView.tsx` - kolorowa oprawa (kafelki `.stat` w kolorach za/przeciw/wstrzym.,
+      wyniki imienne pogrupowane po klubach), otwierany jako KOMUNIKAT/modal (nie link) po
+      kliknięciu "Wyniki" przy głosowaniu. Dla `isSecret` pokazuje tylko liczby zbiorcze
+      (+ ew. listę obecnych przy kworum) z wyraźnym oznaczeniem "Głosowanie tajne", bez
+      wyników imiennych.
