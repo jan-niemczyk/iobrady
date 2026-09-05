@@ -1377,7 +1377,7 @@ function OperatorOnBehalfPanel({
       {open && (
         <div className="mt-2">
           <input
-            className="input"
+            className="form-control"
             placeholder="Wyszukaj uczestnika…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -1668,27 +1668,27 @@ function VoteComposerModal({
 
         <div className="p-6 space-y-5">
           <div>
-            <label className="label" htmlFor="vc-title">Tytuł / wniosek</label>
-            <input id="vc-title" className="input" required value={title} onChange={(e) => setTitle(e.target.value)} />
+            <label className="form-label" htmlFor="vc-title">Tytuł / wniosek</label>
+            <input id="vc-title" className="form-control" required value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
 
           <div>
-            <label className="label" htmlFor="vc-desc">Opis (opcjonalnie)</label>
-            <textarea id="vc-desc" className="input" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <label className="form-label" htmlFor="vc-desc">Opis (opcjonalnie)</label>
+            <textarea id="vc-desc" className="form-control" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
 
           {mode === "adhoc" && (
             <div>
-              <label className="label" htmlFor="vc-context">Kontekst w raporcie (opcjonalnie)</label>
-              <input id="vc-context" className="input" placeholder="np. Wniosek zgłoszony w pkt 4" value={contextLabel} onChange={(e) => setContextLabel(e.target.value)} />
+              <label className="form-label" htmlFor="vc-context">Kontekst w raporcie (opcjonalnie)</label>
+              <input id="vc-context" className="form-control" placeholder="np. Wniosek zgłoszony w pkt 4" value={contextLabel} onChange={(e) => setContextLabel(e.target.value)} />
               <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>Zastępuje nazwę posiedzenia w nagłówku raportu tego głosowania.</p>
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">Typ</label>
-              <select className="input" value={type} onChange={(e) => setType(e.target.value as VoteType)}>
+              <label className="form-label">Typ</label>
+              <select className="form-select" value={type} onChange={(e) => setType(e.target.value as VoteType)}>
                 <option value="STANDARD">Zwykłe (za / przeciw / wstrzymuję się)</option>
                 <option value="LIST">Lista kandydatów / opcji</option>
                 <option value="PACKAGE">Pakietowe (wiele pozycji, każda za/przeciw/wstrzym)</option>
@@ -1696,8 +1696,8 @@ function VoteComposerModal({
               </select>
             </div>
             <div>
-              <label className="label">Widoczność</label>
-              <select className="input" value={visibility} onChange={(e) => setVisibility(e.target.value as VoteVisibility)}>
+              <label className="form-label">Widoczność</label>
+              <select className="form-select" value={visibility} onChange={(e) => setVisibility(e.target.value as VoteVisibility)}>
                 <option value="OPEN">Jawne (z imienną historią)</option>
                 <option value="SECRET">Tajne (anonimowe po zamknięciu)</option>
               </select>
@@ -1707,9 +1707,9 @@ function VoteComposerModal({
           {type !== "QUORUM" && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="label">Typ większości</label>
+                <label className="form-label">Typ większości</label>
                 <select
-                  className="input"
+                  className="form-select"
                   value={majorityKind}
                   onChange={(e) => setMajorityKind(e.target.value as MajorityKind)}
                 >
@@ -1721,9 +1721,9 @@ function VoteComposerModal({
               </div>
               {majorityKind !== "SIMPLE" && (
                 <div>
-                  <label className="label">Mianownik</label>
+                  <label className="form-label">Mianownik</label>
                   <select
-                    className="input"
+                    className="form-select"
                     value={majorityBase}
                     onChange={(e) => setMajorityBase(e.target.value as MajorityBase)}
                   >
@@ -1739,7 +1739,7 @@ function VoteComposerModal({
           {type === "LIST" && (
             <div className="border-t border-[var(--color-rule-soft)] pt-5">
               <div className="flex items-center justify-between mb-3">
-                <label className="label" style={{ marginBottom: 0 }}>Kandydaci / opcje</label>
+                <label className="form-label" style={{ marginBottom: 0 }}>Kandydaci / opcje</label>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -1767,7 +1767,7 @@ function VoteComposerModal({
                   <li key={i} className="flex items-center gap-2">
                     <span className="mono text-xs w-6 text-right" style={{ color: "var(--color-ink-3)" }}>{i + 1}.</span>
                     <input
-                      className="input"
+                      className="form-control"
                       value={o}
                       placeholder="Nazwisko i imię"
                       onChange={(e) => setOptions((arr) => arr.map((v, idx) => (idx === i ? e.target.value : v)))}
@@ -1785,12 +1785,12 @@ function VoteComposerModal({
               </ul>
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <div>
-                  <label className="label">Co najmniej zaznaczeń</label>
-                  <input type="number" min={0} className="input" value={minSel} onChange={(e) => setMinSel(parseInt(e.target.value || "0", 10))} />
+                  <label className="form-label">Co najmniej zaznaczeń</label>
+                  <input type="number" min={0} className="form-control" value={minSel} onChange={(e) => setMinSel(parseInt(e.target.value || "0", 10))} />
                 </div>
                 <div>
-                  <label className="label">Co najwyżej zaznaczeń</label>
-                  <input type="number" min={1} className="input" value={maxSel} onChange={(e) => setMaxSel(parseInt(e.target.value || "1", 10))} />
+                  <label className="form-label">Co najwyżej zaznaczeń</label>
+                  <input type="number" min={1} className="form-control" value={maxSel} onChange={(e) => setMaxSel(parseInt(e.target.value || "1", 10))} />
                 </div>
               </div>
               <p className="text-xs mt-3" style={{ color: "var(--color-ink-3)" }}>
@@ -1802,7 +1802,7 @@ function VoteComposerModal({
           {type === "PACKAGE" && (
             <div className="border-t border-[var(--color-rule-soft)] pt-5">
               <div className="flex items-center justify-between mb-3">
-                <label className="label" style={{ marginBottom: 0 }}>Pozycje pakietu</label>
+                <label className="form-label" style={{ marginBottom: 0 }}>Pozycje pakietu</label>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -1820,13 +1820,13 @@ function VoteComposerModal({
                     <span className="mono text-xs w-6 text-right mt-2" style={{ color: "var(--color-ink-3)" }}>{i + 1}.</span>
                     <div className="flex-1 space-y-1">
                       <input
-                        className="input"
+                        className="form-control"
                         value={it.label}
                         placeholder="Tytuł pozycji (np. Poprawka nr 1)"
                         onChange={(e) => setPackageItems((arr) => arr.map((v, idx) => (idx === i ? { ...v, label: e.target.value } : v)))}
                       />
                       <input
-                        className="input"
+                        className="form-control"
                         value={it.description}
                         placeholder="Opis (opcjonalnie)"
                         style={{ fontSize: 13 }}
@@ -1852,7 +1852,7 @@ function VoteComposerModal({
             {pinRequired && (
               <div className="flex items-center gap-2 mt-3">
                 <input
-                  className="input"
+                  className="form-control"
                   style={{ maxWidth: 120, fontSize: 18, letterSpacing: "0.3em", textAlign: "center" }}
                   value={pinCode}
                   placeholder="0000"
@@ -1868,8 +1868,8 @@ function VoteComposerModal({
           </div>
 
           <div className="border-t border-[var(--color-rule-soft)] pt-4">
-            <label className="label">Pierwszy głos ważny (nie można zmienić)</label>
-            <select className="input" value={firstVoteFinal} onChange={(e) => setFirstVoteFinal(e.target.value as "" | "yes" | "no")}>
+            <label className="form-label">Pierwszy głos ważny (nie można zmienić)</label>
+            <select className="form-select" value={firstVoteFinal} onChange={(e) => setFirstVoteFinal(e.target.value as "" | "yes" | "no")}>
               <option value="">Domyślnie (wg ustawień globalnych)</option>
               <option value="yes">Tak - pierwszy głos ostateczny</option>
               <option value="no">Nie - można zmieniać do zamknięcia</option>
@@ -1954,7 +1954,7 @@ function VoteComposerModal({
                 value={pasteText}
                 onChange={(e) => setPasteText(e.target.value)}
                 rows={10}
-                className="input"
+                className="form-control"
                 style={{ width: "100%", fontFamily: "inherit", resize: "vertical" }}
                 placeholder={"Jan Kowalski\nAnna Nowak\nPiotr Wiśniewski"}
               />
@@ -2148,7 +2148,7 @@ function MessagesPanel({
       <SectionHeader title="Komunikaty" />
       <div className="p-4">
         <textarea
-          className="input"
+          className="form-control"
           rows={2}
           placeholder="Treść komunikatu dla uczestników…"
           value={draft}
@@ -2263,18 +2263,18 @@ function EditMeetingModal({
           <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>Edycja posiedzenia</h3>
           <div className="space-y-3">
             <div>
-              <label className="label">Nazwa</label>
-              <input className="input" value={name} onChange={(e) => setName(e.target.value)} required />
+              <label className="form-label">Nazwa</label>
+              <input className="form-control" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div>
-              <label className="label">Numer (np. „XII/2025”)</label>
-              <input className="input" value={number} onChange={(e) => setNumber(e.target.value)} required />
+              <label className="form-label">Numer (np. „XII/2025”)</label>
+              <input className="form-control" value={number} onChange={(e) => setNumber(e.target.value)} required />
             </div>
             <div>
-              <label className="label">Data i godzina</label>
+              <label className="form-label">Data i godzina</label>
               <input
                 type="datetime-local"
-                className="input"
+                className="form-control"
                 value={scheduledLocal}
                 onChange={(e) => setScheduledLocal(e.target.value)}
                 required
@@ -2348,14 +2348,14 @@ function RecomputeMajorityModal({
         </p>
         <div className="space-y-3">
           <div>
-            <label className="label">Rodzaj większości</label>
-            <select className="input" value={kind} onChange={(e) => setKind(e.target.value as MajorityKind)}>
+            <label className="form-label">Rodzaj większości</label>
+            <select className="form-select" value={kind} onChange={(e) => setKind(e.target.value as MajorityKind)}>
               {Object.entries(KIND_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
             </select>
           </div>
           <div>
-            <label className="label">Podstawa</label>
-            <select className="input" value={base} onChange={(e) => setBase(e.target.value as MajorityBase)}>
+            <label className="form-label">Podstawa</label>
+            <select className="form-select" value={base} onChange={(e) => setBase(e.target.value as MajorityBase)}>
               <option value="OF_VOTERS">głosujących</option>
               <option value="OF_PRESENT">obecnych</option>
               <option value="OF_FULL_BODY">ustawowego składu</option>
@@ -2399,14 +2399,14 @@ function EditVoteModal({
           <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>Edycja głosowania</h3>
           <div className="space-y-3">
             <div>
-              <label className="label">Nazwa głosowania</label>
-              <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} required autoFocus />
+              <label className="form-label">Nazwa głosowania</label>
+              <input className="form-control" value={title} onChange={(e) => setTitle(e.target.value)} required autoFocus />
             </div>
             {showContext && (
               <div>
-                <label className="label">Kontekst w raporcie</label>
+                <label className="form-label">Kontekst w raporcie</label>
                 <input
-                  className="input"
+                  className="form-control"
                   value={context}
                   onChange={(e) => setContext(e.target.value)}
                   placeholder="np. Wniosek zgłoszony w pkt 4 (puste = nazwa posiedzenia)"
@@ -2508,7 +2508,7 @@ function AddToListRow({ listId, participants, act }: {
   const [userId, setUserId] = useState("");
   return (
     <div className="flex items-center gap-1">
-      <select className="input" style={{ fontSize: 11, flex: 1 }} value={userId} onChange={(e) => setUserId(e.target.value)}>
+      <select className="form-select" style={{ fontSize: 11, flex: 1 }} value={userId} onChange={(e) => setUserId(e.target.value)}>
         <option value="">- dopisz uczestnika -</option>
         {participants.map((p) => <option key={p.userId} value={p.userId}>{p.name}{!p.hasVotingRight && " (bez prawa)"}</option>)}
       </select>
@@ -2580,7 +2580,7 @@ function BulkImportModal({ meetingId, agenda, onClose, onDone }: {
           {mode === "text" ? (
             <>
               <textarea
-                className="input" rows={8}
+                className="form-control" rows={8}
                 placeholder={"np.\nUchwała w sprawie budżetu\nUchwała w sprawie planu zagospodarowania\nUchwała w sprawie zmiany statutu"}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
@@ -2601,8 +2601,8 @@ function BulkImportModal({ meetingId, agenda, onClose, onDone }: {
               </div>
               <div className="text-xs" style={{ color: "var(--color-ink-3)" }}>Zaznaczono punktów: <b>{selectedItems.size}</b></div>
               <div>
-                <label className="label">Rodzaj głosowania</label>
-                <select className="input" value={voteType} onChange={(e) => setVoteType(e.target.value as "STANDARD" | "QUORUM")}>
+                <label className="form-label">Rodzaj głosowania</label>
+                <select className="form-select" value={voteType} onChange={(e) => setVoteType(e.target.value as "STANDARD" | "QUORUM")}>
                   <option value="STANDARD">Zwykłe</option>
                   <option value="QUORUM">Kworum</option>
                 </select>
@@ -2612,23 +2612,23 @@ function BulkImportModal({ meetingId, agenda, onClose, onDone }: {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">Jawność</label>
-              <select className="input" value={visibility} onChange={(e) => setVisibility(e.target.value as "OPEN" | "SECRET")}>
+              <label className="form-label">Jawność</label>
+              <select className="form-select" value={visibility} onChange={(e) => setVisibility(e.target.value as "OPEN" | "SECRET")}>
                 <option value="OPEN">Jawne</option>
                 <option value="SECRET">Tajne</option>
               </select>
             </div>
             <div>
-              <label className="label">Rodzaj większości</label>
-              <select className="input" value={majorityKind} onChange={(e) => setMajorityKind(e.target.value as "SIMPLE" | "ABSOLUTE" | "QUALIFIED_2_3")}>
+              <label className="form-label">Rodzaj większości</label>
+              <select className="form-select" value={majorityKind} onChange={(e) => setMajorityKind(e.target.value as "SIMPLE" | "ABSOLUTE" | "QUALIFIED_2_3")}>
                 <option value="SIMPLE">Zwykła</option>
                 <option value="ABSOLUTE">Bezwzględna</option>
                 <option value="QUALIFIED_2_3">Kwalifikowana 2/3</option>
               </select>
             </div>
             <div>
-              <label className="label">Podstawa większości</label>
-              <select className="input" value={majorityBase} onChange={(e) => setMajorityBase(e.target.value as "OF_VOTERS" | "OF_PRESENT" | "OF_STATUTORY")}>
+              <label className="form-label">Podstawa większości</label>
+              <select className="form-select" value={majorityBase} onChange={(e) => setMajorityBase(e.target.value as "OF_VOTERS" | "OF_PRESENT" | "OF_STATUTORY")}>
                 <option value="OF_VOTERS">Głosujących</option>
                 <option value="OF_PRESENT">Obecnych</option>
                 <option value="OF_STATUTORY">Ustawowego składu</option>
@@ -2638,8 +2638,8 @@ function BulkImportModal({ meetingId, agenda, onClose, onDone }: {
 
           {mode === "text" && (
             <div>
-              <label className="label">Punkt porządku (opcjonalnie)</label>
-              <select className="input" value={agendaItemId} onChange={(e) => setAgendaItemId(e.target.value)}>
+              <label className="form-label">Punkt porządku (opcjonalnie)</label>
+              <select className="form-select" value={agendaItemId} onChange={(e) => setAgendaItemId(e.target.value)}>
                 <option value="">Bez punktu (ad hoc)</option>
                 {agenda.map((a) => <option key={a.id} value={a.id}>{a.number}. {a.title}</option>)}
               </select>
@@ -2703,7 +2703,7 @@ function EmailMeetingModal({ meetingId, participants, onClose }: {
         </div>
         <div className="p-5 space-y-3">
           <div>
-            <label className="label">Odbiorcy ({selected.size})</label>
+            <label className="form-label">Odbiorcy ({selected.size})</label>
             <div className="card-soft" style={{ maxHeight: 160, overflowY: "auto" }}>
               {participants.map((p) => (
                 <label key={p.userId} className="flex items-center gap-2 px-3 py-1.5 text-sm border-b border-[var(--color-rule-soft)] cursor-pointer">
@@ -2714,12 +2714,12 @@ function EmailMeetingModal({ meetingId, participants, onClose }: {
             </div>
           </div>
           <div>
-            <label className="label">Temat</label>
-            <input className="input" value={subject} onChange={(e) => setSubject(e.target.value)} />
+            <label className="form-label">Temat</label>
+            <input className="form-control" value={subject} onChange={(e) => setSubject(e.target.value)} />
           </div>
           <div>
-            <label className="label">Treść</label>
-            <textarea className="input" rows={6} value={body} onChange={(e) => setBody(e.target.value)} />
+            <label className="form-label">Treść</label>
+            <textarea className="form-control" rows={6} value={body} onChange={(e) => setBody(e.target.value)} />
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={includePublicLink} onChange={(e) => setIncludePublicLink(e.target.checked)} />

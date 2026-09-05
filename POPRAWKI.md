@@ -577,3 +577,10 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       `guests/page.tsx`, `templates/page.tsx` sprawdzone - to same server-side pobieranie danych
       i przekazanie do już przekonwertowanych komponentów klienckich, bez własnych klas do
       zmiany.
+- [x] `MeetingPanelClient.tsx` (2739 l.) - ostatni, największy plik. Wszystkie pola `.input`
+      (33 wystąpienia, w tym w modalach: tworzenie/edycja głosowania ad hoc, hurtowe głosowania
+      wg punktów, edycja posiedzenia, korekta większości, dopisanie do listy mówców/wniosków,
+      e-mail do uczestników) → `form-control`, a `<select>` z `className="input"` (13 selectów)
+      → `form-select`; `.label` (27 wystąpień) → `form-label`. Konwersja w pełni mechaniczna
+      (bez zmian układu/JSX) - to kończy przemalowanie panelu operatora na Bootstrap zapoczątkowane
+      w Fazie 0 (patrz sekcje AAB-AAC).
