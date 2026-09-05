@@ -566,3 +566,7 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       mówcy/gościa). `VoteReport.tsx` sprawdzony - celowo bez zmian: komponent jest w całości
       czarno-biały i drukowalny (inline style, zero klas `.input`/`.label`/`.card`), zgodnie z
       zastrzeżeniem w planie o zachowaniu wyglądu wydruku.
+- [x] `ParticipantsManagerClient.tsx` - wszystkie pola `.input`→`form-control` (w tym warianty
+      `.input mono`), selecty (rola, klub, hurtowe przypisanie do grupy)→`form-select`,
+      `.label`→`form-label` we wszystkich modalach (nowy/edycja uczestnika, grupa, e-mail do
+      zaznaczonych, import CSV).

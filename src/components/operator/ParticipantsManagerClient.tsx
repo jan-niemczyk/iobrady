@@ -155,7 +155,7 @@ export function ParticipantsManagerClient({
                 <button className="btn" style={{ padding: "4px 10px", fontSize: 11 }}
                   onClick={() => setSelectedIds([])}>Odznacz</button>
                 <select
-                  className="input"
+                  className="form-select"
                   style={{ padding: "4px 8px", fontSize: 11, width: "auto" }}
                   value=""
                   onChange={(e) => {
@@ -365,12 +365,12 @@ function SendEmailModal({ userIds, onClose, onSent }: { userIds: string[]; onClo
         </div>
         <div className="p-5 space-y-3">
           <div>
-            <label className="label">Temat</label>
-            <input className="input" value={subject} onChange={(e) => setSubject(e.target.value)} />
+            <label className="form-label">Temat</label>
+            <input className="form-control" value={subject} onChange={(e) => setSubject(e.target.value)} />
           </div>
           <div>
-            <label className="label">Treść</label>
-            <textarea className="input" rows={6} value={body} onChange={(e) => setBody(e.target.value)} />
+            <label className="form-label">Treść</label>
+            <textarea className="form-control" rows={6} value={body} onChange={(e) => setBody(e.target.value)} />
           </div>
           {error && <div className="text-sm" style={{ color: "var(--color-no)" }}>{error}</div>}
           <div className="flex justify-end gap-2 pt-2">
@@ -529,7 +529,7 @@ Maria,Wiśniewska,m.wisniewska@rada.pl,CHAIRPERSON,,`}
                 </pre>
               </details>
               <textarea
-                className="input mono"
+                className="form-control mono"
                 style={{ minHeight: 200, fontSize: 12 }}
                 placeholder="Wklej tutaj zawartość CSV…"
                 value={text}
@@ -669,34 +669,34 @@ function UserModal({ user, groups, onClose, onSave, onDelete, pending }: {
       <form onSubmit={submit} className="p-6 space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="label">Imię</label>
-            <input className="input" required value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            <label className="form-label">Imię</label>
+            <input className="form-control" required value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </div>
           <div>
-            <label className="label">Nazwisko</label>
-            <input className="input" required value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            <label className="form-label">Nazwisko</label>
+            <input className="form-control" required value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </div>
         </div>
         <div>
-          <label className="label">E-mail (login)</label>
-          <input type="email" className="input" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <label className="form-label">E-mail (login)</label>
+          <input type="email" className="form-control" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div>
-          <label className="label">Funkcja (opcjonalnie)</label>
-          <input className="input" placeholder="np. Przewodniczący, Wiceprzewodnicząca" value={functionTitle} onChange={(e) => setFunctionTitle(e.target.value)} />
+          <label className="form-label">Funkcja (opcjonalnie)</label>
+          <input className="form-control" placeholder="np. Przewodniczący, Wiceprzewodnicząca" value={functionTitle} onChange={(e) => setFunctionTitle(e.target.value)} />
           <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>Pokazywana na liście mówców, prezentacji i transmisji.</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="label">Rola</label>
-            <select className="input" value={role} onChange={(e) => setRole(e.target.value as Role)}>
+            <label className="form-label">Rola</label>
+            <select className="form-select" value={role} onChange={(e) => setRole(e.target.value as Role)}>
               <option value="PARTICIPANT">Uczestnik</option>
               <option value="OPERATOR">Operator</option>
             </select>
           </div>
           <div>
-            <label className="label">Klub / koło</label>
-            <select className="input" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+            <label className="form-label">Klub / koło</label>
+            <select className="form-select" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
               <option value="">- bez grupy -</option>
               {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
@@ -704,7 +704,7 @@ function UserModal({ user, groups, onClose, onSave, onDelete, pending }: {
         </div>
         <div>
           <div className="flex items-center justify-between">
-            <label className="label" style={{ marginBottom: 0 }}>{isNew ? "Hasło" : "Nowe hasło (zostaw puste, jeśli bez zmiany)"}</label>
+            <label className="form-label" style={{ marginBottom: 0 }}>{isNew ? "Hasło" : "Nowe hasło (zostaw puste, jeśli bez zmiany)"}</label>
             {isNew && (
               <label className="flex items-center gap-1.5 cursor-pointer text-xs" style={{ color: "var(--color-ink-2)" }}>
                 <input type="checkbox" checked={autoGenerate} onChange={(e) => setAutoGenerate(e.target.checked)} />
@@ -713,7 +713,7 @@ function UserModal({ user, groups, onClose, onSave, onDelete, pending }: {
             )}
           </div>
           <input
-            type="password" className="input"
+            type="password" className="form-control"
             required={isNew && !autoGenerate} minLength={6}
             disabled={isNew && autoGenerate}
             value={password} onChange={(e) => setPassword(e.target.value)}
@@ -778,18 +778,18 @@ function GroupModal({ group, onClose, onSave, onDelete, pending }: {
     <ModalShell title={isNew ? "Nowa grupa" : "Edycja grupy"} onClose={onClose}>
       <form onSubmit={submit} className="p-6 space-y-4">
         <div>
-          <label className="label">Pełna nazwa</label>
-          <input className="input" required value={name} onChange={(e) => setName(e.target.value)} placeholder="np. Klub Niezależnych" />
+          <label className="form-label">Pełna nazwa</label>
+          <input className="form-control" required value={name} onChange={(e) => setName(e.target.value)} placeholder="np. Klub Niezależnych" />
         </div>
         <div>
-          <label className="label">Skrót (do tabel)</label>
-          <input className="input" value={shortName} onChange={(e) => setShortName(e.target.value)} placeholder="np. KN" maxLength={20} />
+          <label className="form-label">Skrót (do tabel)</label>
+          <input className="form-control" value={shortName} onChange={(e) => setShortName(e.target.value)} placeholder="np. KN" maxLength={20} />
         </div>
         <div>
-          <label className="label">Kolor</label>
+          <label className="form-label">Kolor</label>
           <div className="flex items-center gap-3">
             <input type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ width: 48, height: 32, border: "1px solid var(--color-rule)", background: "transparent" }} />
-            <input type="text" className="input mono" style={{ fontSize: 13 }} value={color} onChange={(e) => setColor(e.target.value)} pattern="#[0-9A-Fa-f]{6}" />
+            <input type="text" className="form-control mono" style={{ fontSize: 13 }} value={color} onChange={(e) => setColor(e.target.value)} pattern="#[0-9A-Fa-f]{6}" />
           </div>
         </div>
 
