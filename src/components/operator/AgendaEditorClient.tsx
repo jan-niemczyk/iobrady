@@ -5,6 +5,7 @@ import Link from "next/link";
 import { IconArrowUp, IconArrowDown, IconArrowLeft } from "@/components/ui/Icon";
 import type { AgendaItemStatus } from "@prisma/client";
 import { AGENDA_ITEM_STATUS_LABEL } from "@/lib/labels";
+import { AttachmentsManager } from "@/components/operator/AttachmentsManager";
 
 interface AgendaItem {
   id: string;
@@ -31,6 +32,7 @@ export function AgendaEditorClient({
   const [agenda, setAgenda] = useState(initialAgenda);
   const [pending, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [attachmentsOpenId, setAttachmentsOpenId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
@@ -141,6 +143,7 @@ export function AgendaEditorClient({
                     <button className="btn" style={{ padding: "4px 8px", fontSize: 11 }} disabled={pending} onClick={() => act("PATCH", `/api/agenda/${a.id}`, { isSubItem: !a.isSubItem }, true)} title={a.isSubItem ? "Zmień na zwykły punkt" : "Zmień na podpunkt (wcięcie)"}>{a.isSubItem ? "Punkt" : "Podpunkt"}</button>
                     <button className="btn" style={{ padding: "4px 8px", fontSize: 11 }} disabled={pending} onClick={() => act("PATCH", `/api/agenda/${a.id}`, { hiddenFromDisplay: !a.hiddenFromDisplay })} title={a.hiddenFromDisplay ? "Pokaż na prezentacji" : "Ukryj na prezentacji"}>{a.hiddenFromDisplay ? "Pokaż" : "Ukryj"}</button>
                     <button className="btn" style={{ padding: "4px 8px", fontSize: 11 }} disabled={pending} onClick={() => setEditingId(a.id)}>Edytuj</button>
+                    <button className="btn" style={{ padding: "4px 8px", fontSize: 11 }} onClick={() => setAttachmentsOpenId(attachmentsOpenId === a.id ? null : a.id)}>Materiały</button>
                     {a.status === "PENDING" && (
                       <button className="btn" style={{ padding: "4px 8px", fontSize: 11 }} disabled={pending} onClick={() => act("POST", `/api/agenda/${a.id}/skip`)}>Pomiń</button>
                     )}
@@ -154,6 +157,11 @@ export function AgendaEditorClient({
                       onClick={() => { if (window.confirm("Usunąć punkt?")) act("DELETE", `/api/agenda/${a.id}`); }}
                     >Usuń</button>
                   </div>
+                  {attachmentsOpenId === a.id && (
+                    <div className="mt-3" style={{ paddingLeft: 52 }}>
+                      <AttachmentsManager meetingId={meetingId} agendaItemId={a.id} />
+                    </div>
+                  )}
                 </div>
               )}
             </li>

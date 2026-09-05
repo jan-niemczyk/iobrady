@@ -12,6 +12,7 @@ import { DiscussionClockPanel } from "@/components/operator/DiscussionClockPanel
 import { AttendanceCheckPanel } from "@/components/operator/AttendanceCheckPanel";
 import { DisplayControlPanel } from "@/components/operator/DisplayControlPanel";
 import { MeetingSettingsPanel } from "@/components/operator/MeetingSettingsPanel";
+import { AttachmentsManager } from "@/components/operator/AttachmentsManager";
 import { IconClose, IconChevronDown, IconChevronRight, IconUsers } from "@/components/ui/Icon";
 import { downloadReportsPdf, downloadReportsZip, downloadSignatureList, downloadAttendanceMergedList, downloadAttendanceLog, downloadCheckReportPdf } from "@/lib/generatePdf";
 import { downloadAgendaPdf, downloadAgendaDocx, downloadProtocolPdf, downloadProtocolDocx, type ProtocolData } from "@/lib/generateProtocol";
@@ -966,6 +967,14 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
 
           {/* Komunikaty */}
           <MessagesPanel meetingId={state.id} messages={state.messages} pending={pending} onPublished={refetch} />
+
+          {/* Materiały całego posiedzenia (bez przypisania do punktu porządku) */}
+          <div className="card p-4">
+            <SectionHeader title="Materiały posiedzenia" />
+            <div className="mt-2">
+              <AttachmentsManager meetingId={state.id} />
+            </div>
+          </div>
         </div>
       </div>
 

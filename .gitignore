@@ -12,3 +12,4 @@ src/app/bootstrap-scoped.css
 src/app/bootstrap-scoped.css.map
 next-env.d.ts
 tsconfig.tsbuildinfo
+storage/

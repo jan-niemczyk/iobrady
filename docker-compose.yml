@@ -44,6 +44,8 @@ services:
     volumes:
       # Trwałe miejsce na wgrane pliki (logo prezentacji) - przetrwa redeploy
       - esog_uploads:/app/public/uploads
+      # Materiały posiedzeń (poza public/ - dostęp tylko przez autoryzowany endpoint)
+      - iobrady_attachments:/app/storage/attachments
     command: >
       sh -c "
         npx prisma db push --accept-data-loss &&
@@ -74,5 +76,6 @@ services:
 volumes:
   esog_db:
   esog_uploads:
+  iobrady_attachments:
   caddy_data:
   caddy_config:

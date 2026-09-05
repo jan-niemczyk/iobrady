@@ -432,3 +432,30 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       DATABASE_URL w trakcie builda wysypywało build - naprawione).
 - [x] `INSTRUKCJA-DEPLOY.md` zaktualizowana pod kreator (Krok 3 bez danych operatora w `.env`,
       Krok 5 opisuje `/setup` zamiast ręcznego zakładania konta).
+
+# Część 2: materiały, dostęp radnego, notatki, e-mail, widok publiczny
+
+## VV. Faza 7: model danych
+- [x] Nowe modele: `Attachment` (materiał posiedzenia/punktu, flagi widoczności dla
+      radnych/publicznie), `AgendaItemNote` (prywatna notatka radnego, unikalna per
+      punkt+użytkownik), `EmailLog` (dziennik wysłanych e-maili). `Meeting.publicEnabled`
+      (domyślnie false). `Settings`: `defaultMaterialsVisibleToParticipants`,
+      `defaultMaterialsPublic`, pełna konfiguracja SMTP (`smtpHost/Port/Secure/User/Password/From`
+      - hasło świadomie w bazie, nie w env). `AuditAction`: `EMAIL_SENT`,
+      `ATTACHMENT_UPLOADED`, `ATTACHMENT_DELETED`.
+
+## WW. Faza 8: materiały/załączniki
+- [x] Pliki przechowywane POZA `public/` (`storage/attachments/`, nowy `src/lib/attachments.ts`)
+      - Next.js nie serwuje ich statycznie, jedyny dostęp to autoryzowany endpoint. Whitelist
+      PDF/DOCX/XLSX/PNG/JPG/WEBP, limit 20 MB, nazwa na dysku losowa (`crypto.randomUUID()`).
+- [x] `src/lib/participantAccess.ts` - `getMeetingParticipant()`, reużywany helper dostępu.
+- [x] Endpointy: `POST/GET /api/meetings/[id]/attachments` (operator - upload/lista),
+      `PATCH/DELETE /api/attachments/[id]` (widoczność/usunięcie), `GET
+      /api/attachments/[id]/download` (kontrola dostępu: operator zawsze; radny - tylko jeśli ma
+      `MeetingParticipant` I `visibleToParticipants`; bez sesji - tylko jeśli
+      `meeting.publicEnabled` I `visibleToPublic`; w innym wypadku 404 bez ujawniania przyczyny).
+- [x] `AttachmentsManager.tsx` (nowy, reużywalny) - lista/upload/toggle widoczności/usuwanie.
+      Wpięty w `AgendaEditorClient.tsx` (przycisk "Materiały" per punkt) i `MeetingPanelClient.tsx`
+      (karta "Materiały posiedzenia", załączniki całego posiedzenia).
+- [x] `docker-compose.yml` - nowy wolumen `iobrady_attachments:/app/storage/attachments`
+      (przetrwa redeploy, tak jak `esog_uploads`).
