@@ -24,6 +24,7 @@ const schema = z.object({
   speakerDefaultRegular: z.boolean().optional(),
   speakerDefaultAdVocem: z.boolean().optional(),
   speakerDefaultFormalMotion: z.boolean().optional(),
+  publicEnabled: z.boolean().optional(),
 });
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -55,6 +56,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   if (parsed.data.speakerDefaultRegular !== undefined) data.speakerDefaultRegular = parsed.data.speakerDefaultRegular;
   if (parsed.data.speakerDefaultAdVocem !== undefined) data.speakerDefaultAdVocem = parsed.data.speakerDefaultAdVocem;
   if (parsed.data.speakerDefaultFormalMotion !== undefined) data.speakerDefaultFormalMotion = parsed.data.speakerDefaultFormalMotion;
+  if (parsed.data.publicEnabled !== undefined) data.publicEnabled = parsed.data.publicEnabled;
 
   await prisma.meeting.update({ where: { id }, data });
 

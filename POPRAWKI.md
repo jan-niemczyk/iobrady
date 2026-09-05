@@ -504,3 +504,20 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       uczestników" + modal w `MeetingPanelClient.tsx`. `POST /api/email/send` (dowolni odbiorcy,
       niezwiązane z posiedzeniem) - przycisk "Wyślij e-mail" przy zaznaczonych kontach w
       `ParticipantsManagerClient.tsx`.
+
+## ZZ. Faza 12: widok publiczny posiedzenia
+- [x] `Meeting.publicEnabled` (Faza 7) - przełącznik w `MeetingSettingsPanel.tsx` (domyślnie
+      wyłączony, operator włącza świadomie per posiedzenie), PATCH przez istniejący
+      `api/meetings/[id]/route.ts`.
+- [x] Nowa publiczna trasa `src/app/public/[meetingId]/page.tsx` (dodana do listy publicznych
+      ścieżek w `src/middleware.ts`) - bez logowania. `meeting.publicEnabled !== true` -> 404
+      (nie zdradza, czy posiedzenie istnieje).
+- [x] Układ: nagłówek z logo/herbem, nazwą organu i nazwą posiedzenia (jak ekran domyślny
+      prezentacji), poniżej materiały ogólne posiedzenia i pełny porządek obrad - przy każdym
+      punkcie podpięte materiały publiczne ORAZ wyniki zakończonych w nim głosowań, renderowane
+      OD RAZU w treści strony (nie jako osobny link/zakładka). Dla głosowań jawnych - pełne
+      wyniki imienne (to znaczy "jawne"); dla tajnych - tylko wynik zbiorczy, tak jak w Fazie 10.
+      Nowy komponent `PublicVoteResult.tsx` (wariant `VoteResultsView` bez fetchowania/modala -
+      dane liczone server-side przez `buildVoteReportData()` wprost na stronie).
+- [x] Wysyłka linku mailem: opcja "Dołącz link do widoku publicznego" w modalu e-maila
+      posiedzenia (Faza 11) - działa tylko gdy `meeting.publicEnabled`.

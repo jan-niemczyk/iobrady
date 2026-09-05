@@ -84,6 +84,7 @@ export interface MeetingClientState {
     agendaAutoDisplayMode: string;
     holdResults: boolean;
     publishResultsAutomatically: boolean;
+    publicEnabled: boolean;
   };
   display: {
     mode: string;

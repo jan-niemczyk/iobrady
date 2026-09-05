@@ -17,8 +17,9 @@ export default auth((req) => {
     return NextResponse.next();
   }
 
-  // strony publiczne (display - widok prezentacyjny dla sali)
-  if (path === "/login" || path.startsWith("/api/auth") || path.startsWith("/display") || path.startsWith("/api/display")) {
+  // strony publiczne (display - widok prezentacyjny dla sali; public - porządek/materiały/wyniki
+  // posiedzenia z Meeting.publicEnabled=true, bez logowania)
+  if (path === "/login" || path.startsWith("/api/auth") || path.startsWith("/display") || path.startsWith("/api/display") || path.startsWith("/public")) {
     if (isLoggedIn && path === "/login") {
       const target = role === "OPERATOR" ? "/dashboard" : "/session";
       return NextResponse.redirect(new URL(target, nextUrl));

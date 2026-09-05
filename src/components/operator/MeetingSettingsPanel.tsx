@@ -13,6 +13,7 @@ interface Props {
     agendaAutoDisplayMode: string;
     holdResults: boolean;
     publishResultsAutomatically: boolean;
+    publicEnabled: boolean;
   };
 }
 
@@ -141,6 +142,22 @@ export function MeetingSettingsPanel({ meetingId, settings }: Props) {
             W trybie automatycznym: pokazywać całą listę porządku obrad, czy tylko bieżący punkt.
           </p>
         </div>
+
+        <label className="flex items-start gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox" className="mt-1"
+            checked={settings.publicEnabled} disabled={pending}
+            onChange={(e) => patch({ publicEnabled: e.target.checked })}
+          />
+          <span>
+            Widok publiczny (bez logowania)
+            <span className="block text-xs" style={{ color: "var(--color-ink-3)" }}>
+              Udostępnia porządek obrad, materiały oznaczone jako publiczne i wyniki zakończonych
+              głosowań (imienne dla jawnych, zbiorcze dla tajnych) pod adresem
+              <code className="mono"> /public/{meetingId}</code> - bez logowania.
+            </span>
+          </span>
+        </label>
 
         <div className="pt-2">
           <button className="btn btn-primary" disabled={pending} onClick={saveQuorum}>

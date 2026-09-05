@@ -54,6 +54,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       agendaAutoDisplayMode: meeting.agendaAutoDisplayMode,
       holdResults: meeting.holdResults,
       publishResultsAutomatically: meeting.publishResultsAutomatically,
+      publicEnabled: meeting.publicEnabled,
     },
     display: {
       mode: meeting.displayMode,

@@ -53,6 +53,7 @@ export default async function MeetingPanelPage({ params }: { params: Promise<{ i
       agendaAutoDisplayMode: meeting.agendaAutoDisplayMode,
       holdResults: meeting.holdResults,
       publishResultsAutomatically: meeting.publishResultsAutomatically,
+      publicEnabled: meeting.publicEnabled,
     },
     display: {
       mode: meeting.displayMode,
