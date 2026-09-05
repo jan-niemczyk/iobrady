@@ -62,17 +62,17 @@ export function MeetingSettingsPanel({ meetingId, settings }: Props) {
   }
 
   return (
-    <div className="card no-grid">
-      <div className="px-5 py-3 border-b border-[var(--color-rule)]">
-        <h2 className="text-sm font-medium">Ustawienia posiedzenia</h2>
+    <div className="card">
+      <div className="card-header bg-white">
+        <h2 className="h6 mb-0">Ustawienia posiedzenia</h2>
       </div>
 
-      <div className="px-5 py-4 flex flex-col gap-4">
+      <div className="card-body d-flex flex-column gap-3">
         <div>
-          <label className="label">Reguła kworum</label>
-          <div className="flex items-center gap-2 flex-wrap">
+          <label className="form-label">Reguła kworum</label>
+          <div className="d-flex align-items-center gap-2 flex-wrap">
             <select
-              className="input" style={{ maxWidth: 300 }}
+              className="form-select" style={{ maxWidth: 300, width: "auto" }}
               value={rule} disabled={pending}
               onChange={(e) => setRule(e.target.value)}
             >
@@ -82,7 +82,7 @@ export function MeetingSettingsPanel({ meetingId, settings }: Props) {
             </select>
             {activeRule?.needsValue && (
               <input
-                className="input" style={{ maxWidth: 110 }}
+                className="form-control" style={{ maxWidth: 110 }}
                 type="number" min={0} step={1}
                 placeholder={activeRule.needsValue === "percent" ? "np. 50" : "np. 8"}
                 value={value} disabled={pending}
@@ -91,84 +91,84 @@ export function MeetingSettingsPanel({ meetingId, settings }: Props) {
             )}
             {activeRule?.needsValue === "percent" && <span className="text-sm">%</span>}
           </div>
-          <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>
+          <p className="form-text mt-1">
             Reguła decyduje, ile osób musi być obecnych, aby posiedzenie było zdolne do podejmowania uchwał.
           </p>
         </div>
 
-        <label className="flex items-start gap-2 text-sm cursor-pointer">
+        <div className="form-check">
           <input
-            type="checkbox" className="mt-1"
+            type="checkbox" className="form-check-input" id="mspAutoOpenSpeakerList"
             checked={settings.autoOpenSpeakerList} disabled={pending}
             onChange={(e) => patch({ autoOpenSpeakerList: e.target.checked })}
           />
-          <span>
+          <label className="form-check-label" htmlFor="mspAutoOpenSpeakerList">
             Automatycznie otwieraj listę mówców
-            <span className="block text-xs" style={{ color: "var(--color-ink-3)" }}>
+            <span className="d-block form-text">
               Po otwarciu punktu porządku obrad lista mówców włącza się sama, z możliwością samodzielnych zapisów.
             </span>
-          </span>
-        </label>
+          </label>
+        </div>
 
-        <label className="flex items-start gap-2 text-sm cursor-pointer">
+        <div className="form-check">
           <input
-            type="checkbox" className="mt-1"
+            type="checkbox" className="form-check-input" id="mspSummaryAfterClose"
             checked={settings.displaySummaryAfterClose} disabled={pending}
             onChange={(e) => patch({ displaySummaryAfterClose: e.target.checked })}
           />
-          <span>
+          <label className="form-check-label" htmlFor="mspSummaryAfterClose">
             Po zamknięciu głosowania pokazuj tylko podsumę
-            <span className="block text-xs" style={{ color: "var(--color-ink-3)" }}>
+            <span className="d-block form-text">
               W trakcie głosowania wyświetlana jest tablica z nazwiskami, a po zamknięciu - sama podsuma wyników.
             </span>
-          </span>
-        </label>
+          </label>
+        </div>
 
         <div>
-          <label className="label">Porządek obrad w auto-prezentacji</label>
-          <div className="flex items-center gap-2 flex-wrap">
+          <label className="form-label">Porządek obrad w auto-prezentacji</label>
+          <div className="d-flex align-items-center gap-2 flex-wrap">
             <button
-              className={`btn btn-sm ${settings.agendaAutoDisplayMode !== "SINGLE" ? "btn-primary" : ""}`}
+              className={`btn btn-sm ${settings.agendaAutoDisplayMode !== "SINGLE" ? "btn-primary" : "btn-outline-secondary"}`}
               disabled={pending}
               onClick={() => patch({ agendaAutoDisplayMode: "FULL" })}
             >Cała lista</button>
             <button
-              className={`btn btn-sm ${settings.agendaAutoDisplayMode === "SINGLE" ? "btn-primary" : ""}`}
+              className={`btn btn-sm ${settings.agendaAutoDisplayMode === "SINGLE" ? "btn-primary" : "btn-outline-secondary"}`}
               disabled={pending}
               onClick={() => patch({ agendaAutoDisplayMode: "SINGLE" })}
             >Każdy punkt osobno</button>
           </div>
-          <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>
+          <p className="form-text mt-1">
             W trybie automatycznym: pokazywać całą listę porządku obrad, czy tylko bieżący punkt.
           </p>
         </div>
 
-        <label className="flex items-start gap-2 text-sm cursor-pointer">
+        <div className="form-check">
           <input
-            type="checkbox" className="mt-1"
+            type="checkbox" className="form-check-input" id="mspPublicEnabled"
             checked={settings.publicEnabled} disabled={pending}
             onChange={(e) => patch({ publicEnabled: e.target.checked })}
           />
-          <span>
+          <label className="form-check-label" htmlFor="mspPublicEnabled">
             Widok publiczny (bez logowania)
-            <span className="block text-xs" style={{ color: "var(--color-ink-3)" }}>
+            <span className="d-block form-text">
               Udostępnia porządek obrad, materiały oznaczone jako publiczne i wyniki zakończonych
               głosowań (imienne dla jawnych, zbiorcze dla tajnych) pod adresem
-              <code className="mono"> /public/{meetingId}</code> - bez logowania.
+              <code className="font-monospace"> /public/{meetingId}</code> - bez logowania.
             </span>
-          </span>
-        </label>
+          </label>
+        </div>
 
         <div className="pt-2">
           <button className="btn btn-primary" disabled={pending} onClick={saveQuorum}>
             Zapisz ustawienia kworum
           </button>
-          <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>
+          <p className="form-text mt-1">
             Pozostałe ustawienia (lista mówców, podsuma, porządek) zapisują się automatycznie po zmianie.
           </p>
         </div>
 
-        {error && <div className="text-sm" style={{ color: "var(--color-seal)" }}>{error}</div>}
+        {error && <div className="text-danger small">{error}</div>}
       </div>
     </div>
   );

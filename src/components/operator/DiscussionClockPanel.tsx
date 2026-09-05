@@ -66,20 +66,20 @@ export function DiscussionClockPanel({ meetingId }: { meetingId: string }) {
 
   return (
     <div className="card">
-      <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--color-rule-soft)]">
-        <h3 className="eyebrow" style={{ margin: 0 }}>Licznik czasu dyskusji</h3>
-        <label className="flex items-center gap-2 text-xs cursor-pointer">
-          <input type="checkbox" checked={state.enabled} onChange={(e) => patch({ enabled: e.target.checked })} />
-          <span>Włączony</span>
-        </label>
+      <div className="card-header bg-white d-flex align-items-center justify-content-between">
+        <h3 className="text-uppercase text-body-secondary small mb-0" style={{ letterSpacing: "0.06em" }}>Licznik czasu dyskusji</h3>
+        <div className="form-check form-switch mb-0">
+          <input className="form-check-input" type="checkbox" role="switch" id="dcpEnabled" checked={state.enabled} onChange={(e) => patch({ enabled: e.target.checked })} />
+          <label className="form-check-label small" htmlFor="dcpEnabled">Włączony</label>
+        </div>
       </div>
 
       {state.enabled && (
-        <div className="p-4 space-y-4">
+        <div className="card-body d-flex flex-column gap-3">
           {/* Podgląd łączny */}
-          <div className="flex items-baseline justify-between">
-            <span className="text-sm" style={{ color: "var(--color-ink-3)" }}>Dyskusja łącznie</span>
-            <span className="mono" style={{ fontSize: 30, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: over ? "var(--color-no)" : "var(--color-ink)" }}>
+          <div className="d-flex align-items-baseline justify-content-between">
+            <span className="small text-body-secondary">Dyskusja łącznie</span>
+            <span className="font-monospace" style={{ fontSize: 30, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: over ? "var(--color-no)" : "var(--color-ink)" }}>
               {fmt(display)}
               {state.budgetSec != null && state.mode === "COUNT_DOWN" && (
                 <span style={{ fontSize: 14, color: "var(--color-ink-3)", marginLeft: 8 }}>/ {fmt(state.budgetSec)}</span>
@@ -88,17 +88,17 @@ export function DiscussionClockPanel({ meetingId }: { meetingId: string }) {
           </div>
 
           {/* Konfiguracja */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="label">Tryb</label>
-              <select className="input" value={state.mode} onChange={(e) => patch({ mode: e.target.value })}>
+          <div className="row g-3">
+            <div className="col-6">
+              <label className="form-label">Tryb</label>
+              <select className="form-select" value={state.mode} onChange={(e) => patch({ mode: e.target.value })}>
                 <option value="COUNT_UP">Licz w górę</option>
                 <option value="COUNT_DOWN">Odliczaj w dół</option>
               </select>
             </div>
-            <div>
-              <label className="label">Zakres</label>
-              <select className="input" value={state.scope} onChange={(e) => patch({ scope: e.target.value })}>
+            <div className="col-6">
+              <label className="form-label">Zakres</label>
+              <select className="form-select" value={state.scope} onChange={(e) => patch({ scope: e.target.value })}>
                 <option value="PER_AGENDA_ITEM">Per punkt</option>
                 <option value="WHOLE_MEETING">Całe posiedzenie</option>
               </select>
@@ -106,20 +106,20 @@ export function DiscussionClockPanel({ meetingId }: { meetingId: string }) {
           </div>
 
           {state.mode === "COUNT_DOWN" && (
-            <div className="flex items-end gap-2">
-              <div className="flex-1">
-                <label className="label">Budżet łączny (min)</label>
-                <input className="input" type="number" min={0} value={budgetMin} onChange={(e) => setBudgetMin(e.target.value)} placeholder="np. 40" />
+            <div className="d-flex align-items-end gap-2">
+              <div className="flex-grow-1">
+                <label className="form-label">Budżet łączny (min)</label>
+                <input className="form-control" type="number" min={0} value={budgetMin} onChange={(e) => setBudgetMin(e.target.value)} placeholder="np. 40" />
               </div>
-              <button className="btn" disabled={pending} onClick={() => patch({ budgetSec: budgetMin === "" ? null : Number(budgetMin) * 60 })}>Ustaw</button>
+              <button className="btn btn-outline-secondary" disabled={pending} onClick={() => patch({ budgetSec: budgetMin === "" ? null : Number(budgetMin) * 60 })}>Ustaw</button>
             </div>
           )}
 
           {/* Limity klubów */}
           {state.clubs.length > 0 && (
             <div>
-              <div className="eyebrow mb-2">Kluby</div>
-              <div className="flex flex-col gap-2">
+              <div className="text-uppercase text-body-secondary small mb-2" style={{ letterSpacing: "0.06em" }}>Kluby</div>
+              <div className="d-flex flex-column gap-2">
                 {state.clubs.map((c) => (
                   <ClubRow key={c.clubShort} club={c} mode={state.mode} pending={pending}
                     onSetBudget={(sec) => patch({ clubBudgets: [{ clubShort: c.clubShort, budgetSec: sec }] })} />
@@ -128,8 +128,8 @@ export function DiscussionClockPanel({ meetingId }: { meetingId: string }) {
             </div>
           )}
 
-          <div className="flex justify-end pt-2 border-t border-[var(--color-rule-soft)]">
-            <button className="btn" style={{ color: "var(--color-no)" }} disabled={pending}
+          <div className="d-flex justify-content-end pt-2 border-top">
+            <button className="btn btn-outline-danger btn-sm" disabled={pending}
               onClick={() => { if (window.confirm("Wyzerować naliczony czas dyskusji (łączny i kluby)?")) patch({ reset: true }); }}>
               Wyzeruj naliczony czas
             </button>
@@ -146,15 +146,15 @@ function ClubRow({ club, mode, pending, onSetBudget }: {
   const [min, setMin] = useState(club.budgetSec != null ? String(Math.round(club.budgetSec / 60)) : "");
   const over = mode === "COUNT_DOWN" && club.budgetSec != null && club.elapsedSec > club.budgetSec;
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm flex-1 truncate">{club.clubShort}</span>
-      <span className="mono text-sm" style={{ color: over ? "var(--color-no)" : "var(--color-ink-2)", fontVariantNumeric: "tabular-nums" }}>
+    <div className="d-flex align-items-center gap-2">
+      <span className="small flex-grow-1 text-truncate">{club.clubShort}</span>
+      <span className="font-monospace small" style={{ color: over ? "var(--color-no)" : "var(--color-ink-2)", fontVariantNumeric: "tabular-nums" }}>
         {fmt(club.elapsedSec)}{club.budgetSec != null ? ` / ${fmt(club.budgetSec)}` : ""}
       </span>
       {mode === "COUNT_DOWN" && (
         <>
-          <input className="input" type="number" min={0} value={min} onChange={(e) => setMin(e.target.value)} placeholder="min" style={{ width: 70, fontSize: 12 }} />
-          <button className="btn" style={{ padding: "2px 8px", fontSize: 11 }} disabled={pending} onClick={() => onSetBudget(min === "" ? null : Number(min) * 60)}>Ustaw</button>
+          <input className="form-control form-control-sm" type="number" min={0} value={min} onChange={(e) => setMin(e.target.value)} placeholder="min" style={{ width: 70 }} />
+          <button className="btn btn-outline-secondary btn-sm" disabled={pending} onClick={() => onSetBudget(min === "" ? null : Number(min) * 60)}>Ustaw</button>
         </>
       )}
     </div>

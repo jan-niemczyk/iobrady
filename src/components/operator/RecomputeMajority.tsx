@@ -45,31 +45,33 @@ export function RecomputeMajority({
   }
 
   return (
-    <div className="card p-4">
-      <div className="text-sm font-semibold mb-2">Korekta zadeklarowanej większości</div>
-      <p className="text-xs mb-3" style={{ color: "var(--color-ink-3)" }}>
-        Jeśli przy głosowaniu wybrano błędny próg większości, można go tu poprawić - wynik zostanie przeliczony z zachowanych liczników.
-      </p>
-      <div className="flex flex-wrap items-end gap-3">
-        <div>
-          <label className="label">Rodzaj większości</label>
-          <select className="input" value={kind} onChange={(e) => setKind(e.target.value)}>
-            {Object.entries(KIND_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-          </select>
+    <div className="card">
+      <div className="card-body">
+        <div className="fw-semibold mb-2">Korekta zadeklarowanej większości</div>
+        <p className="form-text mb-3">
+          Jeśli przy głosowaniu wybrano błędny próg większości, można go tu poprawić - wynik zostanie przeliczony z zachowanych liczników.
+        </p>
+        <div className="d-flex flex-wrap align-items-end gap-3">
+          <div>
+            <label className="form-label">Rodzaj większości</label>
+            <select className="form-select" value={kind} onChange={(e) => setKind(e.target.value)}>
+              {Object.entries(KIND_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="form-label">Podstawa</label>
+            <select className="form-select" value={base} onChange={(e) => setBase(e.target.value)}>
+              <option value="OF_VOTERS">głosujących</option>
+              <option value="OF_PRESENT">obecnych</option>
+              <option value="OF_FULL_BODY">ustawowego składu</option>
+            </select>
+          </div>
+          <button className="btn btn-primary" disabled={busy || !changed} onClick={recompute}>
+            {busy ? "Przeliczanie…" : "Przelicz wynik"}
+          </button>
         </div>
-        <div>
-          <label className="label">Podstawa</label>
-          <select className="input" value={base} onChange={(e) => setBase(e.target.value)}>
-            <option value="OF_VOTERS">głosujących</option>
-            <option value="OF_PRESENT">obecnych</option>
-            <option value="OF_FULL_BODY">ustawowego składu</option>
-          </select>
-        </div>
-        <button className="btn btn-primary" disabled={busy || !changed} onClick={recompute}>
-          {busy ? "Przeliczanie…" : "Przelicz wynik"}
-        </button>
+        {msg && <p className="form-text mt-2">{msg}</p>}
       </div>
-      {msg && <p className="text-xs mt-2" style={{ color: "var(--color-ink-2)" }}>{msg}</p>}
     </div>
   );
 }

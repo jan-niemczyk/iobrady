@@ -535,8 +535,23 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       główny "pokój sterowania" posiedzeniem), `ParticipantsManagerClient.tsx`,
       `AgendaEditorClient.tsx`, `SpeakersPanel.tsx`, `FormalMotionsPanel.tsx`,
       `DisplayControlPanel.tsx`, `AttendanceCheckPanel.tsx`, `MeetingParticipantsClient.tsx`,
-      `VoteReport.tsx`, `DiscussionClockPanel.tsx`, strony `meetings/`, `votes/[id]/report`.
+      `VoteReport.tsx`, strony `meetings/`, `votes/[id]/report`.
       Zasada `.btn`/`.card` (te same nazwy w obu systemach, Bootstrap ładowany później więc
       wygrywa w kaskadzie) już częściowo "przemalowuje" te ekrany bez zmian w kodzie - ale
       `.input`/`.label`/`.pill`/`.eyebrow` tam zostają w starym stylu, dopóki nie przejdą tej
       samej konwersji.
+
+## AAC. Bootstrap - druga tura (małe, izolowane komponenty operatora)
+- [x] `MeetingSettingsPanel.tsx` - pełne przejście na `card`/`card-header`/`card-body`,
+      `form-label`, `form-select`, `form-control`, `form-check` (z parowanymi `id`/`htmlFor`),
+      przyciski trybu prezentacji na `btn-primary`/`btn-outline-secondary`.
+- [x] `RecomputeMajority.tsx` - owinięty w `card`/`card-body`, `.label`→`form-label`, oba
+      selecty→`form-select`, opis→`form-text`.
+- [x] `DiscussionClockPanel.tsx` - `card-header`/`card-body`, przełącznik włączenia→
+      `form-check form-switch` (`role="switch"`), `.label`→`form-label`, selecty→`form-select`,
+      siatka trybu/zakresu→`row g-3`/`col-6`, przyciski→`btn-outline-secondary`/
+      `btn-outline-danger btn-sm`; zagnieżdżony `ClubRow` również skonwertowany
+      (`form-control form-control-sm`, `btn-outline-secondary btn-sm`).
+- [x] `PrintButton.tsx` - sprawdzony, bez zmian: jedyny interaktywny element to
+      `<button className="btn btn-primary">`, który już renderuje się jako Bootstrap dzięki
+      kaskadzie; reszta pliku to logika generowania PDF (pdfmake), bez `.input`/`.label`/`.card`.
