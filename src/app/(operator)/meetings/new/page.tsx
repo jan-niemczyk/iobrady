@@ -63,36 +63,36 @@ export default async function NewMeetingPage() {
       <form action={createMeeting} className="card p-8 space-y-5">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="label" htmlFor="number">Numer posiedzenia</label>
-            <input className="input" id="number" name="number" required placeholder="np. II/2026" />
+            <label className="form-label" htmlFor="number">Numer posiedzenia</label>
+            <input className="form-control" id="number" name="number" required placeholder="np. II/2026" />
           </div>
           <div>
-            <label className="label" htmlFor="meetingType">Typ</label>
-            <input className="input" id="meetingType" name="meetingType" placeholder="np. sesja zwyczajna" />
+            <label className="form-label" htmlFor="meetingType">Typ</label>
+            <input className="form-control" id="meetingType" name="meetingType" placeholder="np. sesja zwyczajna" />
           </div>
         </div>
 
         <div>
-          <label className="label" htmlFor="name">Nazwa</label>
-          <input className="input" id="name" name="name" required placeholder="np. II sesja Rady Miasta" />
+          <label className="form-label" htmlFor="name">Nazwa</label>
+          <input className="form-control" id="name" name="name" required placeholder="np. II sesja Rady Miasta" />
         </div>
 
         <div>
-          <label className="label" htmlFor="scheduledAt">Termin</label>
-          <input className="input" type="datetime-local" id="scheduledAt" name="scheduledAt" required />
+          <label className="form-label" htmlFor="scheduledAt">Termin</label>
+          <input className="form-control" type="datetime-local" id="scheduledAt" name="scheduledAt" required />
         </div>
 
         <div>
-          <label className="label" htmlFor="attendanceMode">Tryb listy obecności</label>
-          <select className="input" id="attendanceMode" name="attendanceMode" defaultValue={defaultAttMode}>
+          <label className="form-label" htmlFor="attendanceMode">Tryb listy obecności</label>
+          <select className="form-select" id="attendanceMode" name="attendanceMode" defaultValue={defaultAttMode}>
             <option value="MANUAL">Operator potwierdza ręcznie</option>
             <option value="SELF_CONFIRMATION">Uczestnik potwierdza samodzielnie</option>
           </select>
         </div>
 
         <div>
-          <label className="label" htmlFor="description">Opis (opcjonalnie)</label>
-          <textarea className="input" id="description" name="description" rows={3} />
+          <label className="form-label" htmlFor="description">Opis (opcjonalnie)</label>
+          <textarea className="form-control" id="description" name="description" rows={3} />
         </div>
 
         <div className="flex justify-end gap-2 pt-2">

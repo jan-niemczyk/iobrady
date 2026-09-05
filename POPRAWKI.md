@@ -570,3 +570,10 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       `.input mono`), selecty (rola, klub, hurtowe przypisanie do grupy)→`form-select`,
       `.label`→`form-label` we wszystkich modalach (nowy/edycja uczestnika, grupa, e-mail do
       zaznaczonych, import CSV).
+- [x] Cienkie wrappery stron: `meetings/page.tsx` - tabela na `table table-hover`/`table-light`,
+      status na `badge text-bg-light border`; `meetings/new/page.tsx` - pełen formularz na
+      `form-control`/`form-select`/`form-label`. `meetings/[id]/participants/page.tsx`,
+      `meetings/[id]/agenda/page.tsx`, `votes/[id]/report/page.tsx`, `participants/page.tsx`,
+      `guests/page.tsx`, `templates/page.tsx` sprawdzone - to same server-side pobieranie danych
+      i przekazanie do już przekonwertowanych komponentów klienckich, bez własnych klas do
+      zmiany.

@@ -23,8 +23,8 @@ export default async function MeetingsListPage() {
       </header>
 
       <div className="card overflow-hidden">
-        <table className="w-full text-sm">
-          <thead style={{ background: "var(--color-paper-2)" }}>
+        <table className="table table-hover mb-0 align-middle">
+          <thead className="table-light">
             <tr className="text-left">
               <Th>Nr</Th>
               <Th>Nazwa</Th>
@@ -42,17 +42,17 @@ export default async function MeetingsListPage() {
               return (
               <Fragment key={m.id}>
               {showYear && (
-                <tr style={{ background: "var(--color-paper-2)" }}>
+                <tr className="table-light">
                   <Td colSpan={6}><span className="eyebrow">{year}</span></Td>
                 </tr>
               )}
-              <tr className="border-t border-[var(--color-rule-soft)] hover:bg-[var(--color-paper-2)]">
+              <tr>
                 <Td><span className="mono text-xs">{m.number}</span></Td>
                 <Td><Link href={`/meetings/${m.id}`} className="underline-offset-2 hover:underline">{m.name}</Link></Td>
                 <Td><span className="mono text-xs" style={{ color: "var(--color-ink-3)" }}>{formatDateTime(m.scheduledAt)}</span></Td>
                 <Td className="text-right num">{m._count.participants}</Td>
                 <Td className="text-right num">{m._count.votes}</Td>
-                <Td><span className="pill pill-neutral">{MEETING_STATUS_LABEL[m.status]}</span></Td>
+                <Td><span className="badge text-bg-light border">{MEETING_STATUS_LABEL[m.status]}</span></Td>
               </tr>
               </Fragment>
               );
