@@ -584,3 +584,23 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       → `form-select`; `.label` (27 wystąpień) → `form-label`. Konwersja w pełni mechaniczna
       (bez zmian układu/JSX) - to kończy przemalowanie panelu operatora na Bootstrap zapoczątkowane
       w Fazie 0 (patrz sekcje AAB-AAC).
+
+## AAD. Korekta wizualna po pierwszej ocenie na produkcji - bez zmian układu
+- Po wdrożeniu na produkcję użytkownik ocenił efekt jako "rozjechany, chaotyczny": niespójne
+  odstępy między wizualnie identycznymi nagłówkami sekcji i zbyt mocno zaokrąglone `.pill`
+  (999px) obok kart/przycisków (`.375rem`/6px). Diagnoza: część paneli buduje nagłówek karty
+  jako zwykły `<div className="eyebrow">`, część jako `<h2>/<h3> className="eyebrow">` -
+  Bootstrap narzuca własny `margin-bottom`/`line-height` na prawdziwe tagi `<h1>-<h6>`
+  niezależnie od klasy `.eyebrow`, więc te same wizualnie nagłówki miały różne odstępy zależnie
+  od użytego tagu. Poprawka **celowo nie rusza układu/JSX żadnego komponentu** - dwie punktowe
+  zmiany CSS:
+  - [x] `src/styles/bootstrap-scoped.scss` - dopisana reguła `h2.eyebrow, h3.eyebrow { margin:0;
+        line-height:1.4; }` po imporcie Bootstrapa (wyższa specyficzność niż goły `h2`/`h3` z
+        reboot Bootstrapa, więc wygrywa niezależnie od kolejności ładowania arkuszy).
+  - [x] `src/app/globals.css` - `.pill { border-radius: 999px }` → `6px`, czyli dokładnie ta
+        sama wartość co `.card`/`.btn`/`.input` w tym samym pliku i `$border-radius` w motywie
+        Bootstrapa - koniec z pełnymi "pigułkami" bez zmiany ani jednego miejsca użycia `.pill`
+        w komponentach.
+  - Realne Bootstrapowe `.badge` (dashboard/archive/login-log/meetings) już miały poprawny,
+    nie-pigułkowy promień - `$border-radius` nie był nadpisywany dla badge, więc nie wymagały
+    zmian.
