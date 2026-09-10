@@ -8,3 +8,12 @@
 // klasami .btn/.card/.input z globals.css używanymi na kartach głosowania.
 @use "bs-theme" as *;
 @import "bootstrap/scss/bootstrap";
+
+// Ujednolicenie nagłówków-etykiet (.eyebrow) użytych na prawdziwych tagach <h2>/<h3>
+// (część paneli operatora buduje nagłówek karty tak, reszta jako zwykły <div>) - Bootstrap
+// narzuca na h1-h6 własny margines i line-height niezależnie od klasy .eyebrow, przez co
+// wizualnie identyczne nagłówki miały różne odstępy w zależności od użytego tagu.
+h2.eyebrow, h3.eyebrow {
+  margin: 0;
+  line-height: 1.4;
+}

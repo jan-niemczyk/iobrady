@@ -101,7 +101,7 @@
     gap: 6px;
     padding: 2px 8px;
     border: 1px solid var(--color-rule);
-    border-radius: 999px;
+    border-radius: 6px; /* spójne z .card/.btn/.input - bez pełnych "pigułek" */
     font-size: 11px;
     line-height: 18px;
     background: var(--color-paper);
