@@ -144,7 +144,7 @@ export function SpeakersPanel({
 
   return (
     <div className="card">
-      <div className="px-5 py-3 border-b border-[var(--color-rule)] flex items-center justify-between">
+      <div className="card-header d-flex align-items-center justify-content-between">
         <div className="eyebrow">Lista mówców</div>
         <div className="flex items-center gap-2 text-xs">
           <label className="flex items-center gap-1 cursor-pointer">

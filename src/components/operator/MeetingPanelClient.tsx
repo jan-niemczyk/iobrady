@@ -587,89 +587,76 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
           <span className="badge text-bg-light border">{MEETING_STATUS_LABEL[state.status]}</span>
 
           {/* Raporty */}
-          <div className="relative">
-            <details className="inline-block">
-              <summary className="btn cursor-pointer list-none" style={{ userSelect: "none" }}>Raporty ▾</summary>
-              <div className="absolute right-0 mt-1 card no-grid z-20" style={{ minWidth: 280, background: "#FFFFFF" }}>
-                <a className="block px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" href={`/display/${state.id}`} target="_blank" rel="noreferrer">
-                  <div>Widok publiczny (ekran świetlny)</div>
-                </a>
-                <a className="block px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" href={`/overlay/${state.id}`} target="_blank" rel="noreferrer">
-                  <div>Nakładka na transmisję (OBS)</div>
-                </a>
-                <a className="block px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" href={`/chairperson/${state.id}`} target="_blank" rel="noreferrer">
-                  <div>Widok przewodniczącego</div>
-                </a>
-                <button
-                  type="button"
-                  className="block w-full text-left px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]"
-                  disabled={pdfBusy === "att-merged"}
-                  onClick={downloadAttendanceMerged}
-                >
-                  <div>{pdfBusy === "att-merged" ? "Generowanie…" : "Lista obecności (PDF)"}</div>
+          <div className="dropdown">
+            <button className="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Raporty
+            </button>
+            <ul className="dropdown-menu dropdown-menu-end" style={{ minWidth: 280, maxHeight: "75vh", overflowY: "auto" }}>
+              <li><a className="dropdown-item" href={`/display/${state.id}`} target="_blank" rel="noreferrer">Widok publiczny (ekran świetlny)</a></li>
+              <li><a className="dropdown-item" href={`/overlay/${state.id}`} target="_blank" rel="noreferrer">Nakładka na transmisję (OBS)</a></li>
+              <li><a className="dropdown-item" href={`/chairperson/${state.id}`} target="_blank" rel="noreferrer">Widok przewodniczącego</a></li>
+              <li><hr className="dropdown-divider" /></li>
+              <li>
+                <button type="button" className="dropdown-item" disabled={pdfBusy === "att-merged"} onClick={downloadAttendanceMerged}>
+                  {pdfBusy === "att-merged" ? "Generowanie…" : "Lista obecności (PDF)"}
                 </button>
-                <button
-                  type="button"
-                  className="block w-full text-left px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]"
-                  disabled={pdfBusy === "att-log"}
-                  onClick={downloadAttendanceLogPdf}
-                >
-                  <div>{pdfBusy === "att-log" ? "Generowanie…" : "Raport obecności (PDF)"}</div>
+              </li>
+              <li>
+                <button type="button" className="dropdown-item" disabled={pdfBusy === "att-log"} onClick={downloadAttendanceLogPdf}>
+                  {pdfBusy === "att-log" ? "Generowanie…" : "Raport obecności (PDF)"}
                 </button>
-                <button
-                  type="button"
-                  className="block w-full text-left px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]"
-                  disabled={pdfBusy === "signature"}
-                  onClick={downloadSignatureListPdf}
-                >
-                  <div>{pdfBusy === "signature" ? "Generowanie…" : "Lista obecności do podpisu (PDF)"}</div>
+              </li>
+              <li>
+                <button type="button" className="dropdown-item" disabled={pdfBusy === "signature"} onClick={downloadSignatureListPdf}>
+                  {pdfBusy === "signature" ? "Generowanie…" : "Lista obecności do podpisu (PDF)"}
                 </button>
-                <div className="px-4 py-1 text-xs font-semibold" style={{ color: "var(--color-ink-3)", background: "var(--color-paper-2)" }}>Porządek i protokół</div>
-                <button type="button" className="block w-full text-left px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" disabled={pdfBusy === "agenda-pdf"} onClick={() => exportProtocol("agenda-pdf")}>
-                  <div>{pdfBusy === "agenda-pdf" ? "Generowanie…" : "Porządek obrad (PDF)"}</div>
+              </li>
+              <li><h6 className="dropdown-header">Porządek i protokół</h6></li>
+              <li>
+                <button type="button" className="dropdown-item" disabled={pdfBusy === "agenda-pdf"} onClick={() => exportProtocol("agenda-pdf")}>
+                  {pdfBusy === "agenda-pdf" ? "Generowanie…" : "Porządek obrad (PDF)"}
                 </button>
-                <button type="button" className="block w-full text-left px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" disabled={pdfBusy === "agenda-docx"} onClick={() => exportProtocol("agenda-docx")}>
-                  <div>{pdfBusy === "agenda-docx" ? "Generowanie…" : "Porządek obrad (DOCX)"}</div>
+              </li>
+              <li>
+                <button type="button" className="dropdown-item" disabled={pdfBusy === "agenda-docx"} onClick={() => exportProtocol("agenda-docx")}>
+                  {pdfBusy === "agenda-docx" ? "Generowanie…" : "Porządek obrad (DOCX)"}
                 </button>
-                <button type="button" className="block w-full text-left px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" disabled={pdfBusy === "protocol-pdf"} onClick={() => exportProtocol("protocol-pdf")}>
-                  <div>{pdfBusy === "protocol-pdf" ? "Generowanie…" : "Protokół - projekt (PDF)"}</div>
+              </li>
+              <li>
+                <button type="button" className="dropdown-item" disabled={pdfBusy === "protocol-pdf"} onClick={() => exportProtocol("protocol-pdf")}>
+                  {pdfBusy === "protocol-pdf" ? "Generowanie…" : "Protokół - projekt (PDF)"}
                 </button>
-                <button type="button" className="block w-full text-left px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" disabled={pdfBusy === "protocol-docx"} onClick={() => exportProtocol("protocol-docx")}>
-                  <div>{pdfBusy === "protocol-docx" ? "Generowanie…" : "Protokół - projekt (DOCX)"}</div>
+              </li>
+              <li>
+                <button type="button" className="dropdown-item" disabled={pdfBusy === "protocol-docx"} onClick={() => exportProtocol("protocol-docx")}>
+                  {pdfBusy === "protocol-docx" ? "Generowanie…" : "Protokół - projekt (DOCX)"}
                 </button>
-                <button type="button" className="block w-full text-left px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" disabled={pdfBusy === "speeches-pdf"} onClick={() => exportSpeechesReport("pdf")}>
-                  <div>{pdfBusy === "speeches-pdf" ? "Generowanie…" : "Raport wystąpień (PDF)"}</div>
+              </li>
+              <li>
+                <button type="button" className="dropdown-item" disabled={pdfBusy === "speeches-pdf"} onClick={() => exportSpeechesReport("pdf")}>
+                  {pdfBusy === "speeches-pdf" ? "Generowanie…" : "Raport wystąpień (PDF)"}
                 </button>
-                <button type="button" className="block w-full text-left px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" disabled={pdfBusy === "speeches-docx"} onClick={() => exportSpeechesReport("docx")}>
-                  <div>{pdfBusy === "speeches-docx" ? "Generowanie…" : "Raport wystąpień (DOCX)"}</div>
+              </li>
+              <li>
+                <button type="button" className="dropdown-item" disabled={pdfBusy === "speeches-docx"} onClick={() => exportSpeechesReport("docx")}>
+                  {pdfBusy === "speeches-docx" ? "Generowanie…" : "Raport wystąpień (DOCX)"}
                 </button>
-                <button
-                  type="button"
-                  className="block w-full text-left px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]"
-                  disabled={pdfBusy === "all"}
-                  onClick={downloadAllReports}
-                >
-                  <div>{pdfBusy === "all" ? "Generowanie…" : "Wszystkie raporty - jeden plik PDF"}</div>
+              </li>
+              <li><hr className="dropdown-divider" /></li>
+              <li>
+                <button type="button" className="dropdown-item" disabled={pdfBusy === "all"} onClick={downloadAllReports}>
+                  {pdfBusy === "all" ? "Generowanie…" : "Wszystkie raporty - jeden plik PDF"}
                 </button>
-                <button
-                  type="button"
-                  className="block w-full text-left px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]"
-                  disabled={pdfBusy === "zip"}
-                  onClick={downloadAllReportsZip}
-                >
-                  <div>{pdfBusy === "zip" ? "Pakowanie…" : "Wszystkie raporty - ZIP (osobne pliki)"}</div>
+              </li>
+              <li>
+                <button type="button" className="dropdown-item" disabled={pdfBusy === "zip"} onClick={downloadAllReportsZip}>
+                  {pdfBusy === "zip" ? "Pakowanie…" : "Wszystkie raporty - ZIP (osobne pliki)"}
                 </button>
-                <a className="block px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" href={`/api/meetings/${state.id}/reports/attendance.csv`}>
-                  <div>Lista obecności (CSV)</div>
-                </a>
-                <a className="block px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm border-b border-[var(--color-rule-soft)]" href={`/api/meetings/${state.id}/reports/votes.csv`}>
-                  <div>Zestawienie głosowań (CSV)</div>
-                </a>
-                <a className="block px-4 py-2 hover:bg-[var(--color-paper-2)] text-sm" href={`/api/audit/csv?meeting=${state.id}`}>
-                  <div>Rejestr czynności (CSV)</div>
-                </a>
-              </div>
-            </details>
+              </li>
+              <li><a className="dropdown-item" href={`/api/meetings/${state.id}/reports/attendance.csv`}>Lista obecności (CSV)</a></li>
+              <li><a className="dropdown-item" href={`/api/meetings/${state.id}/reports/votes.csv`}>Zestawienie głosowań (CSV)</a></li>
+              <li><a className="dropdown-item" href={`/api/audit/csv?meeting=${state.id}`}>Rejestr czynności (CSV)</a></li>
+            </ul>
           </div>
 
           <button
@@ -999,7 +986,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
       {resultsModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={() => { act(`/api/meetings/${state.id}/display`, { displayPinnedVoteId: null, displayMode: "AUTO" }, undefined, "PATCH"); setResultsModal(null); }}>
           <div className="card" style={{ width: "100%", maxWidth: 460, maxHeight: "88vh", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
-            <div className="px-5 py-3 border-b border-[var(--color-rule-soft)] flex items-center justify-between" style={{ flexShrink: 0 }}>
+            <div className="card-header d-flex align-items-center justify-content-between" style={{ flexShrink: 0 }}>
               <h3 className="eyebrow" style={{ margin: 0 }}>Wynik głosowania</h3>
               <span className="text-xs" style={{ color: "var(--color-ink-3)" }}>nr {resultsModal.number ?? "-"}</span>
             </div>
@@ -1942,7 +1929,7 @@ function VoteComposerModal({
       {pasteTarget && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={() => setPasteTarget(null)}>
           <div className="card" style={{ width: "100%", maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
-            <div className="px-5 py-3 border-b border-[var(--color-rule-soft)]">
+            <div className="card-header">
               <h3 className="eyebrow" style={{ margin: 0 }}>Wklej {pasteTarget === "package" ? "pozycje pakietu" : "pozycje listy"} z tekstu</h3>
             </div>
             <div className="p-5">
@@ -1976,7 +1963,7 @@ function VoteComposerModal({
 function SectionHeader({ title, right, tone }: { title: string; right?: React.ReactNode; tone?: "live" }) {
   return (
     <div
-      className="flex items-center justify-between px-5 py-3 border-b"
+      className="card-header d-flex align-items-center justify-content-between"
       style={{
         borderColor: tone === "live" ? "var(--color-live)" : "var(--color-rule)",
         background: tone === "live" ? "var(--color-no-bg)" : undefined,
@@ -2565,7 +2552,7 @@ function BulkImportModal({ meetingId, agenda, onClose, onDone }: {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
       <div className="card" style={{ width: "100%", maxWidth: 560, maxHeight: "88vh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
-        <div className="px-5 py-3 border-b border-[var(--color-rule-soft)]">
+        <div className="card-header">
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Hurtowe tworzenie głosowań</h3>
           <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>
             {mode === "text" ? "Jedna linia = jedno głosowanie." : "Po jednym głosowaniu na każdy zaznaczony punkt, z nazwą punktu."}
@@ -2698,7 +2685,7 @@ function EmailMeetingModal({ meetingId, participants, onClose }: {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
       <div className="card" style={{ width: "100%", maxWidth: 560, maxHeight: "88vh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
-        <div className="px-5 py-3 border-b border-[var(--color-rule-soft)]">
+        <div className="card-header">
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Wyślij e-mail do uczestników</h3>
         </div>
         <div className="p-5 space-y-3">

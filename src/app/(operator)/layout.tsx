@@ -3,6 +3,7 @@ import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { BootstrapJs } from "@/components/BootstrapJs";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export default async function OperatorLayout({ children }: { children: React.Rea
 
   return (
     <div className="d-flex flex-column min-vh-100">
+      <BootstrapJs />
       <TopBar
         userName={`${session.user.firstName} ${session.user.lastName}`}
         logoUrl={settings?.presentationLogoUrl ?? null}

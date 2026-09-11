@@ -76,14 +76,13 @@ export function DisplayControlPanel({
 
   return (
     <div className="card">
-      <div className="px-5 py-3 border-b border-[var(--color-rule)] flex items-center justify-between">
+      <div className="card-header d-flex align-items-center justify-content-between">
         <div>
           <div className="eyebrow">Ekran prezentacyjny</div>
           <div className="text-xs" style={{ color: b.color, fontWeight: 600 }}>{b.label}</div>
         </div>
         <a
-          className="btn"
-          style={{ padding: "4px 10px", fontSize: 11 }}
+          className="btn btn-outline-secondary btn-sm"
           href={`/display/${meetingId}`}
           target="_blank"
           rel="noreferrer"
@@ -92,10 +91,9 @@ export function DisplayControlPanel({
         </a>
       </div>
 
-      <div className="p-4 space-y-2">
+      <div className="card-body d-flex flex-column gap-2">
         <button
-          className="btn btn-primary"
-          style={{ width: "100%", justifyContent: "center", textAlign: "center", fontWeight: 700 }}
+          className="btn btn-dark"
           disabled={pending}
           onClick={() => patch({
             displayMode: "AUTO",
@@ -109,67 +107,49 @@ export function DisplayControlPanel({
           <IconAuto /> Wróć do trybu auto
         </button>
 
-        <button
-          className="btn"
-          style={{ width: "100%", justifyContent: "flex-start", textAlign: "left", fontWeight: state.mode === "DEFAULT" ? 600 : 400 }}
-          disabled={pending}
-          onClick={() => patch({ displayMode: "DEFAULT" })}
-        >
-          ◴ Ekran domyślny (nazwa posiedzenia)
-        </button>
-
-        <button
-          className="btn"
-          style={{ width: "100%", justifyContent: "flex-start", textAlign: "left", fontWeight: state.mode === "SPEAKER_LIST" ? 600 : 400 }}
-          disabled={pending}
-          onClick={() => patch({ displayMode: "SPEAKER_LIST" })}
-        >
-          <IconMic size={14} /> Lista mówców
-        </button>
-
-        <button
-          className="btn"
-          style={{ width: "100%", justifyContent: "flex-start", textAlign: "left", fontWeight: state.mode === "FORMAL_MOTIONS" ? 600 : 400 }}
-          disabled={pending}
-          onClick={() => patch({ displayMode: "FORMAL_MOTIONS" })}
-        >
-          <IconMic size={14} /> Wnioski formalne
-        </button>
-
-        <button
-          className="btn"
-          style={{ width: "100%", justifyContent: "flex-start", textAlign: "left", fontWeight: state.mode === "AGENDA_LIST" ? 600 : 400 }}
-          disabled={pending}
-          onClick={() => patch({ displayMode: "AGENDA_LIST" })}
-        >
-          <IconList size={14} /> Porządek obrad (lista)
-        </button>
+        <div className="list-group">
+          <button type="button" className={`list-group-item list-group-item-action${state.mode === "DEFAULT" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "DEFAULT" })}>
+            ◴ Ekran domyślny (nazwa posiedzenia)
+          </button>
+          <button type="button" className={`list-group-item list-group-item-action${state.mode === "SPEAKER_LIST" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "SPEAKER_LIST" })}>
+            <IconMic size={14} /> Lista mówców
+          </button>
+          <button type="button" className={`list-group-item list-group-item-action${state.mode === "FORMAL_MOTIONS" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "FORMAL_MOTIONS" })}>
+            <IconMic size={14} /> Wnioski formalne
+          </button>
+          <button type="button" className={`list-group-item list-group-item-action${state.mode === "AGENDA_LIST" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "AGENDA_LIST" })}>
+            <IconList size={14} /> Porządek obrad (lista)
+          </button>
+          <button type="button" className={`list-group-item list-group-item-action${state.mode === "BLANK" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "BLANK" })}>
+            ⬛ Wyczyść ekran (pusty)
+          </button>
+        </div>
 
         {/* WPIĘTY PUNKT */}
         <div>
           <button
-            className="btn"
-            style={{ width: "100%", justifyContent: "flex-start", textAlign: "left", fontWeight: state.mode === "PINNED_AGENDA" ? 600 : 400 }}
+            type="button"
+            className={`btn btn-outline-secondary w-100 text-start${state.mode === "PINNED_AGENDA" ? " active" : ""}`}
             onClick={() => setPickAgendaOpen((v) => !v)}
           >
             <IconList size={14} /> Pokaż konkretny punkt
           </button>
           {pickAgendaOpen && (
-            <div className="mt-2 space-y-1 max-h-48 overflow-y-auto p-2 border border-[var(--color-rule-soft)]">
-              {agenda.length === 0 && <div className="text-xs" style={{ color: "var(--color-ink-3)" }}>Brak punktów agendy</div>}
+            <div className="list-group mt-2" style={{ maxHeight: 192, overflowY: "auto" }}>
+              {agenda.length === 0 && <div className="text-body-secondary small p-2">Brak punktów agendy</div>}
               {agenda.map((a) => (
                 <button
                   key={a.id}
-                  className="btn"
-                  style={{ width: "100%", justifyContent: "flex-start", padding: "4px 8px", fontSize: 11, fontWeight: state.pinnedAgendaItemId === a.id ? 600 : 400 }}
+                  type="button"
+                  className={`list-group-item list-group-item-action small${state.pinnedAgendaItemId === a.id ? " active" : ""}`}
                   disabled={pending}
                   onClick={() => {
                     patch({ displayMode: "PINNED_AGENDA", displayPinnedAgendaItemId: a.id });
                     setPickAgendaOpen(false);
                   }}
                 >
-                  <span className="mono mr-2" style={{ color: "var(--color-ink-3)" }}>{a.number}.</span>
-                  <span className="truncate">{a.title}</span>
+                  <span className="mono me-2 text-body-secondary">{a.number}.</span>
+                  <span className="text-truncate">{a.title}</span>
                 </button>
               ))}
             </div>
@@ -179,34 +159,34 @@ export function DisplayControlPanel({
         {/* WPIĘTE GŁOSOWANIE */}
         <div>
           <button
-            className="btn"
-            style={{ width: "100%", justifyContent: "flex-start", textAlign: "left", fontWeight: state.mode === "PINNED_VOTE" ? 600 : 400 }}
+            type="button"
+            className={`btn btn-outline-secondary w-100 text-start${state.mode === "PINNED_VOTE" ? " active" : ""}`}
             onClick={() => setPickVoteOpen((v) => !v)}
           >
             <IconCheck /> Pokaż wyniki głosowania
           </button>
           {pickVoteOpen && (
-            <div className="mt-2 space-y-1 max-h-48 overflow-y-auto p-2 border border-[var(--color-rule-soft)]">
+            <div className="list-group mt-2" style={{ maxHeight: 192, overflowY: "auto" }}>
               {votes.filter((v) => v.status === "CLOSED").length === 0 && (
-                <div className="text-xs" style={{ color: "var(--color-ink-3)" }}>Brak zamkniętych głosowań</div>
+                <div className="text-body-secondary small p-2">Brak zamkniętych głosowań</div>
               )}
               {votes.filter((v) => v.status === "CLOSED").map((v) => (
-                <div key={v.id} className="flex items-center gap-1">
+                <div key={v.id} className="list-group-item d-flex align-items-center gap-1 p-0">
                   <button
-                    className="btn"
-                    style={{ flex: 1, justifyContent: "flex-start", padding: "4px 8px", fontSize: 11, fontWeight: state.pinnedVoteId === v.id ? 600 : 400 }}
+                    type="button"
+                    className={`btn btn-sm flex-grow-1 text-start border-0 rounded-0${state.pinnedVoteId === v.id ? " active" : ""}`}
                     disabled={pending}
                     onClick={() => {
                       patch({ displayMode: "PINNED_VOTE", displayPinnedVoteId: v.id });
                       setPickVoteOpen(false);
                     }}
                   >
-                    <span className="mono mr-2" style={{ color: "var(--color-ink-3)" }}>nr {v.number ?? "-"}</span>
-                    <span className="truncate">{v.title}</span>
+                    <span className="mono me-2 text-body-secondary">nr {v.number ?? "-"}</span>
+                    <span className="text-truncate">{v.title}</span>
                   </button>
                   <button
-                    className="btn"
-                    style={{ padding: "4px 8px", fontSize: 11, color: "var(--color-no)" }}
+                    type="button"
+                    className="btn btn-sm btn-outline-danger border-0 me-1"
                     disabled={pending}
                     title="Ukryj te wyniki z widoku auto (kolejne odsłony pokażą poprzednie/aktualny punkt)"
                     onClick={() => patch({
@@ -225,21 +205,21 @@ export function DisplayControlPanel({
 
         {/* Tryb „pokaż PIN" - tylko dla głosowań zabezpieczonych PIN-em; nie trafia na transmisję */}
         {votes.some((v) => v.pinRequired && (v.status === "OPEN" || v.id === state.pinVoteId)) && (
-          <div className="mt-2">
-            <div className="label mb-1" style={{ fontSize: 11 }}>Pokaż PIN na sali</div>
-            <div className="space-y-1">
+          <div>
+            <div className="form-label mb-1">Pokaż PIN na sali</div>
+            <div className="list-group">
               {votes.filter((v) => v.pinRequired && (v.status === "OPEN" || v.id === state.pinVoteId)).map((v) => {
                 const active = state.pinVoteId === v.id;
                 return (
                   <button
                     key={v.id}
-                    className="btn"
-                    style={{ width: "100%", justifyContent: "flex-start", padding: "6px 8px", fontSize: 11, fontWeight: active ? 600 : 400, borderColor: active ? "var(--color-accent)" : undefined }}
+                    type="button"
+                    className={`list-group-item list-group-item-action small${active ? " active" : ""}`}
                     disabled={pending}
                     onClick={() => patch({ displayPinVoteId: active ? null : v.id })}
                   >
-                    <span className="mono mr-2" style={{ color: "var(--color-ink-3)" }}>nr {v.number ?? "-"}</span>
-                    <span className="truncate">{active ? "PIN pokazany - kliknij, by ukryć" : `Pokaż PIN: ${v.title}`}</span>
+                    <span className="mono me-2 text-body-secondary">nr {v.number ?? "-"}</span>
+                    <span className="text-truncate">{active ? "PIN pokazany - kliknij, by ukryć" : `Pokaż PIN: ${v.title}`}</span>
                   </button>
                 );
               })}
@@ -253,73 +233,74 @@ export function DisplayControlPanel({
         {/* KOMUNIKAT TEKSTOWY - osobny tryb */}
         <div>
           <textarea
-            className="form-control"
+            className="form-control mb-2"
             placeholder="Treść komunikatu (np. Zaraz wznawiamy obrady)"
             value={msgDraft}
             onChange={(e) => setMsgDraft(e.target.value)}
-            style={{ minHeight: 60, fontSize: 12 }}
+            style={{ minHeight: 60 }}
           />
           <button
-            className="btn"
-            style={{ width: "100%", marginTop: 4, fontWeight: state.mode === "MESSAGE" ? 600 : 400 }}
+            type="button"
+            className={`btn btn-outline-secondary w-100${state.mode === "MESSAGE" ? " active" : ""}`}
             disabled={pending || !msgDraft.trim()}
             onClick={() => patch({ displayMode: "MESSAGE", displayCustomMessage: msgDraft })}
           >
             <IconMessage /> Wyświetl komunikat
           </button>
-          <label className="flex items-center gap-2 text-xs mt-2 cursor-pointer" style={{ color: "var(--color-ink-2)" }}>
+          <div className="form-check mt-2">
             <input
               type="checkbox"
+              className="form-check-input"
+              id="dcpMessageOverlay"
               checked={state.messageOnOverlay ?? true}
               onChange={(e) => patch({ displayMessageOnOverlay: e.target.checked })}
             />
-            Pokaż komunikat także na transmisji (OBS)
-          </label>
-          <label className="flex items-center gap-2 text-xs mt-2 cursor-pointer" style={{ color: "var(--color-ink-2)" }}>
+            <label className="form-check-label small" htmlFor="dcpMessageOverlay">Pokaż komunikat także na transmisji (OBS)</label>
+          </div>
+          <div className="form-check">
             <input
               type="checkbox"
+              className="form-check-input"
+              id="dcpMessageObsStyle"
               checked={state.messageObsStyle ?? false}
               onChange={(e) => patch({ displayMessageObsStyle: e.target.checked })}
             />
-            Na prezentacji pokaż komunikat w stylu transmisji (kolorowe tło)
-          </label>
+            <label className="form-check-label small" htmlFor="dcpMessageObsStyle">Na prezentacji pokaż komunikat w stylu transmisji (kolorowe tło)</label>
+          </div>
         </div>
 
-        <button
-          className="btn"
-          style={{ width: "100%", justifyContent: "flex-start", textAlign: "left", fontWeight: state.mode === "BLANK" ? 600 : 400 }}
-          disabled={pending}
-          onClick={() => patch({ displayMode: "BLANK" })}
-        >
-          ⬛ Wyczyść ekran (pusty)
-        </button>
-
         {/* OPCJE */}
-        <label className="flex items-center gap-2 text-xs mt-2 cursor-pointer" style={{ color: "var(--color-ink-2)" }}>
+        <div className="form-check">
           <input
             type="checkbox"
+            className="form-check-input"
+            id="dcpShowCastCount"
             checked={state.showCastCount}
             onChange={(e) => patch({ displayShowCastCount: e.target.checked })}
           />
-          Pokaż licznik oddanych głosów w trakcie głosowania
-        </label>
-        <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: "var(--color-ink-2)" }}>
+          <label className="form-check-label small" htmlFor="dcpShowCastCount">Pokaż licznik oddanych głosów w trakcie głosowania</label>
+        </div>
+        <div className="form-check">
           <input
             type="checkbox"
+            className="form-check-input"
+            id="dcpShowByName"
             checked={state.showByName}
             onChange={(e) => patch({ displayShowByName: e.target.checked })}
           />
-          Pokazuj imienne wyniki głosowań jawnych (tablica)
-        </label>
+          <label className="form-check-label small" htmlFor="dcpShowByName">Pokazuj imienne wyniki głosowań jawnych (tablica)</label>
+        </div>
         {state.showByName && (
-          <label className="flex items-center gap-2 text-xs cursor-pointer pl-5" style={{ color: "var(--color-ink-2)" }}>
+          <div className="form-check ps-5">
             <input
               type="checkbox"
+              className="form-check-input"
+              id="dcpShowIndividual"
               checked={state.showIndividualVotes}
               onChange={(e) => patch({ displayShowIndividualVotes: e.target.checked })}
             />
-            Pokazuj indywidualne stanowiska (za/przeciw/wstrz.)
-          </label>
+            <label className="form-check-label small" htmlFor="dcpShowIndividual">Pokazuj indywidualne stanowiska (za/przeciw/wstrz.)</label>
+          </div>
         )}
 
         {/* STEROWANIE STRONAMI - widoczne, gdy na ekranie jest głosowanie typu LISTA lub PAKIET */}
@@ -368,52 +349,50 @@ function BreakControl({
   }
 
   return (
-    <div style={{ border: "1px solid var(--color-rule-soft)", padding: 8 }}>
-      <div className="flex items-center justify-between">
-        <button type="button" className="text-sm font-medium flex items-center gap-1" style={{ fontWeight: isBreak ? 600 : 400 }} onClick={() => setExpanded((v) => !v)}>
-          <span style={{ opacity: 0.5, fontSize: 11 }}>{expanded || isBreak ? "▾" : "▸"}</span> Przerwa w obradach
+    <div className="border rounded">
+      <div className="d-flex align-items-center justify-content-between px-2 py-1">
+        <button type="button" className="btn btn-link btn-sm text-decoration-none px-0" style={{ fontWeight: isBreak ? 600 : 400 }} onClick={() => setExpanded((v) => !v)}>
+          Przerwa w obradach
         </button>
         {isBreak && (
-          <button className="btn" style={{ padding: "2px 8px", fontSize: 11 }} disabled={pending} onClick={() => patch({ displayMode: "AUTO", breakUntil: null })}>Zakończ</button>
+          <button className="btn btn-outline-secondary btn-sm" disabled={pending} onClick={() => patch({ displayMode: "AUTO", breakUntil: null })}>Zakończ</button>
         )}
       </div>
-      {(expanded || isBreak) && (
-        <div className="mt-2">
-      <div className="flex flex-wrap gap-1 mb-2">
-        {[5, 10, 15, 30].map((min) => (
-          <button key={min} className="btn" style={{ padding: "3px 10px", fontSize: 12 }} disabled={pending} onClick={() => startBreak(min)}>{min} min</button>
-        ))}
-      </div>
-      <div className="flex items-center gap-1 mb-2">
-        <input
-          className="form-control"
-          placeholder="do godz. GG:MM"
-          value={customTime}
-          onChange={(e) => onTimeChange(e.target.value)}
-          inputMode="numeric"
-          style={{ fontSize: 12, maxWidth: 120 }}
-        />
-        <button className="btn" style={{ padding: "3px 10px", fontSize: 12 }} disabled={pending || !customTime} onClick={() => startUntilTime(customTime)}>Ustaw</button>
-      </div>
-      <div className="flex items-center gap-1 mb-2">
-        <input
-          className="form-control"
-          placeholder="minut z palca"
-          value={customMin}
-          onChange={(e) => setCustomMin(e.target.value.replace(/\D/g, "").slice(0, 3))}
-          inputMode="numeric"
-          style={{ fontSize: 12, maxWidth: 120 }}
-        />
-        <button className="btn" style={{ padding: "3px 10px", fontSize: 12 }} disabled={pending || !customMin} onClick={() => { startBreak(Number(customMin)); setCustomMin(""); }}>Ustaw</button>
-      </div>
-      <button className="btn" style={{ width: "100%", padding: "3px 10px", fontSize: 12 }} disabled={pending} onClick={startOpenEnded}>Przerwa bez licznika</button>
-      {isBreak && state.breakUntil && (
-        <div className="text-xs mt-2" style={{ color: "var(--color-ink-3)" }}>
-          Wznowienie: {new Date(state.breakUntil).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}
+      <div className={`collapse ${expanded || isBreak ? "show" : ""}`}>
+        <div className="p-2 pt-0 d-flex flex-column gap-2">
+          <div className="btn-group" role="group">
+            {[5, 10, 15, 30].map((min) => (
+              <button key={min} type="button" className="btn btn-outline-secondary btn-sm" disabled={pending} onClick={() => startBreak(min)}>{min} min</button>
+            ))}
+          </div>
+          <div className="input-group input-group-sm">
+            <input
+              className="form-control"
+              placeholder="do godz. GG:MM"
+              value={customTime}
+              onChange={(e) => onTimeChange(e.target.value)}
+              inputMode="numeric"
+            />
+            <button className="btn btn-outline-secondary" disabled={pending || !customTime} onClick={() => startUntilTime(customTime)}>Ustaw</button>
+          </div>
+          <div className="input-group input-group-sm">
+            <input
+              className="form-control"
+              placeholder="minut z palca"
+              value={customMin}
+              onChange={(e) => setCustomMin(e.target.value.replace(/\D/g, "").slice(0, 3))}
+              inputMode="numeric"
+            />
+            <button className="btn btn-outline-secondary" disabled={pending || !customMin} onClick={() => { startBreak(Number(customMin)); setCustomMin(""); }}>Ustaw</button>
+          </div>
+          <button className="btn btn-outline-secondary btn-sm" disabled={pending} onClick={startOpenEnded}>Przerwa bez licznika</button>
+          {isBreak && state.breakUntil && (
+            <div className="small text-body-secondary">
+              Wznowienie: {new Date(state.breakUntil).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}
+            </div>
+          )}
         </div>
-      )}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

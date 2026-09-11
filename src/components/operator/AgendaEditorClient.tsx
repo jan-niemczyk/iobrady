@@ -71,7 +71,7 @@ export function AgendaEditorClient({
       </header>
 
       <div className="card overflow-hidden">
-        <div className="px-5 py-3 border-b border-[var(--color-rule)] flex items-center justify-between">
+        <div className="card-header d-flex align-items-center justify-content-between">
           <h2 className="eyebrow">Punkty ({agenda.length})</h2>
           <div className="flex gap-2">
             <button
@@ -239,7 +239,7 @@ function ImportAgendaModal({
   return (
     <div className="fixed inset-0 z-50 grid place-items-center p-4" style={{ background: "rgba(0,0,0,0.4)" }} onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="card no-grid" style={{ width: "100%", maxWidth: 640, background: "#FFFFFF" }}>
-        <div className="px-5 py-3 border-b border-[var(--color-rule)] flex items-center justify-between">
+        <div className="card-header d-flex align-items-center justify-content-between">
           <h2 className="eyebrow">Import porządku obrad</h2>
           <button onClick={onClose} className="btn" style={{ padding: "4px 10px", fontSize: 12 }}>Zamknij</button>
         </div>

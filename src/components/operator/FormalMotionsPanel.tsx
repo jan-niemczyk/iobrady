@@ -149,7 +149,7 @@ export function FormalMotionsPanel({
           <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{toast}</div>
         </div>
       )}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--color-rule-soft)]">
+      <div className="card-header d-flex align-items-center justify-content-between">
         <h3 className="eyebrow" style={{ margin: 0, color: "var(--color-no)" }}>Wnioski formalne</h3>
         <label className="flex items-center gap-2 text-xs cursor-pointer">
           <input type="checkbox" checked={allowAnytime} onChange={(e) => onToggleAllow(e.target.checked)} />

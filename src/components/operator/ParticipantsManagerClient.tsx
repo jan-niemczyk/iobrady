@@ -360,7 +360,7 @@ function SendEmailModal({ userIds, onClose, onSent }: { userIds: string[]; onClo
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
       <div className="card" style={{ width: "100%", maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
-        <div className="px-5 py-3 border-b border-[var(--color-rule-soft)]">
+        <div className="card-header">
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Wyślij e-mail do zaznaczonych ({userIds.length})</h3>
         </div>
         <div className="p-5 space-y-3">
@@ -505,7 +505,7 @@ function ImportCsvModal({
   return (
     <div className="fixed inset-0 z-50 grid place-items-center p-4" style={{ background: "rgba(0,0,0,0.4)" }} onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="card no-grid" style={{ width: "100%", maxWidth: 720, background: "#FFFFFF", maxHeight: "85vh", overflow: "auto" }}>
-        <div className="px-5 py-3 border-b border-[var(--color-rule)] flex items-center justify-between">
+        <div className="card-header d-flex align-items-center justify-content-between">
           <h2 className="eyebrow">Import użytkowników z CSV</h2>
           <button onClick={onClose} className="btn" style={{ padding: "4px 10px", fontSize: 12 }}>Zamknij</button>
         </div>

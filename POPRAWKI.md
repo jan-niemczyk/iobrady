@@ -646,3 +646,65 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
         bazowy przejęty od Bootstrapa), interaktywne chipy z obramowaniem → `badge border`.
   - Karty głosowania/prezentacja/transmisja - bez zmian (nie ładują Bootstrapa, `.pill`/
     `.eyebrow` z `globals.css` nadal ich jedynym źródłem stylu).
+
+## AAF. "Domyślny wygląd Bootstrapa" - prawdziwe komponenty zamiast ręcznych imitacji + druga
+     przyczyna niewidocznych elementów (kolizja `.collapse` Tailwind/Bootstrap)
+- Dalsza, ostrzejsza ocena użytkownika ("nadal jest paskudnie... karty wyglądają źle, macie
+  zrobić domyślny wygląd... jak się klika Raporty to dramat, nie ma dropdown tylko dropup...
+  Przerwa w obradach jest po swojemu a nie na bootstrap") wskazała, że punktowe poprawki CSS to
+  za mało - część UI wciąż była RĘCZNIE zaimitowana (nagłówek karty jako zwykły `<div>` z linią
+  pod spodem zamiast prawdziwego `card-header`; menu "Raporty" jako natywny `<details>/<summary>`
+  zamiast Bootstrapowego `.dropdown`; "Przerwa w obradach" jako ręcznie stylowany `<div
+  style={{border:...}}>` z własnymi trójkącikami ▾/▸ zamiast Bootstrapowego wzorca zwijanej
+  sekcji) - stąd "nie ma dropdown tylko dropup" (natywny `<details>` nie ma kolizji z viewportem
+  jak prawdziwy Bootstrapowy dropdown z Popperem) i ogólny "niespójny" wygląd.
+- [x] **Prawdziwe nagłówki kart** - wszystkie ręcznie budowane paski nagłówka
+      (`className="px-5 py-3 border-b ..."` z `<h2/h3 className="eyebrow">` w środku, ~14 miejsc
+      w `DisplayControlPanel`, `FormalMotionsPanel`, `MeetingPanelClient` (×5),
+      `AttendanceCheckPanel` (×2), `AgendaEditorClient` (×2), `SpeakersPanel`,
+      `ParticipantsManagerClient` (×2)) zamienione na prawdziwy Bootstrapowy `card-header`
+      (jasne tło `--bs-card-cap-bg`, własny padding/border) - sama nazwa klasy, bez zmiany
+      treści nagłówków ani układu.
+- [x] **Prawdziwy dropdown "Raporty"** (`MeetingPanelClient.tsx`) - zamiast `<details>/<summary>`
+      + ręcznie pozycjonowanego `absolute` panelu: `div.dropdown` + `button.dropdown-toggle
+      data-bs-toggle="dropdown"` + `ul.dropdown-menu.dropdown-menu-end` z `li>a/button
+      .dropdown-item`, `dropdown-header` (sekcja "Porządek i protokół") i `dropdown-divider` -
+      teraz to prawdziwy komponent Bootstrapa z automatycznym, poprawnym pozycjonowaniem.
+      Wymaga JS Bootstrapa (patrz niżej) - bez niego `data-bs-toggle` nic by nie robił.
+- [x] **JS Bootstrapa dociągnięty** - nowy `src/components/BootstrapJs.tsx` (client component,
+      `useEffect(() => import("bootstrap/dist/js/bootstrap.bundle.min.js"))`) wyrenderowany w
+      layoutach `(operator)`, `login`, `account`, `chairperson` - dotąd był ładowany tylko CSS
+      Bootstrapa (apka nie miała dropdownów), teraz jest i JS, więc `data-bs-toggle="dropdown"`
+      działa "z pudełka", bez pisania własnej logiki otwierania/pozycjonowania. Dodano
+      `src/types/bootstrap-js.d.ts` (deklaracja modułu - paczka nie ma typów dla ścieżki do
+      gotowego bundla).
+- [x] **"Przerwa w obradach" na realnych komponentach** (`DisplayControlPanel.tsx`) - ręczny
+      `<div style={{border:...}}>` z trójkącikami ▾/▸ zamieniony na `border rounded` + Bootstrapowy
+      wzorzec zwijanej sekcji (`className="collapse show"` sterowany istniejącym stanem React,
+      bez `data-bs-toggle` - nie było potrzeby JS-a skoro stan już był w komponencie), środek na
+      `btn-group` (przyciski 5/10/15/30 min - teraz złączone w jeden pasek, nie osobne guziki) i
+      `input-group` (pole + przycisk "Ustaw" w jednym, spójnym elemencie). Reszta panelu
+      (`DisplayControlPanel`) też przeszła na prawdziwe komponenty: `list-group`/
+      `list-group-item-action`/`active` dla listy trybów prezentacji (zamiast ręcznego
+      pogrubiania tekstu przez `fontWeight`), `form-check` dla checkboxów opcji.
+- [x] **Druga przyczyna niewidocznych elementów - kolizja nazwy klasy `.collapse`.** Po dodaniu
+      `className="collapse show"` do Przerwy, jej zawartość (przyciski 5/10/15/30 min, pola
+      input-group) była w DOM (potwierdzone przez odczyt realnego drzewa strony), ale
+      NIEWIDOCZNA mimo poprawnego `display:block`. Przyczyna: Tailwind ma WŁASNĄ, zupełnie inną
+      utility o tej samej nazwie `.collapse` (`visibility:collapse` - do ukrywania wierszy
+      tabeli), generowaną automatycznie, bo gdziekolwiek w kodzie pojawia się
+      `className="collapse"`. To nie jest konflikt na tej samej właściwości CSS (Bootstrap
+      ustawia `display`, Tailwind `visibility`), więc zasada "unlayered wygrywa z layerowanym"
+      (patrz AAE) nic tu nie rozstrzyga - OBIE reguły się stosują naraz: element dostaje
+      poprawne `display:block` ORAZ `visibility:collapse` z Tailwinda i jest niewidoczny mimo
+      zajmowania miejsca w layoucie. Naprawione jedną regułą w `bootstrap-scoped.scss`:
+      `.collapse { visibility: visible; }` (unlayered, więc bezwarunkowo neutralizuje Tailwinda
+      w całym zakresie Bootstrapa) - Bootstrap i tak nigdy świadomie nie używa `visibility` do
+      pokazywania/ukrywania `.collapse`, więc to bezpieczne, ogólne zabezpieczenie na przyszłość
+      (dowolny kolejny Bootstrapowy `.collapse`/accordion w panelu operatora będzie działał
+      poprawnie bez ponownego natrafiania na ten sam problem).
+- Zweryfikowane na żywo (nie tylko przez czytanie kodu) - lokalne uruchomienie `npm run dev` z
+  bazą Postgres, zalogowanie jako operator, utworzenie testowego posiedzenia z punktami/
+  wnioskiem formalnym/głosowaniami i zrzuty ekranu rzeczywistej strony: nagłówki kart z jasnym
+  tłem, dropdown "Raporty" otwierający się w dół z podziałami sekcji, "Przerwa w obradach" z
+  widocznym, złączonym `btn-group`/`input-group` po rozwinięciu.

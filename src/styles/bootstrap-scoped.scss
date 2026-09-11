@@ -22,6 +22,18 @@
 // definicja poniżej (nie tylko poprawka marginesu) rozwiązuje to raz a dobrze.
 // ─────────────────────────────────────────────────────────────────
 
+// Tailwind ma WŁASNĄ, zupełnie inną klasę o tej samej nazwie ".collapse" (utility
+// visibility:collapse - do ukrywania wierszy tabeli), generowaną automatycznie, bo
+// gdziekolwiek w kodzie użyto className="collapse" (Bootstrapowy komponent zwijany).
+// To nie konflikt na tej samej właściwości (Bootstrap ustawia `display`, Tailwind
+// `visibility`) więc żadna reguła "unlayered wygrywa" tego nie rozstrzyga same z siebie -
+// obie się stosują naraz, więc zwinięty element dostaje display:block (poprawnie) ALE
+// też visibility:collapse (z Tailwinda) i jest niewidoczny mimo zajmowania miejsca.
+// Jawnie neutralizujemy to tutaj.
+.collapse {
+  visibility: visible;
+}
+
 // Delikatny cień na wszystkich kartach - Bootstrap sam z siebie go nie dokłada
 // (żeby dostać go bez zmiany każdego pliku, dopisujemy tu jedną własność do
 // jego własnej reguły .card, zamiast dopisywać "shadow-sm" w markupie wszędzie).

@@ -89,7 +89,7 @@ export function AttendanceCheckPanel({
 
   return (
     <div className="card">
-      <div className="px-5 py-3 border-b border-[var(--color-rule-soft)]">
+      <div className="card-header">
         <h3 className="eyebrow" style={{ margin: 0, marginBottom: 8 }}>Obecność</h3>
         <div className="flex flex-wrap items-center gap-1">
           <a href={`/meetings/${meetingId}/participants`} className="btn" style={{ padding: "5px 10px", fontSize: 12 }}>Uczestnicy</a>
@@ -179,7 +179,7 @@ export function AttendanceCheckPanel({
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
           onClick={() => setModalOpen(false)}>
           <div className="card" style={{ width: "100%", maxWidth: 560, maxHeight: "88vh", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--color-rule-soft)]">
+            <div className="card-header d-flex align-items-center justify-content-between">
               <h3 className="eyebrow" style={{ margin: 0 }}>Sprawdzenie obecności</h3>
               <span className="text-sm" style={{ fontWeight: 600 }}>Potwierdziło: {active.entries.filter((e) => e.present).length} / {active.entries.length}</span>
             </div>
