@@ -219,7 +219,7 @@ export function ParticipantsManagerClient({
                     <td className="px-4 py-2">{u.firstName} {u.lastName}</td>
                     <td className="px-4 py-2 mono text-xs" style={{ color: "var(--color-ink-3)" }}>{u.email}</td>
                     <td className="px-4 py-2">
-                      <span className="pill pill-neutral">{u.role === "OPERATOR" ? "Operator" : "Uczestnik"}</span>
+                      <span className="badge text-bg-light border">{u.role === "OPERATOR" ? "Operator" : "Uczestnik"}</span>
                     </td>
                     <td className="px-4 py-2">
                       {u.groupShort ? (

@@ -239,13 +239,13 @@ export function SpeakersPanel({
                 <span className="mono text-xs w-6 text-right" style={{ color: "var(--color-ink-3)" }}>{idx + 1}.</span>
                 <span className="text-sm truncate">{e.userName}</span>
                 {e.entryType === "AD_VOCEM" && (
-                  <span className="pill" style={{ background: "var(--color-no-bg)", color: "var(--color-no)", fontSize: 9 }}>AD VOCEM</span>
+                  <span className="badge" style={{ background: "var(--color-no-bg)", color: "var(--color-no)", fontSize: 9 }}>AD VOCEM</span>
                 )}
                 {e.entryType === "FORMAL_MOTION" && (
-                  <span className="pill" style={{ background: "var(--color-abstain-bg)", color: "var(--color-abstain)", fontSize: 9 }}>WNIOSEK</span>
+                  <span className="badge" style={{ background: "var(--color-abstain-bg)", color: "var(--color-abstain)", fontSize: 9 }}>WNIOSEK</span>
                 )}
                 {e.priority && (
-                  <span className="pill" style={{ background: "var(--color-yes-bg)", color: "var(--color-yes)", fontSize: 9 }}>PRIORYTET</span>
+                  <span className="badge" style={{ background: "var(--color-yes-bg)", color: "var(--color-yes)", fontSize: 9 }}>PRIORYTET</span>
                 )}
                 <label className="flex items-center gap-1 text-xs" title="Limit czasu wystąpienia w sekundach. 0 lub puste = brak limitu.">
                   <span className="mono" style={{ color: "var(--color-ink-3)" }}>limit:</span>

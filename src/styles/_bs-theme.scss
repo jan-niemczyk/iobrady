@@ -38,15 +38,18 @@ $border-radius:       .375rem;
 $border-radius-sm:    .25rem;
 $border-radius-lg:    .5rem;
 
-// Stonowane, "urzędowe" akcenty - bez cieni/gradientów rodem z gotowych szablonów.
-$enable-shadows:      false;
+// Bez gradientów rodem z gotowych szablonów - ale delikatny cień na kartach
+// zostaje włączony (miększy, mniej "surowy" wygląd niż płaskie bloki z samym
+// obramowaniem - wzorem sprawdzonego motywu w innej aplikacji tego samego zespołu).
 $enable-gradients:    false;
-$box-shadow:          none;
-$box-shadow-sm:       none;
-$box-shadow-lg:       none;
+$box-shadow-sm:       0 1px 2px rgba(15, 23, 42, .06), 0 1px 1px rgba(15, 23, 42, .04);
+$box-shadow:          0 2px 10px rgba(15, 23, 42, .06);
+$box-shadow-lg:       0 4px 18px rgba(15, 23, 42, .08);
 
 $link-color:          $ink;
 $link-hover-color:    $ink-2;
 
 $card-border-color:   $rule-soft;
 $table-border-color:  $rule-soft;
+$card-spacer-y:       1.1rem;
+$card-spacer-x:       1.1rem;

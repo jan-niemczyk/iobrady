@@ -604,3 +604,45 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
   - Realne Bootstrapowe `.badge` (dashboard/archive/login-log/meetings) już miały poprawny,
     nie-pigułkowy promień - `$border-radius` nie był nadpisywany dla badge, więc nie wymagały
     zmian.
+
+## AAE. Prawdziwy rdzeń problemu: CSS Cascade Layers (Tailwind vs Bootstrap) - naprawa wzorem sprawdzonej aplikacji
+- Poprawka AAD nie wystarczyła (użytkownik pokazał zrzut ekranu na żywo - "WNIOSKI FORMALNE"
+  nadal renderował się jako olbrzymi czerwony nagłówek, `.pill` nadal w pełni zaokrąglone).
+  Prawdziwa przyczyna: `globals.css` (Tailwind v4, `@import "tailwindcss"`) owija własne klasy
+  (`.eyebrow`, `.pill`, `.card`, `.btn`...) w `@layer components`, a skompilowany Bootstrap
+  (`bootstrap-scoped.css`) jest w całości UNLAYERED (poza jakimkolwiek `@layer`). Wg specyfikacji
+  CSS Cascade Layers reguły spoza jakiegokolwiek layera ZAWSZE wygrywają z regułami
+  layerowanymi - niezależnie od specyficzności selektora i kolejności w dokumencie. Dlatego
+  Bootstrapowy, goły `h2,h3{font-size:1.75rem/1.5rem}` (unlayered, tag) bezwarunkowo wygrywał z
+  layerowanym `.eyebrow{font-size:10px}` (klasa) z `globals.css`, mimo wyższej specyficzności
+  klasy - stąd olbrzymie nagłówki wszędzie tam, gdzie `.eyebrow` trafiał na prawdziwy tag
+  `<h2>/<h3>`. Poprzednia poprawka AAD nadpisywała tylko margines/line-height, nie font-size.
+- Zdiagnozowane i naprawione wzorem architektury z `jan-niemczyk/systemglosowanobiegowych`
+  (druga aplikacja tego zespołu, gdzie motyw Bootstrapa jest jedynym systemem CSS - bez
+  Tailwinda w tle, więc bez konfliktu layerów):
+  - [x] `src/styles/bootstrap-scoped.scss` - `.eyebrow` przeniesiony z layerowanej definicji
+        w `globals.css` na PEŁNĄ, samodzielną, unlayered definicję w tym pliku (po imporcie
+        Bootstrapa) - font-size/waga/margines/line-height w jednym miejscu, bezwarunkowo
+        wygrywa z Bootstrapem niezależnie od tagu. `globals.css` zachowuje swoją (layerowaną)
+        wersję `.eyebrow` bez zmian - nadal poprawnie działa na kartach głosowania/prezentacji,
+        które nie ładują Bootstrapa.
+  - [x] Dopisana `.badge-live` (pulsująca kropka, wzorem `.pill-live::before` - jedyna rzecz,
+        której Bootstrapowy `.badge` nie ma gotowej) oraz `.card { box-shadow: $box-shadow-sm; }`
+        (delikatny cień na wszystkich kartach operatora - jedno dopisanie do własnej reguły
+        Bootstrapa, bez zmiany choćby jednego pliku komponentu).
+  - [x] `src/styles/_bs-theme.scss` - włączone stonowane cienie (`$box-shadow-sm/$box-shadow/
+        $box-shadow-lg`, wartości 1:1 z `systemglosowanobiegowych`) zamiast całkowitego
+        wyłączenia (`$enable-shadows:false` usunięte) - "miększy" wygląd zamiast płaskich,
+        surowych bloków; nieco hojniejszy `$card-spacer-y/x` (1.1rem).
+  - [x] Wszystkie pozostałe użycia `.pill*` w panelu operatora zamienione na `badge` +
+        modyfikator (`AgendaEditorClient.tsx` - `StatusPill`, `MeetingPanelClient.tsx` -
+        pasek tytułowy/`AgendaStatusPill`/tabliczka obecnych/"bieżący punkt",
+        `MeetingParticipantsClient.tsx` - chipy zakresu priorytetu, `SpeakersPanel.tsx` -
+        znaczniki AD VOCEM/WNIOSEK/PRIORYTET, `ParticipantsManagerClient.tsx` - rola konta):
+        `pill-live`→`badge badge-live`, `pill-ok`→`badge text-bg-success` (kolor `$success`
+        już wcześniej zamapowany na `--color-yes`), `pill-neutral`→`badge text-bg-light border`
+        (wzorem już istniejących `MEETING_STATUS_LABEL` badge z Fazy AAB), gołe `.pill` z
+        inline-stylowanym tłem/kolorem → `badge` z tym samym inline stylem (promień/padding
+        bazowy przejęty od Bootstrapa), interaktywne chipy z obramowaniem → `badge border`.
+  - Karty głosowania/prezentacja/transmisja - bez zmian (nie ładują Bootstrapa, `.pill`/
+    `.eyebrow` z `globals.css` nadal ich jedynym źródłem stylu).

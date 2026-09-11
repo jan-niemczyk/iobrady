@@ -442,7 +442,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium" style={{ overflowWrap: "anywhere" }}>
-                          {isCurrentItem && <span className="pill" style={{ fontSize: 9, padding: "1px 6px", marginRight: 6, background: "var(--color-accent)", color: "#fff" }}>BIEŻĄCY PUNKT</span>}
+                          {isCurrentItem && <span className="badge" style={{ fontSize: 9, padding: "1px 6px", marginRight: 6, background: "var(--color-accent)", color: "#fff" }}>BIEŻĄCY PUNKT</span>}
                           {v.title}
                         </div>
                         {v.description && (
@@ -583,8 +583,8 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
           <h1 style={{ fontSize: 32, lineHeight: 1.05 }}>{state.name}</h1>
         </div>
         <div className="flex items-center gap-2">
-          {live && <span className="pill pill-live">Na żywo</span>}
-          <span className="pill pill-neutral">{MEETING_STATUS_LABEL[state.status]}</span>
+          {live && <span className="badge badge-live">Na żywo</span>}
+          <span className="badge text-bg-light border">{MEETING_STATUS_LABEL[state.status]}</span>
 
           {/* Raporty */}
           <div className="relative">
@@ -2009,7 +2009,7 @@ function OnlineList({ participants }: { participants: { userId: string; name: st
       {open && (
         <div className="mt-2 flex flex-wrap gap-1">
           {sorted.map((p) => (
-            <span key={p.userId} className="pill" style={{ padding: "2px 8px", fontSize: 11, opacity: p.online ? 1 : 0.5 }}>
+            <span key={p.userId} className="badge border" style={{ padding: "2px 8px", fontSize: 11, opacity: p.online ? 1 : 0.5 }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: p.online ? "var(--color-yes)" : "var(--color-ink-3)", display: "inline-block", marginRight: 5 }} />
               {p.name}{p.groupShort ? ` (${p.groupShort})` : ""}
             </span>
@@ -2080,11 +2080,11 @@ function BallotCounter({ label, color, value }: { label: string; color: "yes" | 
 }
 
 function AgendaStatusPill({ status }: { status: AgendaItemStatus }) {
-  if (status === "CURRENT") return <span className="pill pill-live">Rozpatrywany</span>;
-  if (status === "PAUSED") return <span className="pill" style={{ background: "var(--color-abstain-bg)", color: "var(--color-abstain)" }}>Zawieszony</span>;
-  if (status === "COMPLETED") return <span className="pill pill-ok">Zakończony</span>;
-  if (status === "SKIPPED") return <span className="pill pill-neutral">Pominięty</span>;
-  return <span className="pill pill-neutral">Oczekuje</span>;
+  if (status === "CURRENT") return <span className="badge badge-live">Rozpatrywany</span>;
+  if (status === "PAUSED") return <span className="badge" style={{ background: "var(--color-abstain-bg)", color: "var(--color-abstain)" }}>Zawieszony</span>;
+  if (status === "COMPLETED") return <span className="badge text-bg-success">Zakończony</span>;
+  if (status === "SKIPPED") return <span className="badge text-bg-light border">Pominięty</span>;
+  return <span className="badge text-bg-light border">Oczekuje</span>;
 }
 
 function labelForType(t: VoteType): string {

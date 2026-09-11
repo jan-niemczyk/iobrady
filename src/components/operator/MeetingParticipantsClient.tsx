@@ -181,15 +181,15 @@ export function MeetingParticipantsClient({
                               return (
                                 <>
                                   <button
-                                    className="pill"
-                                    style={{ cursor: "pointer", fontSize: 10, padding: "1px 7px", background: isGlobal ? "var(--color-yes)" : undefined, color: isGlobal ? "#fff" : undefined, borderColor: isGlobal ? "var(--color-yes)" : undefined }}
+                                    className="badge border"
+                                    style={{ cursor: "pointer", fontSize: 10, padding: "1px 7px", background: isGlobal ? "var(--color-yes)" : "#fff", color: isGlobal ? "#fff" : "var(--color-ink-2)", borderColor: isGlobal ? "var(--color-yes)" : "var(--color-rule-soft)" }}
                                     onClick={() => act("PATCH", `/api/meeting-participants/${p.id}`, { priorityAgendaItemIds: [], priorityAgendaItemId: null })}
                                     title="Priorytet przez całe posiedzenie"
                                   >Globalny</button>
                                   {agenda.map((a) => {
                                     const on = sel.includes(a.id);
                                     return (
-                                      <button key={a.id} className="pill" style={{ cursor: "pointer", fontSize: 10, padding: "1px 7px", background: on ? "var(--color-yes)" : undefined, color: on ? "#fff" : undefined, borderColor: on ? "var(--color-yes)" : undefined }} onClick={() => toggle(a.id)} title={`Priorytet w punkcie ${a.number}`}>
+                                      <button key={a.id} className="badge border" style={{ cursor: "pointer", fontSize: 10, padding: "1px 7px", background: on ? "var(--color-yes)" : "#fff", color: on ? "#fff" : "var(--color-ink-2)", borderColor: on ? "var(--color-yes)" : "var(--color-rule-soft)" }} onClick={() => toggle(a.id)} title={`Priorytet w punkcie ${a.number}`}>
                                         {a.number}
                                       </button>
                                     );

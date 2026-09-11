@@ -9,11 +9,54 @@
 @use "bs-theme" as *;
 @import "bootstrap/scss/bootstrap";
 
-// Ujednolicenie nagłówków-etykiet (.eyebrow) użytych na prawdziwych tagach <h2>/<h3>
-// (część paneli operatora buduje nagłówek karty tak, reszta jako zwykły <div>) - Bootstrap
-// narzuca na h1-h6 własny margines i line-height niezależnie od klasy .eyebrow, przez co
-// wizualnie identyczne nagłówki miały różne odstępy w zależności od użytego tagu.
-h2.eyebrow, h3.eyebrow {
+// ─────────────────────────────────────────────────────────────────
+// Cienki własny layer - WYŁĄCZNIE to, czego Bootstrap nie ma gotowego.
+// Celowo UNLAYERED (poza jakimkolwiek @layer) i zdefiniowane PO imporcie
+// Bootstrapa: globals.css (Tailwind) owija swoje odpowiedniki (.eyebrow, .pill)
+// w `@layer components`, a wg specyfikacji CSS Cascade Layers reguły spoza
+// jakiegokolwiek layera ZAWSZE wygrywają z regułami layerowanymi, niezależnie
+// od specyficzności selektora czy kolejności w dokumencie. Dlatego wcześniejsza
+// próba nadpisania samej marginesu na `h2.eyebrow, h3.eyebrow` nie wystarczała -
+// Bootstrapowy `h2,h3{font-size:...}` (też unlayered, goły tag) nadal wygrywał
+// z layerowanym `.eyebrow{font-size:10px}` z globals.css. Pełna, samodzielna
+// definicja poniżej (nie tylko poprawka marginesu) rozwiązuje to raz a dobrze.
+// ─────────────────────────────────────────────────────────────────
+
+// Delikatny cień na wszystkich kartach - Bootstrap sam z siebie go nie dokłada
+// (żeby dostać go bez zmiany każdego pliku, dopisujemy tu jedną własność do
+// jego własnej reguły .card, zamiast dopisywać "shadow-sm" w markupie wszędzie).
+.card {
+  box-shadow: $box-shadow-sm;
+}
+
+.eyebrow {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--bs-secondary-color);
+  font-weight: 600;
   margin: 0;
   line-height: 1.4;
+}
+
+// Odznaka "trwa" - jedyna rzecz, której Bootstrapowy .badge nie ma (pulsująca kropka).
+// Użycie: className="badge badge-live" (baza .badge daje padding/rozmiar/promień).
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .35; }
+}
+.badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  color: var(--color-live);
+  background: #fff;
+  border: 1px solid var(--color-live);
+}
+.badge-live::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--color-live);
+  animation: pulse 1.4s ease-in-out infinite;
 }

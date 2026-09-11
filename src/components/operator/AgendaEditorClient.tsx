@@ -346,8 +346,8 @@ function ItemEditor({
 }
 
 function StatusPill({ status }: { status: AgendaItemStatus }) {
-  if (status === "CURRENT") return <span className="pill pill-live">Rozpatrywany</span>;
-  if (status === "COMPLETED") return <span className="pill pill-ok">Zakończony</span>;
-  if (status === "SKIPPED") return <span className="pill pill-neutral">Pominięty</span>;
-  return <span className="pill pill-neutral">{AGENDA_ITEM_STATUS_LABEL[status]}</span>;
+  if (status === "CURRENT") return <span className="badge badge-live">Rozpatrywany</span>;
+  if (status === "COMPLETED") return <span className="badge text-bg-success">Zakończony</span>;
+  if (status === "SKIPPED") return <span className="badge text-bg-light border">Pominięty</span>;
+  return <span className="badge text-bg-light border">{AGENDA_ITEM_STATUS_LABEL[status]}</span>;
 }
