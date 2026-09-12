@@ -727,3 +727,58 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
       treści (formularz, nie lista wyboru), więc oddzielenie jest tu celowe, nie przypadkowe.
 - Zweryfikowane na żywo tym samym sposobem co w AAF - zrzut ekranu pokazuje jedną, ciągłą listę
   bez mieszanych stylów przycisków.
+
+## AAH. Rozdzielenie statusu posiedzenia od przycisku "Otwórz" + ujednolicenie kart panelu (`card-body`)
+
+**Koncepcja od Jana:** pełny panel posiedzenia (głosowania na żywo, mówcy, obecność...) ma się
+włączać dopiero po otwarciu posiedzenia; samo "Otwórz posiedzenie" ma być oddzielone od
+faktycznego rozpoczęcia obrad (osobny przycisk), a dopóki posiedzenie nie jest otwarte, operator
+ma widzieć edytor porządku obrad razem z planerem głosowań zamiast pustego/pełnego panelu.
+Przy okazji: "na nowo zbudować wszystkie karty ... nie rozumiem marginesów" - w
+`MeetingPanelClient.tsx` znaleziono pięć różnych ad-hoc paddingów (`p-3`/`p-4`/`p-5`/`p-6`/`p-8`)
+używanych zamiast Bootstrapowego `card-body`, w dwóch miejscach nałożonych na sam `.card` (a nie
+na treść pod nagłówkiem) - to była mechaniczna przyczyna "rozjazdu".
+
+- [x] **Rozdzielenie statusów OPEN / IN_PROGRESS.** Etykiety w `labels.ts` już od dawna miały
+      osobne "Otwarte" i "W toku" - flow tego nie wykorzystywał (`/open` skakał od razu do
+      `IN_PROGRESS`). Teraz: `POST /api/meetings/[id]/open` ustawia `status: "OPEN"` (bez zmiany
+      w pozostałej logice), nowy endpoint `POST /api/meetings/[id]/start` (wymaga `status ===
+      "OPEN"`) ustawia `status: "IN_PROGRESS"`. Nowa wartość enuma `AuditAction.MEETING_STARTED`
+      w schemacie (audit log rozpoczęcia obrad, osobno od `MEETING_OPENED`).
+- [x] **Nagłówek panelu (`MeetingPanelClient.tsx`)** - trzy niezależne przyciski zamiast jednego:
+      "Otwórz posiedzenie" (PREPARED/DRAFT -> OPEN), "Rozpocznij obrady" (OPEN -> IN_PROGRESS,
+      widoczny tylko w statusie OPEN), "Zamknij posiedzenie" (OPEN lub IN_PROGRESS -> CLOSED, bez
+      zmian poza warunkiem widoczności).
+- [x] **Widok przygotowania (`PreparationView`, nowy)** - dopóki `status` to `PREPARED`/`DRAFT`
+      (`isPreparation`), zamiast siatki 12 kolumn z pełnym panelem pokazywany jest baner
+      informacyjny + `AgendaEditorClient` (nowy prop `embedded` - bez własnego nagłówka strony,
+      do osadzenia wewnątrz panelu) + nowa karta `VotePlannerCard`. Po `OPEN`/`IN_PROGRESS` panel
+      wygląda jak dotychczas (bez zmian w funkcjonalności samego posiedzenia w toku).
+- [x] **`VotePlannerCard` (nowa karta "Planer głosowań")** - lista punktów porządku z
+      checkboxami + wybór rodzaju/jawności/większości/podstawy, tworzy po jednym głosowaniu na
+      zaznaczony punkt przez istniejący endpoint `votes/bulk-by-agenda` (ten sam, którego już
+      używał `BulkImportModal` w trybie "agenda") - bez duplikowania logiki bulk-tworzenia.
+- [x] **Ujednolicenie paddingu kart na `card-body`** - "Aktualny punkt", pusty stan "Głosowanie",
+      `ActiveVotePanel`, `MessagesPanel` (`p-3..p-8` -> `card-body`); "Materiały posiedzenia" i
+      karta e-mail miały `.p-4` na samym `.card` (podwójny padding razem z nagłówkiem) - poprawione
+      na `card` + osobny `card-body` pod nagłówkiem. `FutureSignupsPanel` ("Zapisy do przyszłych
+      punktów") był ręcznie zwijany przyciskiem z glifami ▾/▸ - przebudowany na prawdziwy
+      Bootstrapowy `card-header` (button) + `collapse`/`show`, ten sam wzorzec co "Przerwa w
+      obradach" w AAF/AAG.
+- [x] **Poprawka:** serwerowy initial state (`app/(operator)/meetings/[id]/page.tsx`) nie
+      przekazywał pól `unnumbered`/`isSubItem`/`hiddenFromDisplay`/`description`/`presenter` w
+      mapowaniu `agenda` - efekt uboczny: nienumerowane punkty ("Przerwa", "Zamknięcie
+      posiedzenia") w nowej karcie "Planer głosowań" wyświetlały samo "." zamiast "-." (dywiz
+      zamiast numeru). Uzupełniono mapowanie o brakujące pola.
+- **Świadomie nietknięte:** cztery miejsca po stronie uczestnika, które już wcześniej traktowały
+  `OPEN` jako "posiedzenie widoczne/dołączalne" razem z `IN_PROGRESS`/`PAUSED`
+  (`api/me/session`, `api/me/active-votes`, `(participant)/session/page.tsx`,
+  `(participant)/session/mini/page.tsx`) - zgodnie z ustaleniem "aplikacją u radnego zajmiemy się
+  później, będzie więcej zmian", uczestnik od teraz widzi posiedzenie jako aktywne już w stanie
+  OPEN (przed kliknięciem "Rozpocznij obrady") - to zachowanie zgodne z pierwotnym zamysłem
+  nazewnictwa statusów, nie regresja.
+- Zweryfikowane na żywo: lokalny `npm run dev`, przejście testowego posiedzenia
+  PREPARED -> (widok przygotowania: edytor porządku + planer głosowań) -> "Otwórz posiedzenie"
+  -> OPEN (pełny panel, przycisk "Rozpocznij obrady") -> "Rozpocznij obrady" -> IN_PROGRESS
+  ("W toku", przycisk znika, zostaje tylko "Zamknij posiedzenie") - zrzuty ekranu Playwright na
+  każdym etapie, `npx tsc --noEmit` i `npm run build` czyste.

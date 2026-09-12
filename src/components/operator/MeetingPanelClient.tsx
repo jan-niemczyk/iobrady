@@ -10,6 +10,7 @@ import { SpeakersPanel } from "@/components/operator/SpeakersPanel";
 import { FormalMotionsPanel } from "@/components/operator/FormalMotionsPanel";
 import { DiscussionClockPanel } from "@/components/operator/DiscussionClockPanel";
 import { AttendanceCheckPanel } from "@/components/operator/AttendanceCheckPanel";
+import { AgendaEditorClient } from "@/components/operator/AgendaEditorClient";
 import { DisplayControlPanel } from "@/components/operator/DisplayControlPanel";
 import { MeetingSettingsPanel } from "@/components/operator/MeetingSettingsPanel";
 import { AttachmentsManager } from "@/components/operator/AttachmentsManager";
@@ -375,6 +376,10 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
   }
 
   const live = state.status === "IN_PROGRESS" || state.status === "OPEN";
+  // Dopóki posiedzenie nie zostało otwarte, pełny panel (głosowania na żywo, mówcy,
+  // obecność...) nie ma jeszcze sensu - operator dostaje edytor porządku obrad i planer
+  // głosowań zamiast tego, patrz PreparationView niżej.
+  const isPreparation = state.status === "PREPARED" || state.status === "DRAFT";
   const currentItem = state.agenda.find((a) => a.id === state.currentAgendaItemId);
   const activeVote = state.votes.find((v) => v.status === "OPEN");
 
@@ -668,9 +673,14 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
             Edytuj
           </button>
 
-          {state.status === "PREPARED" && (
+          {(state.status === "PREPARED" || state.status === "DRAFT") && (
             <button className="btn btn-primary" disabled={pending} onClick={() => act(`/api/meetings/${state.id}/open`)}>
               Otwórz posiedzenie
+            </button>
+          )}
+          {state.status === "OPEN" && (
+            <button className="btn btn-primary" disabled={pending} onClick={() => act(`/api/meetings/${state.id}/start`)} title="Rozpocznij obrady na żywo (status W toku)">
+              Rozpocznij obrady
             </button>
           )}
           {(state.status === "OPEN" || state.status === "IN_PROGRESS") && (
@@ -706,6 +716,15 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
         </div>
       </header>
 
+      {isPreparation ? (
+        <PreparationView
+          meetingId={state.id}
+          meetingName={state.name}
+          meetingNumber={state.number}
+          agenda={state.agenda}
+        />
+      ) : (
+      <>
       {/* STAT ROW */}
       <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px mb-6 border border-[var(--color-rule)] bg-[var(--color-rule)]" style={{ overflow: "hidden" }}>
         <StatCell label="Uczestnicy" value={state.counts.eligible} sub="z prawem głosu" />
@@ -722,7 +741,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
         <div className="col-span-12 lg:col-span-4 space-y-4">
           <div className="card">
             <SectionHeader title="Aktualny punkt" />
-            <div className="p-5">
+            <div className="card-body">
               {currentItem ? (
                 <>
                   {!currentItem.unnumbered && <div className="eyebrow mb-2">Pkt <span className="mono">{currentItem.number}</span></div>}
@@ -866,7 +885,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                   )
                 }
               />
-              <div className="p-8 text-center" style={{ color: "var(--color-ink-3)" }}>
+              <div className="card-body text-center" style={{ color: "var(--color-ink-3)" }}>
                 <p className="mb-4 text-sm">Brak aktywnego głosowania.</p>
                 <p className="text-xs">
                   {currentItem
@@ -958,21 +977,23 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
           <MessagesPanel meetingId={state.id} messages={state.messages} pending={pending} onPublished={refetch} />
 
           {/* Materiały całego posiedzenia (bez przypisania do punktu porządku) */}
-          <div className="card p-4">
+          <div className="card">
             <SectionHeader title="Materiały posiedzenia" />
-            <div className="mt-2">
+            <div className="card-body">
               <AttachmentsManager meetingId={state.id} />
             </div>
           </div>
 
-          <div className="card p-4">
+          <div className="card">
             <SectionHeader title="E-mail" />
-            <div className="mt-2">
+            <div className="card-body">
               <button className="btn btn-sm" onClick={() => setEmailModalOpen(true)}>Wyślij e-mail do uczestników</button>
             </div>
           </div>
         </div>
       </div>
+      </>
+      )}
 
       {emailModalOpen && (
         <EmailMeetingModal
@@ -1175,6 +1196,145 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+//  Przygotowanie posiedzenia (PREPARED/DRAFT - przed "Otwórz posiedzenie")
+//  Pełny panel (głosowania na żywo, mówcy, obecność...) nie ma tu jeszcze sensu -
+//  operator dostaje edytor porządku obrad i planer głosowań.
+// ─────────────────────────────────────────────────────────────────────────
+
+function PreparationView({
+  meetingId, meetingName, meetingNumber, agenda,
+}: {
+  meetingId: string;
+  meetingName: string;
+  meetingNumber: string;
+  agenda: { id: string; order: number; number: string; title: string; status: AgendaItemStatus; isSubItem?: boolean; unnumbered?: boolean }[];
+}) {
+  return (
+    <div className="d-flex flex-column gap-4">
+      <div className="alert alert-secondary d-flex align-items-center gap-2 mb-0">
+        <span>
+          Posiedzenie jeszcze nie zostało otwarte - pełny panel (głosowania na żywo, lista mówców,
+          obecność) pojawi się po kliknięciu <strong>„Otwórz posiedzenie"</strong> w nagłówku.
+          Teraz można przygotować porządek obrad i zaplanować głosowania.
+        </span>
+      </div>
+      <AgendaEditorClient
+        embedded
+        meetingId={meetingId}
+        meetingName={meetingName}
+        meetingNumber={meetingNumber}
+        initialAgenda={agenda}
+      />
+      <VotePlannerCard meetingId={meetingId} agenda={agenda} />
+    </div>
+  );
+}
+
+// Planer głosowań - hurtowe tworzenie głosowań dopasowanych do zaznaczonych punktów
+// porządku obrad (ten sam endpoint co "Importuj z tekstu" w trybie "dla punktów").
+function VotePlannerCard({
+  meetingId, agenda,
+}: {
+  meetingId: string;
+  agenda: { id: string; number: string; title: string; unnumbered?: boolean }[];
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [voteType, setVoteType] = useState<"STANDARD" | "QUORUM">("STANDARD");
+  const [visibility, setVisibility] = useState<"OPEN" | "SECRET">("OPEN");
+  const [majorityKind, setMajorityKind] = useState<"SIMPLE" | "ABSOLUTE" | "QUALIFIED_2_3">("SIMPLE");
+  const [majorityBase, setMajorityBase] = useState<"OF_VOTERS" | "OF_PRESENT" | "OF_STATUTORY">("OF_VOTERS");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<number | null>(null);
+
+  function toggle(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  async function submit() {
+    setBusy(true); setError(null); setDone(null);
+    const r = await fetch(`/api/meetings/${meetingId}/votes/bulk-by-agenda`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ agendaItemIds: Array.from(selected), type: voteType, visibility, majorityKind, majorityBase }),
+    });
+    setBusy(false);
+    if (!r.ok) { setError(await r.text()); return; }
+    setDone(selected.size);
+    setSelected(new Set());
+  }
+
+  return (
+    <div className="card">
+      <div className="card-header">
+        <h2 className="eyebrow mb-0">Planer głosowań</h2>
+      </div>
+      <div className="card-body">
+        <p className="text-body-secondary small mb-3">
+          Utwórz po jednym głosowaniu dla każdego zaznaczonego punktu porządku (z jego nazwą) -
+          zostaną zapisane jako „Przygotowane" i uruchomisz je ręcznie po rozpoczęciu obrad.
+        </p>
+        {agenda.length === 0 ? (
+          <p className="text-body-secondary small mb-0">Dodaj najpierw punkty porządku obrad powyżej.</p>
+        ) : (
+          <>
+            <div className="list-group mb-3" style={{ maxHeight: 260, overflowY: "auto" }}>
+              {agenda.map((a) => (
+                <label key={a.id} className="list-group-item d-flex align-items-center gap-2">
+                  <input type="checkbox" className="form-check-input mt-0" checked={selected.has(a.id)} onChange={() => toggle(a.id)} />
+                  <span className="mono text-body-secondary">{a.unnumbered ? "-" : a.number}.</span>
+                  <span className="text-truncate">{a.title}</span>
+                </label>
+              ))}
+            </div>
+            <div className="row g-3 mb-3">
+              <div className="col-6 col-md-3">
+                <label className="form-label">Rodzaj</label>
+                <select className="form-select" value={voteType} onChange={(e) => setVoteType(e.target.value as "STANDARD" | "QUORUM")}>
+                  <option value="STANDARD">Zwykłe</option>
+                  <option value="QUORUM">Kworum</option>
+                </select>
+              </div>
+              <div className="col-6 col-md-3">
+                <label className="form-label">Jawność</label>
+                <select className="form-select" value={visibility} onChange={(e) => setVisibility(e.target.value as "OPEN" | "SECRET")}>
+                  <option value="OPEN">Jawne</option>
+                  <option value="SECRET">Tajne</option>
+                </select>
+              </div>
+              <div className="col-6 col-md-3">
+                <label className="form-label">Większość</label>
+                <select className="form-select" value={majorityKind} onChange={(e) => setMajorityKind(e.target.value as "SIMPLE" | "ABSOLUTE" | "QUALIFIED_2_3")}>
+                  <option value="SIMPLE">Zwykła</option>
+                  <option value="ABSOLUTE">Bezwzględna</option>
+                  <option value="QUALIFIED_2_3">Kwalifikowana 2/3</option>
+                </select>
+              </div>
+              <div className="col-6 col-md-3">
+                <label className="form-label">Podstawa</label>
+                <select className="form-select" value={majorityBase} onChange={(e) => setMajorityBase(e.target.value as "OF_VOTERS" | "OF_PRESENT" | "OF_STATUTORY")}>
+                  <option value="OF_VOTERS">Głosujących</option>
+                  <option value="OF_PRESENT">Obecnych</option>
+                  <option value="OF_STATUTORY">Ustawowego składu</option>
+                </select>
+              </div>
+            </div>
+            {error && <div className="text-danger small mb-2">{error}</div>}
+            {done != null && <div className="text-success small mb-2">Utworzono {done} głosowań.</div>}
+            <button className="btn btn-primary" disabled={busy || selected.size === 0} onClick={submit}>
+              {busy ? "Tworzę…" : `Utwórz ${selected.size || ""} głosowań`.trim()}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 //  Aktywne głosowanie z live counterem
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -1218,7 +1378,7 @@ function ActiveVotePanel({
   return (
     <div className="card" style={{ borderColor: "var(--color-live)", borderWidth: 2 }}>
       <SectionHeader title="Trwa głosowanie" tone="live" />
-      <div className="p-6">
+      <div className="card-body">
         <div className="eyebrow mb-2 flex flex-wrap items-center gap-2">
           <span>{vote.visibility === "OPEN" ? "Jawne" : "Tajne"}</span>
           <span>-</span>
@@ -2133,7 +2293,7 @@ function MessagesPanel({
   return (
     <div className="card">
       <SectionHeader title="Komunikaty" />
-      <div className="p-4">
+      <div className="card-body">
         <textarea
           className="form-control"
           rows={2}
@@ -2436,12 +2596,12 @@ function FutureSignupsPanel({
 
   return (
     <div className="card">
-      <button type="button" className="w-full flex items-center justify-between px-5 py-3" onClick={() => setOpen((v) => !v)}>
-        <span className="eyebrow" style={{ margin: 0 }}>Zapisy do przyszłych punktów{totalSignups > 0 ? ` (${totalSignups})` : ""}</span>
-        <span style={{ opacity: 0.5, fontSize: 12 }}>{open ? "▾" : "▸"}</span>
+      <button type="button" className="card-header d-flex align-items-center justify-content-between border-0 w-100" onClick={() => setOpen((v) => !v)}>
+        <span className="eyebrow mb-0">Zapisy do przyszłych punktów{totalSignups > 0 ? ` (${totalSignups})` : ""}</span>
+        <span className="text-body-secondary small">{open ? "Zwiń" : "Rozwiń"}</span>
       </button>
-      {open && (
-        <div className="px-4 pb-4 space-y-3">
+      <div className={`collapse${open ? " show" : ""}`}>
+        <div className="card-body d-flex flex-column gap-3">
           {relevant.map((a) => {
             const list = listByItem.get(a.id)!;
             const waiting = list.entries.filter((e) => e.status === "WAITING").sort((x, y) => x.order - y.order);
@@ -2481,7 +2641,7 @@ function FutureSignupsPanel({
             );
           })}
         </div>
-      )}
+      </div>
     </div>
   );
 }

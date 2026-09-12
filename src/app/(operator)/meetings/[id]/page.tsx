@@ -71,6 +71,8 @@ export default async function MeetingPanelPage({ params }: { params: Promise<{ i
     },
     agenda: meeting.agenda.map((a) => ({
       id: a.id, order: a.order, number: a.number, title: a.title, status: a.status,
+      isSubItem: a.isSubItem, unnumbered: a.unnumbered, hiddenFromDisplay: a.hiddenFromDisplay,
+      description: a.description, presenter: a.presenter,
     })),
     counts: {
       total: meeting.participants.length,

@@ -12,9 +12,9 @@ interface AgendaItem {
   order: number;
   number: string;
   title: string;
-  description: string | null;
+  description?: string | null;
   committee?: string | null;
-  presenter: string | null;
+  presenter?: string | null;
   status: AgendaItemStatus;
   isSubItem?: boolean;
   unnumbered?: boolean;
@@ -22,12 +22,15 @@ interface AgendaItem {
 }
 
 export function AgendaEditorClient({
-  meetingId, meetingName, meetingNumber, initialAgenda,
+  meetingId, meetingName, meetingNumber, initialAgenda, embedded,
 }: {
   meetingId: string;
   meetingName: string;
   meetingNumber: string;
   initialAgenda: AgendaItem[];
+  /** Bez własnego nagłówka/marginesu strony - do osadzenia wewnątrz panelu posiedzenia
+      (przed otwarciem posiedzenia), gdzie chrome strony dostarcza już rodzic. */
+  embedded?: boolean;
 }) {
   const [agenda, setAgenda] = useState(initialAgenda);
   const [pending, startTransition] = useTransition();
@@ -60,16 +63,8 @@ export function AgendaEditorClient({
     });
   }
 
-  return (
-    <div className="px-6 py-8 max-w-[960px] mx-auto">
-      <header className="flex items-end justify-between border-b border-[var(--color-rule)] pb-6 mb-8">
-        <div>
-          <div className="eyebrow mb-2">Posiedzenie nr <span className="mono">{meetingNumber}</span> - Porządek obrad</div>
-          <h1 style={{ fontSize: 32, lineHeight: 1.05 }}>{meetingName}</h1>
-        </div>
-        <Link href={`/meetings/${meetingId}`} className="btn"><IconArrowLeft size={13} /> Wróć do panelu</Link>
-      </header>
-
+  const content = (
+    <>
       <div className="card overflow-hidden">
         <div className="card-header d-flex align-items-center justify-content-between">
           <h2 className="eyebrow">Punkty ({agenda.length})</h2>
@@ -189,6 +184,21 @@ export function AgendaEditorClient({
           onImported={() => { setShowImport(false); refetch(); }}
         />
       )}
+    </>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <div className="px-6 py-8 max-w-[960px] mx-auto">
+      <header className="flex items-end justify-between border-b border-[var(--color-rule)] pb-6 mb-8">
+        <div>
+          <div className="eyebrow mb-2">Posiedzenie nr <span className="mono">{meetingNumber}</span> - Porządek obrad</div>
+          <h1 style={{ fontSize: 32, lineHeight: 1.05 }}>{meetingName}</h1>
+        </div>
+        <Link href={`/meetings/${meetingId}`} className="btn"><IconArrowLeft size={13} /> Wróć do panelu</Link>
+      </header>
+      {content}
     </div>
   );
 }
