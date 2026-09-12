@@ -708,3 +708,22 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
   wnioskiem formalnym/głosowaniami i zrzuty ekranu rzeczywistej strony: nagłówki kart z jasnym
   tłem, dropdown "Raporty" otwierający się w dół z podziałami sekcji, "Przerwa w obradach" z
   widocznym, złączonym `btn-group`/`input-group` po rozwinięciu.
+
+## AAG. `DisplayControlPanel.tsx` - jeden spójny `list-group-flush` zamiast trzech stylów
+- Kolejny zrzut ekranu użytkownika pokazał, że karta "Ekran prezentacyjny" mieszała TRZY różne
+  style przycisków w jednej kolumnie: płaskie, złączone wiersze `list-group` (tryby ekranu),
+  osobne zaokrąglone przyciski `btn btn-outline-secondary` z odstępami ("Pokaż konkretny punkt",
+  "Pokaż wyniki głosowania") i bezramkowy tekst ("Przerwa w obradach") - stąd zarzut "dwa rodzaje
+  przycisków" i wrażenie zbędnych marginesów między blokami w tej samej karcie.
+- [x] Cała zawartość karty przebudowana na JEDEN ciągły `list-group list-group-flush`
+      (Bootstrapowy, oficjalny wzorzec listy "wtopionej" w kartę - bez własnego obramowania/
+      zaokrąglenia, tylko cienkie linie między wierszami, zero dodatkowych marginesów) -
+      wszystkie tryby, "Pokaż konkretny punkt"/"Pokaż wyniki głosowania" (rozwijają się jako
+      kolejne, wcięte pozycje tej samej listy, nie osobne boksy), "Przerwa w obradach" (po
+      rozwinięciu pokazuje `btn-group`/`input-group` wewnątrz jednego `list-group-item`, nie w
+      oddzielnej ramce) i "Pokaż PIN na sali" (nagłówek sekcji jako wyszarzony wiersz listy) -
+      wszystko jedną, spójną wizualnie sekwencją. Kompozycja komunikatu tekstowego i checkboxy
+      opcji zostają w osobnych, jawnie oddzielonych `card-body` (`border-top`) - to inny rodzaj
+      treści (formularz, nie lista wyboru), więc oddzielenie jest tu celowe, nie przypadkowe.
+- Zweryfikowane na żywo tym samym sposobem co w AAF - zrzut ekranu pokazuje jedną, ciągłą listę
+  bez mieszanych stylów przycisków.
