@@ -1,0 +1,99 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-iobrady}
+      POSTGRES_USER: ${POSTGRES_USER:-iobrady}
+      # Hasło bazy WYMAGANE w .env - bez niego start się zatrzyma (brak domyślnego hasła).
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Ustaw POSTGRES_PASSWORD w .env}
+      TZ: ${TZ:-Europe/Warsaw}
+      PGTZ: ${TZ:-Europe/Warsaw}
+    volumes:
+      - esog_db:/var/lib/postgresql/data
+    # Port 5432 NIE jest już wystawiany na świat - dostęp tylko z sieci dockera.
+    # (Jeśli potrzebujesz łączyć się z bazą z zewnątrz, odkomentuj poniżej.)
+    # ports:
+    #   - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-iobrady}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-iobrady}:${POSTGRES_PASSWORD:?Ustaw POSTGRES_PASSWORD w .env}@db:5432/${POSTGRES_DB:-iobrady}
+      # Publiczny adres aplikacji (https://twoja-domena) - wymagany.
+      NEXTAUTH_URL: ${NEXTAUTH_URL:?Ustaw NEXTAUTH_URL w .env}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?Ustaw NEXTAUTH_SECRET w .env}
+      # Klucz szyfrowania sekretów w bazie (hasło SMTP) - `openssl rand -base64 32`. Przechowuj
+      # jego kopię POZA serwerem: bez niego hasła SMTP z kopii zapasowej nie da się odczytać.
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:-}
+      APP_ENCRYPTION_KEYS_OLD: ${APP_ENCRYPTION_KEYS_OLD:-}
+      # Kod instalacyjny kreatora /setup (opcjonalny; bez niego kod jest w logu przy starcie).
+      SETUP_TOKEN: ${SETUP_TOKEN:-}
+      # Aplikacja stoi za Caddy - adres klienta z X-Forwarded-For (limity logowania i prezentacji).
+      TRUST_PROXY: "true"
+      # Zakładanie pierwszego konta operatora odbywa się przez kreator (/setup) po pierwszym
+      # uruchomieniu - poniższe zmienne są opcjonalną, zapasową ścieżką dla wdrożeń automatycznych.
+      INIT_SEED: ${INIT_SEED:-false}
+      SEED_OPERATOR_EMAIL: ${SEED_OPERATOR_EMAIL:-operator@example.local}
+      SEED_OPERATOR_PASSWORD: ${SEED_OPERATOR_PASSWORD:-}
+      NODE_ENV: production
+      TZ: ${TZ:-Europe/Warsaw}
+    # Port 3000 NIE jest wystawiany na świat - ruch idzie przez Caddy.
+    expose:
+      - "3000"
+    volumes:
+      # Trwałe miejsce na wgrane pliki (logo prezentacji) - przetrwa redeploy
+      - esog_uploads:/app/public/uploads
+      # Materiały posiedzeń (poza public/ - dostęp tylko przez autoryzowany endpoint)
+      - iobrady_attachments:/app/storage/attachments
+    # Stan aplikacji (odpowiada i ma połączenie z bazą) - używany przez Caddy i scripts/update.sh.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 180s
+    # Sprawdzenie konfiguracji i migracja bez akceptacji utraty danych - patrz scripts/migrate.sh.
+    command: >
+      sh -c "
+        ./scripts/migrate.sh &&
+        if [ \"$INIT_SEED\" = \"true\" ]; then npx tsx prisma/seed.ts; fi &&
+        node server.js
+      "
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      # Domena, dla której Caddy pobierze certyfikat Let's Encrypt (patrz Caddyfile).
+      # "localhost" (wartość domyślna) działa bez certyfikatu - do testów lokalnych.
+      DOMAIN: ${DOMAIN:-localhost}
+      TZ: ${TZ:-Europe/Warsaw}
+
+# Nazwy wolumenów zostają "esog_*" ze względów wstecznej kompatybilności (zmiana złamałaby
+# istniejące instalacje - dane pozostałyby w starym, "osieroconym" wolumenie).
+volumes:
+  esog_db:
+  esog_uploads:
+  iobrady_attachments:
+  caddy_data:
+  caddy_config:

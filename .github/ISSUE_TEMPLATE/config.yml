@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Podatność bezpieczeństwa
+    url: https://github.com/jan-niemczyk/iobrady/security/advisories/new
+    about: Zgłoś prywatnie - nie opisuj podatności w publicznym zgłoszeniu.

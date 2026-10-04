@@ -1,0 +1,22 @@
+# Do obrazu trafia tylko kod aplikacji - bez sekretów, danych instalacji i artefaktów lokalnych.
+.git
+.github
+.env
+.env.*
+!.env.example
+node_modules
+.next
+out
+storage
+public/uploads/*
+!public/uploads/.gitkeep
+test-results
+playwright-report
+tsconfig.tsbuildinfo
+*.log
+*.dump
+*.sql.gz
+*.enc
+*.key
+backups
+.tmp-*

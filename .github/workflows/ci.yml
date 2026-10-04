@@ -1,0 +1,64 @@
+name: CI
+
+# Typy, build, migracja od zera, sondy bezpieczeństwa i test trybu kotarkowego - na danych
+# syntetycznych, w izolowanej bazie usługi CI (bez dostępu do produkcji).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: iobrady
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ci" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ci:ci-only-password@localhost:5432/iobrady
+      NEXTAUTH_URL: http://localhost:3000
+      TRUST_PROXY: "true"
+      # Dane wyłącznie syntetyczne (konta *@demo.local tworzone przez tests/security/fixture.ts)
+      SEC_OP_EMAIL: operator@example.local
+      SEC_OP_PASS: ci-operator-pass
+      SEC_PT_PASS: ci-participant-pass
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Skrypty powłoki i plik compose (składnia)
+        run: |
+          for f in scripts/*.sh; do sh -n "$f"; done
+          cp .env.example .env && docker compose config -q && rm .env
+      - run: npm ci
+      - name: Losowy sekret sesji (tylko na czas CI)
+        run: echo "NEXTAUTH_SECRET=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+      - run: npx prisma generate
+      - run: npx tsc --noEmit
+      - name: Migracja od zera (bez akceptacji utraty danych)
+        run: ./scripts/migrate.sh
+      - run: npx tsx tests/security/fixture.ts
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Start aplikacji
+        run: |
+          (npx next start -p 3000 > next.log 2>&1 &)
+          for i in $(seq 1 30); do curl -sf http://localhost:3000/login > /dev/null && break; sleep 2; done
+      - name: Sondy bezpieczeństwa
+        run: CHROME_PATH=$(node -e "console.log(require('@playwright/test').chromium.executablePath())") node tests/security/audit-probes.mjs
+      - name: Test trybu kotarkowego
+        run: E2E_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/booth-mode.spec.ts --reporter=line
+      - if: failure()
+        run: tail -200 next.log

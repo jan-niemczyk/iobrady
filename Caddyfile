@@ -1,0 +1,30 @@
+# Caddy automatycznie pobiera i odnawia certyfikat Let's Encrypt dla tej domeny.
+# Ustaw zmienną środowiskową DOMAIN (patrz docker-compose.yml/.env) na swoją domenę.
+{$DOMAIN:localhost} {
+	# Reverse proxy do aplikacji Next.js w kontenerze "app" (port 3000 w sieci dockera)
+	# X-Forwarded-For ustawiany przez Caddy na adres klienta (nagłówek od klienta jest zastępowany) -
+	# aplikacja (TRUST_PROXY=true) liczy na tej podstawie limity logowania i prezentacji.
+	reverse_proxy app:3000 {
+		header_up X-Forwarded-For {remote_host}
+	}
+
+	# Nagłówki bezpieczeństwa
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	encode gzip zstd
+
+	# SSE (Server-Sent Events) dla widoku radnego/prezentacji - bez buforowania
+	@sse {
+		path /api/meetings/*/stream
+	}
+	reverse_proxy @sse app:3000 {
+		header_up X-Forwarded-For {remote_host}
+		flush_interval -1
+	}
+}

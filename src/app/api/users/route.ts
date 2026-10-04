@@ -1,0 +1,96 @@
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import bcrypt from "bcryptjs";
+import { Role } from "@prisma/client";
+import { randomPassword } from "@/lib/randomPassword";
+import { sendMail, MailNotConfiguredError } from "@/lib/mail";
+import { welcomeEmail } from "@/lib/mailTemplates";
+import { appOrigin, validationError } from "@/lib/http";
+import { audit } from "@/lib/audit";
+
+const schema = z.object({
+  email: z.string().email().toLowerCase(),
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100),
+  functionTitle: z.string().max(120).nullable().optional(),
+  role: z.nativeEnum(Role).default(Role.PARTICIPANT),
+  groupId: z.string().nullable().optional(),
+  password: z.string().min(8).max(200).optional(),
+  autoGenerate: z.boolean().optional().default(false),
+  active: z.boolean().optional().default(true),
+  sendEmail: z.boolean().optional().default(false),
+}).refine((d) => d.autoGenerate || (d.password && d.password.length >= 8), {
+  message: "Podaj hasło (co najmniej 8 znaków) lub wybierz automatyczne generowanie.",
+  path: ["password"],
+});
+
+export async function GET() {
+  const session = await auth();
+  if (!session || session.user.role !== "OPERATOR")
+    return new NextResponse("Unauthorized", { status: 401 });
+  const users = await prisma.user.findMany({
+    include: { group: true },
+    orderBy: [{ role: "asc" }, { lastName: "asc" }],
+  });
+  return NextResponse.json(users.map((u) => ({
+    id: u.id, email: u.email,
+    firstName: u.firstName, lastName: u.lastName,
+    role: u.role, active: u.active,
+    groupId: u.groupId, groupName: u.group?.name ?? null,
+    groupShort: u.group?.shortName ?? null,
+    groupColor: u.group?.color ?? null,
+  })));
+}
+
+export async function POST(req: Request) {
+  const session = await auth();
+  if (!session || session.user.role !== "OPERATOR")
+    return new NextResponse("Unauthorized", { status: 401 });
+
+  const body = await req.json().catch(() => ({}));
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) return validationError(parsed.error);
+
+  const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  if (existing) return new NextResponse("Użytkownik z tym e-mailem już istnieje", { status: 400 });
+
+  const password = parsed.data.autoGenerate ? randomPassword() : parsed.data.password!;
+  const u = await prisma.user.create({
+    data: {
+      email: parsed.data.email,
+      firstName: parsed.data.firstName,
+      lastName: parsed.data.lastName,
+      functionTitle: parsed.data.functionTitle ?? null,
+      role: parsed.data.role,
+      groupId: parsed.data.groupId ?? null,
+      passwordHash: await bcrypt.hash(password, 10),
+      active: parsed.data.active ?? true,
+      // Hasło nadane przez operatora = hasło startowe: zmiana przy pierwszym logowaniu.
+      mustChangePassword: true,
+    },
+  });
+  await audit({
+    action: "USER_CREATED",
+    description: `Utworzono konto ${u.firstName} ${u.lastName} (${u.role === "OPERATOR" ? "operator" : "radny"})`,
+    userId: session.user.id,
+    metadata: { targetUserId: u.id, role: u.role, active: u.active },
+  });
+  let emailError: string | undefined;
+  if (parsed.data.sendEmail) {
+    try {
+      const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
+      const { subject, html } = welcomeEmail({
+        orgName: settings?.organizationName ?? "iOBRADY",
+        firstName: u.firstName, lastName: u.lastName, email: u.email, password,
+        loginUrl: `${appOrigin(req)}/login`,
+      });
+      await sendMail({ to: u.email, subject, html, kind: "welcome", sentByUserId: session.user.id });
+    } catch (e) {
+      emailError = e instanceof MailNotConfiguredError ? e.message : "Nie udało się wysłać e-maila powitalnego.";
+    }
+  }
+
+  return NextResponse.json({ ok: true, id: u.id, password: parsed.data.autoGenerate ? password : undefined, emailError });
+}

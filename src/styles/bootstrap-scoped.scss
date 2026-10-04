@@ -1,0 +1,276 @@
+// Bootstrap 5.3 dla panelu operatora, logowania, konta i widoku przewodniczącego.
+//
+// Arkusz jest importowany WYŁĄCZNIE w layoutach tych sekcji (src/app/(operator)/layout.tsx,
+// src/app/login/layout.tsx, src/app/account/layout.tsx, src/app/chairperson/layout.tsx).
+// Ekrany radnych (/session - w tym karty do głosowania), prezentacja (/display) i transmisja
+// (/overlay) go NIE ładują, więc nic poniżej nie może ich dotknąć. Kompilacja:
+// `npm run build:bootstrap` (uruchamiane automatycznie przez `npm run build`, ale NIE przez
+// `npm run dev` - po zmianie tego pliku trzeba przebudować CSS ręcznie).
+@use "bs-theme" as *;
+@import "bootstrap/scss/bootstrap";
+
+// ─────────────────────────────────────────────────────────────────────────
+// Wspólne reguły panelu. Celowo UNLAYERED i PO Bootstrapie: globals.css (Tailwind) jest
+// ładowany też tutaj i ma swoje klasy (.eyebrow, .card, .btn, text-xs...) w @layer, a reguły
+// spoza layera zawsze wygrywają z layerowanymi. Dzięki temu jeden system typografii/odstępów
+// obowiązuje w całym panelu bez !important i bez zmian w globals.css (z którego korzystają
+// chronione widoki).
+// ─────────────────────────────────────────────────────────────────────────
+
+body {
+  background-color: #F5F7FA;
+}
+
+// Tailwind generuje `.collapse { visibility: collapse }` (ukrywanie wierszy tabel) - przy
+// Bootstrapowym .collapse obie reguły działałyby naraz i rozwinięta treść byłaby niewidoczna.
+.collapse {
+  visibility: visible;
+}
+
+// ─── typografia ──────────────────────────────────────────────────────────
+// Najmniejszy tekst w panelu to 13px: Tailwindowe text-xs (12px) podnosimy do tej wartości.
+.text-xs {
+  font-size: .8125rem;
+  line-height: 1.4;
+}
+.text-sm {
+  font-size: .875rem;
+  line-height: 1.45;
+}
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  letter-spacing: -.005em;
+  color: $ink;
+}
+
+// Etykieta pomocnicza (dawniej drobne wersaliki z rozstrzelonymi literami).
+.eyebrow {
+  display: block;
+  margin: 0;
+  font-family: $font-family-base;
+  font-size: .8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-transform: none;
+  color: $ink-3;
+}
+
+// Tytuł karty - jeden wygląd niezależnie od tagu (h2/h3/div) użytego w nagłówku karty.
+.card-title-text,
+.card-header .eyebrow {
+  margin: 0;
+  font-size: .9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0;
+  text-transform: none;
+  color: $ink;
+}
+.card-header {
+  min-height: 2.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .375rem .75rem;
+}
+.card-header > :only-child {
+  flex: 1 1 auto;
+}
+.card {
+  box-shadow: $box-shadow-sm;
+}
+
+// Nagłówek strony panelu (PageHeader).
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: .75rem 1.5rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid $rule-soft;
+}
+.page-header h1 {
+  margin: 0;
+  font-size: 1.625rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.page-header .page-kicker {
+  margin-bottom: .25rem;
+  font-size: .875rem;
+  font-weight: 500;
+  color: $ink-3;
+}
+@include media-breakpoint-down(md) {
+  .page-header h1 { font-size: 1.375rem; }
+}
+
+// ─── przyciski ───────────────────────────────────────────────────────────
+// Bootstrapowa bazowa `.btn` nie ma tła ani obramowania (zakłada wariant koloru). W panelu
+// `btn` bez wariantu oznacza przycisk neutralny - jasne tło, szara krawędź.
+$btn-variants: ".btn-primary, .btn-secondary, .btn-success, .btn-danger, .btn-warning, " +
+  ".btn-info, .btn-light, .btn-dark, .btn-link, .btn-outline-primary, .btn-outline-secondary, " +
+  ".btn-outline-success, .btn-outline-danger, .btn-outline-warning, .btn-outline-info, " +
+  ".btn-outline-light, .btn-outline-dark, .btn-yes, .btn-no, .btn-abstain, .btn-close";
+.btn:not(#{$btn-variants}) {
+  --bs-btn-color: #{$ink};
+  --bs-btn-bg: #{$white};
+  --bs-btn-border-color: #{$rule};
+  --bs-btn-hover-color: #{$ink};
+  --bs-btn-hover-bg: #{$paper-2};
+  --bs-btn-hover-border-color: #94A3B8;
+  --bs-btn-active-color: #{$ink};
+  --bs-btn-active-bg: #{$rule-soft};
+  --bs-btn-active-border-color: #94A3B8;
+  --bs-btn-disabled-color: #{$ink-3};
+  --bs-btn-disabled-bg: #{$white};
+  --bs-btn-disabled-border-color: #{$rule-soft};
+}
+.btn {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .375rem;
+}
+.btn.w-100, .btn.text-start { justify-content: flex-start; }
+.btn.w-100.justify-content-center { justify-content: center; }
+
+// Kolorowe przyciski głosu (ZA / PRZECIW / WSTRZYMUJĘ) - jako warianty Bootstrapa.
+.btn-yes { @include button-variant($yes, $yes, $hover-background: #166534, $hover-border: #166534, $color: $white, $hover-color: $white); }
+.btn-no { @include button-variant($no, $no, $hover-background: #B91C1C, $hover-border: #B91C1C, $color: $white, $hover-color: $white); }
+.btn-abstain { @include button-variant($abstain, $abstain, $hover-background: #92400E, $hover-border: #92400E, $color: $white, $hover-color: $white); }
+
+// ─── formularze ──────────────────────────────────────────────────────────
+// Checkbox/radio bez klasy Bootstrapa wyglądają tak samo jak .form-check-input i są
+// wyrównane do tekstu etykiety.
+input[type="checkbox"]:not(.form-check-input),
+input[type="radio"]:not(.form-check-input) {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: $navy;
+  vertical-align: -.15em;
+}
+// .form-check-input poza .form-check (np. w etykiecie flex) - bez przesunięcia w pionie.
+:not(.form-check) > .form-check-input {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+label:has(> input[type="checkbox"]),
+label:has(> input[type="radio"]) {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  cursor: pointer;
+}
+.form-control-color { padding: .25rem; }
+
+// ─── odznaki statusów ────────────────────────────────────────────────────
+.badge {
+  letter-spacing: 0;
+  text-transform: none;
+  vertical-align: middle;
+}
+// Odznaka "trwa" (pulsująca kropka) - jedyna rzecz, której Bootstrapowy .badge nie ma.
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .35; }
+}
+.badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: .4em;
+  color: $live;
+  background: #FFF1F2;
+  border: 1px solid #FECDD3;
+}
+.badge-live::before {
+  content: "";
+  width: .45em;
+  height: .45em;
+  border-radius: 50%;
+  background: $live;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+// ─── listy i tabele ──────────────────────────────────────────────────────
+.table > thead th {
+  font-size: .8125rem;
+  font-weight: 600;
+  color: $ink-2;
+  white-space: nowrap;
+}
+.list-group-item { overflow-wrap: anywhere; }
+
+// Numer porządkowy w wierszach list (punkty, głosowania, mówcy) - stała, wąska kolumna.
+.row-num {
+  flex: 0 0 auto;
+  min-width: 1.5rem;
+  font-variant-numeric: tabular-nums;
+  color: $ink-3;
+}
+
+// Pasek nawigacji panelu.
+.navbar .nav-link.active {
+  color: $navy;
+  font-weight: 600;
+}
+
+// Ikona w wierszu listy trybów prezentacji - stała szerokość, żeby teksty były w jednej linii.
+.dcp-ico {
+  display: inline-flex;
+  width: 1.25rem;
+  justify-content: center;
+  margin-right: .375rem;
+  color: $ink-3;
+}
+.list-group-item.active .dcp-ico { color: inherit; }
+
+// Głosowanie przypisane do bieżącego punktu - delikatne wyróżnienie paskiem z lewej.
+.list-group-item.vote-row-current {
+  background-color: #FFFBEB;
+  box-shadow: inset 3px 0 0 #D97706;
+}
+
+// Elementy pozycjonowane absolutnie w tabeli (np. .visually-hidden w nagłówku kolumny) muszą
+// zostać wewnątrz przewijanego kontenera - inaczej poszerzają całą stronę na telefonie.
+.table-responsive { position: relative; }
+
+// Lista wyboru punktu / głosowania w panelu ekranu prezentacyjnego: numer w stałej kolumnie,
+// tytuł zawijany do 2 linii - długie nazwy nie rozpychają panelu.
+.dcp-pick {
+  display: flex;
+  align-items: flex-start;
+  gap: .5rem;
+  width: 100%;
+  padding: .4rem 1rem .4rem 2.25rem;
+  font-size: .875rem;
+  text-align: left;
+  color: $ink;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid $rule-soft;
+  &:first-child { border-top: 0; }
+  &:hover:not(:disabled) { background: $paper-2; }
+  &.active { background: $navy; color: $white; .dcp-pick-num { color: rgba(255, 255, 255, .75); } }
+}
+.dcp-pick-num {
+  flex: 0 0 auto;
+  min-width: 2.25rem;
+  font-variant-numeric: tabular-nums;
+  color: $ink-3;
+}
+.dcp-pick-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}

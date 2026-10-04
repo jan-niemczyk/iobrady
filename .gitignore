@@ -1,0 +1,35 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+# Konfiguracja konkretnej instalacji (sekrety) - nigdy w repozytorium
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+.DS_Store
+src/app/bootstrap-scoped.css
+src/app/bootstrap-scoped.css.map
+next-env.d.ts
+tsconfig.tsbuildinfo
+storage/
+
+# Playwright
+/test-results/
+/playwright-report/
+
+# Pliki wgrywane przez aplikację (logo, plansza) - wolumen, nie repozytorium
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# Kopie zapasowe, zrzuty baz i klucze - dane instalacji, nie repozytorium
+backups/
+*.dump
+*.sql.gz
+*.enc
+*.key
+
+# Pliki robocze
+.tmp-*
