@@ -22,6 +22,8 @@ interface AgendaItem {
   isSubItem?: boolean;
   unnumbered?: boolean;
   hiddenFromDisplay?: boolean;
+  /** Planowany limit wypowiedzi w punkcie (s); null = limit z ustawień. */
+  speechLimitSec?: number | null;
 }
 
 interface PlannedVote {
@@ -153,6 +155,7 @@ export function AgendaEditorClient({
                           {a.hiddenFromDisplay && <span className="ms-2 small text-body-secondary">(ukryty na prezentacji)</span>}
                         </div>
                         {a.presenter && <div className="small text-body-secondary">Referent: {a.presenter}</div>}
+                        {a.speechLimitSec != null && <div className="small text-body-secondary">Limit wypowiedzi: {formatLimit(a.speechLimitSec)}</div>}
                         {(a as { committee?: string | null }).committee && <div className="small text-body-secondary">Opinia: {(a as { committee?: string | null }).committee}</div>}
                       </div>
                       <StatusPill status={a.status} />
@@ -399,7 +402,7 @@ function ItemEditor({
 }: {
   item?: AgendaItem;
   onCancel: () => void;
-  onSave: (data: { number: string; title: string; committee: string | null; presenter: string | null; isSubItem: boolean; unnumbered: boolean }) => void;
+  onSave: (data: { number: string; title: string; committee: string | null; presenter: string | null; isSubItem: boolean; unnumbered: boolean; speechLimitSec: number | null }) => void;
 }) {
   const [number, setNumber] = useState(item?.number ?? "");
   const [title, setTitle] = useState(item?.title ?? "");
@@ -407,10 +410,12 @@ function ItemEditor({
   const [presenter, setPresenter] = useState(item?.presenter ?? "");
   const [isSubItem, setIsSubItem] = useState(item?.isSubItem ?? false);
   const [unnumbered, setUnnumbered] = useState(item?.unnumbered ?? false);
+  const [limit, setLimit] = useState(item?.speechLimitSec != null ? String(item.speechLimitSec) : "");
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    onSave({ number: unnumbered ? "" : number, title, committee: committee || null, presenter: presenter || null, isSubItem, unnumbered });
+    const sec = parseInt(limit, 10);
+    onSave({ number: unnumbered ? "" : number, title, committee: committee || null, presenter: presenter || null, isSubItem, unnumbered, speechLimitSec: Number.isFinite(sec) && sec > 0 ? sec : null });
   }
 
   const uid = item?.id ?? "new";
@@ -432,6 +437,14 @@ function ItemEditor({
         <label className="form-label" htmlFor={`ai-com-${uid}`}>Komisja / opinia <span className="fw-normal text-body-secondary">(opcjonalnie)</span></label>
         <input id={`ai-com-${uid}`} className="form-control" value={committee} onChange={(e) => setCommittee(e.target.value)} placeholder="np. Komisja ds. Finansów" />
       </div>
+      <div className="col-12 col-md-6">
+        <label className="form-label" htmlFor={`ai-limit-${uid}`}>Limit wypowiedzi <span className="fw-normal text-body-secondary">(opcjonalnie)</span></label>
+        <div className="input-group">
+          <input id={`ai-limit-${uid}`} className="form-control" type="number" min={0} step={10} value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="z ustawień" />
+          <span className="input-group-text">s</span>
+        </div>
+        <div className="form-text">Domyślny limit wystąpienia w liście mówców tego punktu. Puste = limit z ustawień.</div>
+      </div>
       <div className="col-12">
         <div className="form-check">
           <input className="form-check-input" type="checkbox" id={`ai-unnum-${uid}`} checked={unnumbered} onChange={(e) => setUnnumbered(e.target.checked)} />
@@ -448,6 +461,11 @@ function ItemEditor({
       </div>
     </form>
   );
+}
+
+/** Limit w sekundach jako m:ss (np. 3:00). */
+function formatLimit(sec: number): string {
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")} min`;
 }
 
 function StatusPill({ status }: { status: AgendaItemStatus }) {

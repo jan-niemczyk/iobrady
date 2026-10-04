@@ -1297,3 +1297,33 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
 - Sprawdzone (serwer deweloperski, dane syntetyczne): stan domyślny, wyłączenie listy, dziedziczenie przez
   nowe wpisy, włączenie pojedynczego wpisu, powrót wartości limitu, pamięć w następnym punkcie, kolejka
   wniosków niezależna od listy, liczenie w górę na ekranie sali i w panelu operatora.
+
+## AAZ. Plansza w trybach prezentacji, białe logo, czcionki, planowane limity, poprawki
+
+- [x] **Plansza reprezentacyjna jako tryb**: pozycja „Plansza reprezentacyjna” na liście trybów ekranu
+      (zamiast osobnego pola z przyciskami). Wybranie innego trybu (także „Wróć do trybu auto”) ją zdejmuje,
+      ponowne kliknięcie wraca do poprzedniego widoku.
+- [x] **Osobna czcionka planszy** (`Settings.boardFont`, puste = czcionka prezentacji) i **Myriad Pro**
+      na liście czcionek (gdy nie ma jej na komputerze ekranu - Inter).
+- [x] **Logo na planszy ograniczone także szerokością**: maks. 17,2% szerokości ekranu (wzór: logo
+      330 px przy 1920 px, czyli ok. 266 px przy ekranie szerokości ok. 1549 px) i jak dotąd 22% wysokości,
+      z zachowaniem proporcji.
+- [x] **Białe logo** (`Settings.presentationLogoLightUrl`, Ustawienia - „Logo białe (na ciemne tła)”):
+      używane automatycznie na ciemnym tle - nagłówek w ciemnym kolorze, przerwa, komunikat w stylu
+      transmisji, plansza (tryb „logo organizacji”), ekrany przerwy i komunikatu na transmisji.
+      Bez tego pliku wszędzie logo domyślne. Niezależne od osobnego logo planszy.
+- [x] **Planowane limity wypowiedzi w punktach** (`AgendaItem.speechLimitSec`, edytor porządku obrad -
+      „Limit wypowiedzi”): lista mówców punktu startuje z tym limitem; zmiana planu obejmuje oczekujące
+      wystąpienia; zmiana limitu listy w panelu aktualizuje plan punktu.
+- [x] **Błąd: zmiana punktu z numerem na bez numeru** - API edycji punktu nie znało pola „bez numeru”
+      i wymagało niepustego numeru. Poprawione (czytelny komunikat, gdy numerowany punkt nie ma numeru).
+- [x] **Błąd: edycja punktu w panelu posiedzenia czyściła opinię komisji** - pole nie trafiało do edytora.
+- [x] **Ekran sali / transmisja odporne na stan przeglądarki** (zgłoszenie: plansza głosowania nie
+      pojawiła się w zwykłym oknie, w incognito tak). Serwer wysyła obu oknom te same dane, więc przyczyna
+      leżała w przeglądarce: stary kod strony w karcie otwartej przed aktualizacją, automatyczne
+      tłumaczenie strony albo rozszerzenie zmieniające treść. Zmiany: ekran przeładowuje się sam po
+      aktualizacji serwera (`appVersion` w API ekranu), po błędzie rysowania samonaprawia się po 5 s
+      (`ScreenGuard`), tłumaczenie przeglądarki jest wyłączone (`notranslate`).
+- Sprawdzone (serwer deweloperski, dane syntetyczne): wszystkie powyższe scenariusze przez API i w przeglądarce
+  (logo 1000x200 na planszy 1920x1080 -> 330x66 px, białe logo w ciemnym nagłówku i na planszy, czcionki),
+  build produkcyjny.

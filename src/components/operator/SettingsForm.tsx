@@ -5,7 +5,7 @@ import type React from "react";
 import { CardHeader } from "./ui";
 import { RepresentationBoard } from "@/components/presentation/RepresentationBoard";
 import { resolveBoardLogo } from "@/lib/board";
-import { PRESENTATION_FONTS } from "@/lib/presentationFonts";
+import { PRESENTATION_FONTS, fontStack } from "@/lib/presentationFonts";
 import { ask, notify, notifyFailure, readUserError } from "@/lib/feedback";
 import type { MajorityKind, MajorityBase, QuorumRule, AttendanceMode, VoteVisibility } from "@prisma/client";
 
@@ -28,6 +28,10 @@ interface Settings {
   /** Własny kolor planszy; null = kolor nagłówka. */
   boardColor: string | null;
   presentationLogoUrl: string | null;
+  /** Białe logo na ciemne tła; null = wszędzie logo domyślne. */
+  presentationLogoLightUrl: string | null;
+  /** Czcionka planszy reprezentacyjnej; null = czcionka prezentacji. */
+  boardFont: string | null;
   boardBackgroundUrl: string | null;
   boardLogoMode: string;
   boardLogoUrl: string | null;
@@ -261,6 +265,43 @@ export function SettingsForm({ initial }: { initial: Settings }) {
             </div>
             <div className="form-text">Logo zastępuje pionowy pasek akcentu w nagłówku. PNG/JPG/SVG/WEBP, max 2 MB. Zapisywane na serwerze.</div>
           </div>
+
+          <div className="col-12">
+            <label className="form-label">Logo białe (na ciemne tła) <span className="fw-normal text-body-secondary">(opcjonalne)</span></label>
+            <div className="d-flex align-items-center flex-wrap gap-2">
+              {s.presentationLogoLightUrl && (
+                <img src={s.presentationLogoLightUrl} alt="białe logo" className="border rounded p-1" style={{ height: 40, width: "auto", objectFit: "contain", background: "#0B2A4A" }} />
+              )}
+              <label className={`btn${pending ? " disabled" : ""}`}>
+                {s.presentationLogoLightUrl ? "Zmień białe logo…" : "Wybierz plik…"}
+                <input
+                  type="file"
+                  accept="image/png,image/svg+xml,image/webp"
+                  className="d-none"
+                  disabled={pending}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (!file) return;
+                    if (file.size > 2_000_000) { notify.error("Plik logo jest za duży (maks. 2 MB)."); return; }
+                    const fd = new FormData();
+                    fd.append("file", file);
+                    const r = await fetch("/api/settings/logo?variant=light", { method: "POST", body: fd });
+                    if (!r.ok) { await notifyFailure(r); return; }
+                    const { url } = await r.json();
+                    update("presentationLogoLightUrl", url);
+                  }}
+                />
+              </label>
+              {s.presentationLogoLightUrl && (
+                <button type="button" className="btn btn-outline-danger" onClick={async () => {
+                  await fetch("/api/settings/logo?variant=light", { method: "DELETE" });
+                  update("presentationLogoLightUrl", null);
+                }}>Usuń białe logo</button>
+              )}
+            </div>
+            <div className="form-text">Używane automatycznie tam, gdzie tło jest ciemne: nagłówek w ciemnym kolorze, przerwa, komunikat, plansza reprezentacyjna (logo organizacji), ekrany przerwy na transmisji. Bez tego pliku wszędzie jest logo powyżej. PNG/SVG/WEBP z przezroczystością, maks. 2 MB.</div>
+          </div>
         </div>
       </Section>
 
@@ -428,13 +469,13 @@ function BoardSection({ s, update, pending }: {
     }
   }
 
-  const logo = resolveBoardLogo(s.boardLogoMode, s.presentationLogoUrl, s.boardLogoUrl);
+  const logo = resolveBoardLogo(s.boardLogoMode, s.presentationLogoUrl, s.boardLogoUrl, s.presentationLogoLightUrl);
   const disabled = pending || busy !== null;
 
   return (
     <Section title="Plansza reprezentacyjna">
       <p className="small text-body-secondary">
-        Ekran pokazywany na prezentacji na żądanie (przycisk „Pokaż planszę” w panelu prezentacji posiedzenia).
+        Ekran pokazywany na prezentacji na żądanie (pozycja „Plansza reprezentacyjna” na liście trybów ekranu w panelu posiedzenia).
         Kolor planszy: kolor nagłówka prezentacji albo własny (poniżej). Tekst, kolor, tryb logo i krycie zapisuje przycisk „Zapisz”; pliki zapisują się od razu.
       </p>
       <div className="row g-4">
@@ -457,7 +498,7 @@ function BoardSection({ s, update, pending }: {
           <fieldset>
             <legend className="form-label fs-6 mb-1">Logo</legend>
             {([
-              ["ORG", "Logo organizacji (z nagłówka prezentacji)"],
+              ["ORG", "Logo organizacji (białe, jeśli wgrane; inaczej z nagłówka)"],
               ["CUSTOM", "Osobny wariant logo dla planszy (np. białe na przezroczystym tle)"],
               ["NONE", "Bez logo"],
             ] as const).map(([v, label]) => (
@@ -513,6 +554,14 @@ function BoardSection({ s, update, pending }: {
           </fieldset>
 
           <div>
+            <label className="form-label" htmlFor="board-font">Czcionka planszy</label>
+            <select id="board-font" className="form-select" value={s.boardFont ?? ""} onChange={(e) => update("boardFont", e.target.value || null)}>
+              <option value="">Jak prezentacja ({s.presentationFont})</option>
+              {PRESENTATION_FONTS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+          </div>
+
+          <div>
             <label className="form-label" htmlFor="board-text">Tekst pod logo</label>
             <textarea id="board-text" className="form-control" rows={4} maxLength={600}
               value={s.boardText ?? ""} onChange={(e) => update("boardText", e.target.value)} />
@@ -539,7 +588,7 @@ function BoardSection({ s, update, pending }: {
               logoUrl={logo}
               text={s.boardText}
               overlayOpacity={s.boardOverlayOpacity}
-              fontFamily={`'${s.presentationFont}', system-ui, sans-serif`}
+              fontFamily={fontStack(s.boardFont ?? s.presentationFont)}
             />
           </div>
           <div className="form-text">Podgląd w proporcjach ekranu 16:9 - ten sam układ co na prezentacji.</div>

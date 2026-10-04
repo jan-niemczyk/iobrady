@@ -56,6 +56,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   for (const k of ["displayMode", "displayPinnedVoteId", "displayPinnedAgendaItemId", "displayCustomMessage", "displayMessageOnOverlay", "displayMessageObsStyle", "displayShowCastCount", "displayShowByName", "displayShowIndividualVotes", "displayCandidatePage", "displayCandidateSort", "displayPinVoteId", "displayBoardVisible"] as const) {
     if (parsed.data[k] !== undefined) data[k] = parsed.data[k];
   }
+  // Plansza reprezentacyjna jest jednym z trybów na liście: wybranie innego trybu ją zdejmuje.
+  if (parsed.data.displayMode !== undefined && parsed.data.displayBoardVisible === undefined) data.displayBoardVisible = false;
   if (parsed.data.breakUntil !== undefined) {
     data.breakUntil = parsed.data.breakUntil ? new Date(parsed.data.breakUntil) : null;
   }

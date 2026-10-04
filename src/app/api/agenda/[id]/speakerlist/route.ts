@@ -32,7 +32,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       agendaItemId,
       selfSignupEnabled: parsed.data.selfSignupEnabled ?? false,
       visibleToParticipants: parsed.data.visibleToParticipants ?? true,
-      defaultTimeLimitSec: parsed.data.defaultTimeLimitSec ?? null,
+      // planowany limit punktu (edytor porządku obrad), o ile nie podano innego
+      defaultTimeLimitSec: parsed.data.defaultTimeLimitSec ?? item.speechLimitSec ?? null,
     },
   });
 

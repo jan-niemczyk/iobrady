@@ -110,49 +110,15 @@ export function DisplayControlPanel({
     <div className="card">
       <CardHeader
         title="Ekran prezentacyjny"
-        sub={<span>Tryb: <span className={`fw-semibold ${b.cls}`}>{b.label}</span>{state.boardVisible && <span className="text-warning-emphasis"> - przykryty planszą</span>}</span>}
+        sub={<span>Tryb: {state.boardVisible
+          ? <span className="fw-semibold text-warning-emphasis">Plansza reprezentacyjna</span>
+          : <span className={`fw-semibold ${b.cls}`}>{b.label}</span>}</span>}
         right={
           <a className="btn btn-sm" href={screenUrl("display", meetingId, displayToken)} target="_blank" rel="noreferrer">
             Otwórz podgląd
           </a>
         }
       />
-
-      {/* Plansza reprezentacyjna: przykrywa cały ekran prezentacji; nie zmienia trybu ani obrad,
-          więc po ukryciu prezentacja pokazuje aktualny stan. */}
-      <div className="card-body pb-0">
-        <div
-          className={`border rounded-2 p-2 d-flex flex-column gap-2 ${state.boardVisible ? "border-warning bg-warning-subtle" : ""}`}
-          role="status"
-          aria-live="polite"
-        >
-          <div className="small">
-            <span className="fw-semibold">Plansza reprezentacyjna: </span>
-            {state.boardVisible
-              ? <span className="fw-semibold text-warning-emphasis">wyświetlana na ekranie sali</span>
-              : <span className="text-body-secondary">ukryta</span>}
-          </div>
-          <div className="d-flex gap-2">
-            <button
-              type="button"
-              className="btn btn-sm flex-fill justify-content-center"
-              disabled={pending || !!state.boardVisible}
-              aria-pressed={!!state.boardVisible}
-              onClick={() => patch({ displayBoardVisible: true }, "Plansza reprezentacyjna jest wyświetlana.")}
-            >
-              Pokaż planszę
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm flex-fill justify-content-center"
-              disabled={pending || !state.boardVisible}
-              onClick={() => patch({ displayBoardVisible: false }, "Plansza reprezentacyjna została ukryta.")}
-            >
-              Ukryj planszę
-            </button>
-          </div>
-        </div>
-      </div>
 
       <div className="card-body pb-2">
         <button
@@ -172,26 +138,37 @@ export function DisplayControlPanel({
       </div>
 
       <div className="list-group list-group-flush">
-        <button type="button" className={`list-group-item list-group-item-action${state.mode === "DEFAULT" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "DEFAULT" })}>
+        {/* Plansza reprezentacyjna (zdjęcie): tryb jak pozostałe - wybranie innego trybu ją zdejmuje,
+            ponowne kliknięcie wraca do poprzedniego widoku. */}
+        <button
+          type="button"
+          className={`list-group-item list-group-item-action${state.boardVisible ? " active" : ""}`}
+          disabled={pending}
+          aria-pressed={!!state.boardVisible}
+          onClick={() => patch({ displayBoardVisible: !state.boardVisible }, state.boardVisible ? "Plansza reprezentacyjna została zdjęta." : "Plansza reprezentacyjna jest wyświetlana.")}
+        >
+          <span className="dcp-ico" aria-hidden>▣</span> Plansza reprezentacyjna
+        </button>
+        <button type="button" className={`list-group-item list-group-item-action${!state.boardVisible && state.mode === "DEFAULT" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "DEFAULT" })}>
           <span className="dcp-ico" aria-hidden>◴</span> Ekran domyślny (nazwa posiedzenia)
         </button>
-        <button type="button" className={`list-group-item list-group-item-action${state.mode === "SPEAKER_LIST" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "SPEAKER_LIST" })}>
+        <button type="button" className={`list-group-item list-group-item-action${!state.boardVisible && state.mode === "SPEAKER_LIST" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "SPEAKER_LIST" })}>
           <span className="dcp-ico" aria-hidden><IconMic size={14} /></span> Lista mówców
         </button>
-        <button type="button" className={`list-group-item list-group-item-action${state.mode === "FORMAL_MOTIONS" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "FORMAL_MOTIONS" })}>
+        <button type="button" className={`list-group-item list-group-item-action${!state.boardVisible && state.mode === "FORMAL_MOTIONS" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "FORMAL_MOTIONS" })}>
           <span className="dcp-ico" aria-hidden><IconMic size={14} /></span> Wnioski formalne
         </button>
-        <button type="button" className={`list-group-item list-group-item-action${state.mode === "AGENDA_LIST" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "AGENDA_LIST" })}>
+        <button type="button" className={`list-group-item list-group-item-action${!state.boardVisible && state.mode === "AGENDA_LIST" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "AGENDA_LIST" })}>
           <span className="dcp-ico" aria-hidden><IconList size={14} /></span> Porządek obrad (lista)
         </button>
-        <button type="button" className={`list-group-item list-group-item-action${state.mode === "ATTENDANCE" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "ATTENDANCE" })}>
+        <button type="button" className={`list-group-item list-group-item-action${!state.boardVisible && state.mode === "ATTENDANCE" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "ATTENDANCE" })}>
           <span className="dcp-ico" aria-hidden><IconCheck /></span> Lista obecności
         </button>
 
         {/* WPIĘTY PUNKT */}
         <button
           type="button"
-          className={`list-group-item list-group-item-action${state.mode === "PINNED_AGENDA" ? " active" : ""}`}
+          className={`list-group-item list-group-item-action${!state.boardVisible && state.mode === "PINNED_AGENDA" ? " active" : ""}`}
           onClick={() => setPickAgendaOpen((v) => !v)}
         >
           <span className="dcp-ico" aria-hidden><IconList size={14} /></span> Pokaż konkretny punkt
@@ -221,7 +198,7 @@ export function DisplayControlPanel({
         {/* WPIĘTE GŁOSOWANIE */}
         <button
           type="button"
-          className={`list-group-item list-group-item-action${state.mode === "PINNED_VOTE" ? " active" : ""}`}
+          className={`list-group-item list-group-item-action${!state.boardVisible && state.mode === "PINNED_VOTE" ? " active" : ""}`}
           onClick={() => setPickVoteOpen((v) => !v)}
         >
           <span className="dcp-ico" aria-hidden><IconCheck /></span> Pokaż wyniki głosowania
@@ -251,7 +228,7 @@ export function DisplayControlPanel({
         {/* PRZERWA W OBRADACH - osobny tryb; zasłania ekran/transmisję; z licznikiem */}
         <button
           type="button"
-          className={`list-group-item list-group-item-action${isBreak ? " active" : ""}`}
+          className={`list-group-item list-group-item-action${!state.boardVisible && isBreak ? " active" : ""}`}
           onClick={() => setBreakOpen((v) => !v)}
         >
           <span className="dcp-ico" aria-hidden>⏸</span> Przerwa w obradach
@@ -307,7 +284,7 @@ export function DisplayControlPanel({
 
         <button
           type="button"
-          className={`list-group-item list-group-item-action${state.mode === "BLANK" ? " active" : ""}`}
+          className={`list-group-item list-group-item-action${!state.boardVisible && state.mode === "BLANK" ? " active" : ""}`}
           disabled={pending}
           onClick={() => patch({ displayMode: "BLANK" })}
         >
@@ -326,7 +303,7 @@ export function DisplayControlPanel({
         />
         <button
           type="button"
-          className={`btn w-100 justify-content-center${state.mode === "MESSAGE" ? " active" : ""}`}
+          className={`btn w-100 justify-content-center${!state.boardVisible && state.mode === "MESSAGE" ? " active" : ""}`}
           disabled={pending || !msgDraft.trim()}
           onClick={() => patch({ displayMode: "MESSAGE", displayCustomMessage: msgDraft })}
         >

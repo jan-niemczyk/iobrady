@@ -1,3 +1,4 @@
+import { ScreenGuard } from "@/components/presentation/ScreenGuard";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { OverlayClient } from "./OverlayClient";
@@ -16,5 +17,5 @@ export default async function OverlayPage({
   // SA-07: jak ekran prezentacji - token ekranu albo sesja operatora/uczestnika.
   const token = t ?? (await cookies()).get(displayCookieName(meetingId))?.value ?? null;
   if (!(await canViewDisplay(meetingId, token))) notFound();
-  return <OverlayClient meetingId={meetingId} />;
+  return <ScreenGuard><OverlayClient meetingId={meetingId} /></ScreenGuard>;
 }

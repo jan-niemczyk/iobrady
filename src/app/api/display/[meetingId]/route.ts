@@ -5,6 +5,7 @@ import { resolveBoardLogo } from "@/lib/board";
 import { secretTallyHidden } from "@/lib/secretTally";
 import { canViewDisplay, presentedDisplayToken } from "@/lib/displayAccess";
 import { getDisplayCache, setDisplayCache } from "@/lib/displayCache";
+import { appVersion } from "@/lib/appVersion";
 import { rateLimit } from "@/lib/rateLimit";
 import { clientIp } from "@/lib/clientIp";
 
@@ -287,11 +288,15 @@ async function buildDisplayPayload(meetingId: string) {
       agendaAutoMode: m.agendaAutoDisplayMode,
       autoOpenSpeakerList: m.autoOpenSpeakerList,
     },
+    // wersja aplikacji - ekran przeładowuje się po aktualizacji serwera
+    appVersion: appVersion(),
     organization: settings?.organizationName ?? "Organizacja",
     presentation: {
       font: settings?.presentationFont ?? "Inter",
       headerColor: settings?.presentationHeaderColor ?? "#0B2A4A",
       logoUrl: settings?.presentationLogoUrl ?? null,
+      // białe logo na ciemne tła; null = wszędzie logo domyślne
+      logoLightUrl: settings?.presentationLogoLightUrl?.startsWith("/api/uploads/") ? settings.presentationLogoLightUrl : null,
       overtimeSound: settings?.speechOvertimeSound ?? false,
     },
     // Plansza reprezentacyjna: widoczność per posiedzenie, treść z ustawień organizacji.
@@ -303,11 +308,14 @@ async function buildDisplayPayload(meetingId: string) {
         settings?.boardLogoMode,
         settings?.presentationLogoUrl ?? null,
         settings?.boardLogoUrl?.startsWith("/api/uploads/") ? settings.boardLogoUrl : null,
+        settings?.presentationLogoLightUrl?.startsWith("/api/uploads/") ? settings.presentationLogoLightUrl : null,
       ),
       text: settings?.boardText ?? settings?.organizationName ?? "",
       overlayOpacity: settings?.boardOverlayOpacity ?? 80,
       // Własny kolor planszy; null = kolor nagłówka prezentacji.
       color: settings?.boardColor ?? null,
+      // Czcionka planszy; null = czcionka prezentacji.
+      font: settings?.boardFont ?? null,
     },
     overlay: {
       font: settings?.overlayFont ?? "Inter",

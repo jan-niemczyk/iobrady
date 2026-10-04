@@ -32,6 +32,9 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
   const { limitEnabled, ...listData } = parsed.data;
   if (Object.keys(listData).length > 0) await prisma.speakerList.update({ where: { id }, data: listData });
+  // Limit listy zmieniony w panelu = planowany limit punktu (widoczny w edytorze porządku obrad).
+  if (listData.defaultTimeLimitSec !== undefined && list.agendaItemId)
+    await prisma.agendaItem.update({ where: { id: list.agendaItemId }, data: { speechLimitSec: listData.defaultTimeLimitSec } });
   if (typeof limitEnabled === "boolean") await setListLimitEnabled(id, limitEnabled);
   publishToMeeting(list.meetingId, { type: "speakerlist.updated" });
   return NextResponse.json({ ok: true });

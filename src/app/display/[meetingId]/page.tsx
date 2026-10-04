@@ -1,3 +1,4 @@
+import { ScreenGuard } from "@/components/presentation/ScreenGuard";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { DisplayClient } from "./DisplayClient";
@@ -16,5 +17,5 @@ export default async function DisplayPage({
   // SA-07: token ekranu (link lub ciasteczko ustawione przez middleware) albo sesja operatora/uczestnika.
   const token = t ?? (await cookies()).get(displayCookieName(meetingId))?.value ?? null;
   if (!(await canViewDisplay(meetingId, token))) notFound();
-  return <DisplayClient meetingId={meetingId} bare={bare === "1"} />;
+  return <ScreenGuard><DisplayClient meetingId={meetingId} bare={bare === "1"} /></ScreenGuard>;
 }

@@ -321,6 +321,7 @@ model Settings {
   presentationFont         String       @default("Outfit")   // Inter/Lato/Roboto/DM Sans/Source Sans Pro
   presentationHeaderColor  String       @default("#0B2A4A") // ciemny morski granat (nagłówek prezentacji)
   presentationLogoUrl      String?      // opcjonalne logo zamiast paska koloru (data URL lub ścieżka)
+  presentationLogoLightUrl String?      // białe logo na ciemne tła (kontrast); null = wszędzie logo domyślne
   // Plansza reprezentacyjna (ekran prezentacji na żądanie operatora). Kolor = presentationHeaderColor.
   boardBackgroundUrl       String?      // zdjęcie tła (odbarwiane i barwione nakładką przy wyświetlaniu)
   boardLogoMode            String       @default("ORG") // ORG (logo organizacji) | CUSTOM (osobny wariant) | NONE
@@ -328,6 +329,7 @@ model Settings {
   boardText                String?      // tekst pod logo; ręczne podziały wierszy zachowane
   boardOverlayOpacity      Int          @default(80) // krycie nakładki w kolorze nagłówka, 0-100 %
   boardColor               String?      // własny kolor planszy (#RRGGBB); null = kolor nagłówka prezentacji
+  boardFont                String?      // czcionka planszy reprezentacyjnej; null = czcionka prezentacji
   // "Pierwszy głos ważny" - po oddaniu nie można zmienić. Osobno dla tajnych i jawnych.
   firstVoteFinalOpen       Boolean      @default(false)
   firstVoteFinalSecret     Boolean      @default(false)
@@ -552,6 +554,8 @@ model AgendaItem {
   unnumbered  Boolean          @default(false)
   /** Ukryty na liście porządku obrad w prezentacji (nadal działa w panelu operatora). */
   hiddenFromDisplay Boolean    @default(false)
+  /** Planowany limit wypowiedzi w tym punkcie (s); null = limit z ustawień. Trafia do listy mówców punktu. */
+  speechLimitSec Int?
   startedAt   DateTime?
   completedAt DateTime?
 

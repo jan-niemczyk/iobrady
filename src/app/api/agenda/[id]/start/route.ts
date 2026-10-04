@@ -58,6 +58,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
           data: {
             meetingId: item.meetingId,
             agendaItemId: item.id,
+            defaultTimeLimitSec: item.speechLimitSec ?? null, // planowany limit punktu
             selfSignupEnabled: true,
             visibleToParticipants: true,
             allowRegular: (item.meeting as { speakerDefaultRegular?: boolean }).speakerDefaultRegular ?? true,

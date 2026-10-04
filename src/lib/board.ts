@@ -6,10 +6,24 @@
 const FALLBACK_COLOR = "#0B2A4A";
 
 /** Logo planszy wg ustawienia: logo organizacji (domyślnie), osobny wariant albo brak. */
-export function resolveBoardLogo(mode: string | null | undefined, orgLogoUrl: string | null, customLogoUrl: string | null): string | null {
+export function resolveBoardLogo(mode: string | null | undefined, orgLogoUrl: string | null, customLogoUrl: string | null, orgLogoLightUrl?: string | null): string | null {
   if (mode === "NONE") return null;
   if (mode === "CUSTOM") return customLogoUrl;
-  return orgLogoUrl;
+  // Tło planszy jest zawsze ciemne - białe logo organizacji, jeśli wgrane.
+  return orgLogoLightUrl ?? orgLogoUrl;
+}
+
+/** Logo na tło danego koloru: na ciemnym tle białe logo (jeśli wgrane), w pozostałych przypadkach domyślne. */
+export function logoForBackground(bg: string | null | undefined, logoUrl: string | null, logoLightUrl: string | null | undefined): string | null {
+  if (logoLightUrl && bg && isDarkHex(bg)) return logoLightUrl;
+  return logoUrl;
+}
+
+/** Ciemne tło (biały tekst czytelniejszy niż czarny) - luminancja wg WCAG. */
+export function isDarkHex(hex: string): boolean {
+  const rgb = parseHex(hex);
+  if (!rgb) return false;
+  return luminance(rgb) < 0.179;
 }
 
 function parseHex(hex: string): [number, number, number] | null {

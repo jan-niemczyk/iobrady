@@ -8,6 +8,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Prezentacja",
+  // Bez automatycznego tłumaczenia przez przeglądarkę (podmiana tekstu psuje aktualizacje ekranu).
+  other: { google: "notranslate" },
 };
 
 export default function DisplayLayout({ children }: { children: React.ReactNode }) {

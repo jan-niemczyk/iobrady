@@ -27,6 +27,9 @@ export interface BoardContent {
   fontFamily?: string;
 }
 
+/** Maksymalna szerokość logo na planszy w % szerokości ekranu (wzór: 330 px przy 1920 px). */
+const LOGO_MAX_W_CQW = 17.2;
+
 export function RepresentationBoard({ color, backgroundUrl, logoUrl, text, overlayOpacity, fontFamily }: BoardContent) {
   const bg = boardBackgroundColor(color);
   const opacity = Math.min(100, Math.max(0, Number.isFinite(overlayOpacity) ? overlayOpacity : 80)) / 100;
@@ -34,6 +37,8 @@ export function RepresentationBoard({ color, backgroundUrl, logoUrl, text, overl
 
   // Uszkodzone / niedostępne logo: znika bez ikony błędu i bez zarezerwowanego miejsca.
   const [failedLogo, setFailedLogo] = useState<string | null>(null);
+  // Proporcje logo (szer./wys.) - do ograniczenia jednocześnie wysokości i szerokości bez zniekształceń.
+  const [logoRatio, setLogoRatio] = useState<number | null>(null);
   const showLogo = !!logoUrl && failedLogo !== logoUrl;
 
   const boxRef = useRef<HTMLDivElement>(null);
@@ -60,7 +65,7 @@ export function RepresentationBoard({ color, backgroundUrl, logoUrl, text, overl
     const ro = new ResizeObserver(() => fit());
     ro.observe(box);
     return () => ro.disconnect();
-  }, [fit, cleanText, showLogo, logoUrl]);
+  }, [fit, cleanText, showLogo, logoUrl, logoRatio]);
 
   return (
     <div
@@ -108,10 +113,19 @@ export function RepresentationBoard({ color, backgroundUrl, logoUrl, text, overl
               src={logoUrl!}
               alt=""
               onError={() => setFailedLogo(logoUrl)}
-              onLoad={fit}
+              onLoad={(e) => {
+                const img = e.currentTarget;
+                if (img.naturalWidth > 0 && img.naturalHeight > 0) setLogoRatio(img.naturalWidth / img.naturalHeight);
+                fit();
+              }}
               style={{
-                display: "block", height: "calc(22cqh * var(--k))", width: "auto",
-                maxWidth: "calc(40cqw * var(--k))", objectFit: "contain", flexShrink: 0,
+                // Logo mieści się w polu: wysokość do 22% ekranu, szerokość do 17,2% (wzór: logo
+                // 330 px na ekranie 1920 px). Szerokie logo jest zmniejszane proporcjonalnie.
+                display: "block", width: "auto", objectFit: "contain", flexShrink: 0,
+                height: logoRatio
+                  ? `calc(min(22cqh, ${(LOGO_MAX_W_CQW / logoRatio).toFixed(4)}cqw) * var(--k))`
+                  : "calc(22cqh * var(--k))",
+                maxWidth: `calc(${LOGO_MAX_W_CQW}cqw * var(--k))`,
               }}
             />
           )}

@@ -38,6 +38,9 @@ export const PRESENTATION_FONTS: PresentationFont[] = [
   { value: "Poppins", label: "Poppins", stack: sans("Poppins") },
   // Tahoma: systemowy (Windows); poza Windows najbliższe zamienniki.
   { value: "Tahoma", label: "Tahoma (Windows)", stack: sans("Tahoma", "Verdana", "Segoe UI", "Arimo") },
+  // Myriad Pro: czcionka Adobe (licencja komercyjna) - używana, gdy jest zainstalowana na komputerze
+  // ekranu; w przeciwnym razie Inter (z Google Fonts).
+  { value: "Myriad Pro", label: "Myriad Pro (jeśli zainstalowana, inaczej Inter)", stack: sans("Myriad Pro", "MyriadPro-Regular", "Myriad", "Inter") },
 ];
 
 export function fontStack(name: string): string {

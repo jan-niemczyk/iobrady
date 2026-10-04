@@ -27,6 +27,8 @@ export default async function AgendaEditPage({ params }: { params: Promise<{ id:
         title: a.title,
         description: a.description,
         presenter: a.presenter,
+        committee: a.committee,
+        speechLimitSec: a.speechLimitSec,
         status: a.status,
         isSubItem: a.isSubItem,
         unnumbered: a.unnumbered,

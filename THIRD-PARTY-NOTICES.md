@@ -52,6 +52,8 @@ do działającej aplikacji poza wygenerowanym CSS.
   każdej rodzinie w Google Fonts (SIL OFL 1.1 lub Apache 2.0).
 - **Tahoma** - czcionka systemowa Windows (Microsoft), tylko wskazywana z nazwy; niedostępna poza
   Windows zastępowana jest czcionkami Verdana, Segoe UI lub Arimo. Nie jest rozpowszechniana.
+- **Myriad Pro** - czcionka Adobe (licencja komercyjna), tylko wskazywana z nazwy; używana, gdy jest
+  zainstalowana na komputerze ekranu, w przeciwnym razie Inter. Nie jest rozpowszechniana.
 - Dokumenty DOCX wskazują czcionkę Arial z systemu użytkownika (nie jest dołączana).
 
 ## Grafika

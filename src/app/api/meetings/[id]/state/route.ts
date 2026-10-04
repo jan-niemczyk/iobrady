@@ -84,7 +84,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       candidatePage: meeting.displayCandidatePage,
       candidateSort: meeting.displayCandidateSort,
     },
-    agenda: meeting.agenda.map(a => ({ id: a.id, order: a.order, number: a.number, title: a.title, status: a.status, isSubItem: a.isSubItem, unnumbered: a.unnumbered, hiddenFromDisplay: a.hiddenFromDisplay, description: a.description, presenter: a.presenter })),
+    agenda: meeting.agenda.map(a => ({ id: a.id, order: a.order, number: a.number, title: a.title, status: a.status, isSubItem: a.isSubItem, unnumbered: a.unnumbered, hiddenFromDisplay: a.hiddenFromDisplay, description: a.description, presenter: a.presenter, committee: a.committee, speechLimitSec: a.speechLimitSec })),
     counts: {
       total: meeting.participants.length,
       eligible: eligible.length,

@@ -8,8 +8,14 @@ import { sniffImage } from "@/lib/imageSniff";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 
+/** Wariant logo: domyślne albo białe (na ciemne tła) - `?variant=light`. */
+function fieldFor(req: Request): "presentationLogoUrl" | "presentationLogoLightUrl" {
+  return new URL(req.url).searchParams.get("variant") === "light" ? "presentationLogoLightUrl" : "presentationLogoUrl";
+}
+
 /** POST /api/settings/logo - wgranie logo prezentacji (multipart/form-data, pole "file"). */
 export async function POST(req: Request) {
+  const field = fieldFor(req);
   const session = await auth();
   if (!session || session.user.role !== "OPERATOR")
     return new NextResponse("Unauthorized", { status: 401 });
@@ -25,36 +31,39 @@ export async function POST(req: Request) {
   // SA-09: typ po treści pliku, nie po deklaracji przeglądarki; SVG bez aktywnej treści.
   const ext = sniffImage(buffer, true);
   if (!ext) return new NextResponse("Dozwolone: PNG, JPG, WEBP lub SVG bez skryptów i odwołań zewnętrznych.", { status: 400 });
-  const filename = `logo-${Date.now()}.${ext}`;
+  const filename = `${field === "presentationLogoLightUrl" ? "logo-light" : "logo"}-${Date.now()}.${ext}`;
   await writeFile(path.join(UPLOAD_DIR, filename), buffer);
   const url = `/api/uploads/${filename}`;
 
   // Usuń poprzednie logo (jeśli było lokalnym plikiem), żeby nie zaśmiecać wolumenu.
   const prev = await prisma.settings.findUnique({ where: { id: "singleton" } });
-  if (prev?.presentationLogoUrl?.startsWith("/api/uploads/")) {
-    await unlink(path.join(UPLOAD_DIR, prev.presentationLogoUrl.replace("/api/uploads/", ""))).catch(() => {});
+  const prevUrl = prev?.[field];
+  if (prevUrl?.startsWith("/api/uploads/")) {
+    await unlink(path.join(UPLOAD_DIR, prevUrl.replace("/api/uploads/", ""))).catch(() => {});
   }
 
   await prisma.settings.upsert({
     where: { id: "singleton" },
-    create: { id: "singleton", presentationLogoUrl: url },
-    update: { presentationLogoUrl: url },
+    create: { id: "singleton", [field]: url },
+    update: { [field]: url },
   });
 
-  await audit({ action: "SETTINGS_CHANGED", description: "Wgrano logo prezentacji", userId: session.user.id });
+  await audit({ action: "SETTINGS_CHANGED", description: field === "presentationLogoLightUrl" ? "Wgrano białe logo prezentacji" : "Wgrano logo prezentacji", userId: session.user.id });
   return NextResponse.json({ ok: true, url });
 }
 
-/** DELETE /api/settings/logo - usunięcie logo. */
-export async function DELETE() {
+/** DELETE /api/settings/logo - usunięcie logo (`?variant=light` - białego). */
+export async function DELETE(req: Request) {
+  const field = fieldFor(req);
   const session = await auth();
   if (!session || session.user.role !== "OPERATOR")
     return new NextResponse("Unauthorized", { status: 401 });
 
   const prev = await prisma.settings.findUnique({ where: { id: "singleton" } });
-  if (prev?.presentationLogoUrl?.startsWith("/api/uploads/")) {
-    await unlink(path.join(UPLOAD_DIR, prev.presentationLogoUrl.replace("/api/uploads/", ""))).catch(() => {});
+  const prevUrl = prev?.[field];
+  if (prevUrl?.startsWith("/api/uploads/")) {
+    await unlink(path.join(UPLOAD_DIR, prevUrl.replace("/api/uploads/", ""))).catch(() => {});
   }
-  await prisma.settings.update({ where: { id: "singleton" }, data: { presentationLogoUrl: null } });
+  await prisma.settings.update({ where: { id: "singleton" }, data: { [field]: null } });
   return NextResponse.json({ ok: true });
 }

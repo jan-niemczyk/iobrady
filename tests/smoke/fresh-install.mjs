@@ -83,8 +83,9 @@ const v1 = r.j?.voteId;
 const za = rad.getByRole("button", { name: "Za", exact: true });
 await za.first().waitFor({ timeout: 15000 });
 ok("Karta głosowania pojawia się u radnego bez przeładowania", true);
-await za.first().click(); await rad.waitForTimeout(1500);
-r = await api("GET", `/api/votes/${v1}/counter`);
+await za.first().click();
+// do 10 s - pierwszy głos po starcie serwera deweloperskiego czeka na kompilację trasy
+for (let i = 0; i < 20; i++) { r = await api("GET", `/api/votes/${v1}/counter`); if (r.j?.yes === 1) break; await rad.waitForTimeout(500); }
 ok("Głos radnego z karty przyjęty (jawne)", r.j?.yes === 1, `ZA=${r.j?.yes}`);
 r = await api("POST", `/api/votes/${v1}/close`); ok("Zamknięcie głosowania jawnego", r.s === 200);
 
@@ -93,8 +94,8 @@ r = await api("POST", `/api/meetings/${mid}/votes`, { title: "Wybór sekretarza"
 const v2 = r.j?.voteId;
 await rad.getByText("Wybór sekretarza").first().waitFor({ timeout: 15000 });
 await rad.getByRole("button", { name: "Przeciw", exact: true }).first().waitFor({ timeout: 15000 });
-await rad.getByRole("button", { name: "Przeciw", exact: true }).first().click(); await rad.waitForTimeout(1500);
-r = await api("GET", `/api/votes/${v2}/counter`);
+await rad.getByRole("button", { name: "Przeciw", exact: true }).first().click();
+for (let i = 0; i < 20; i++) { r = await api("GET", `/api/votes/${v2}/counter`); if (r.j?.castCount === 1) break; await rad.waitForTimeout(500); }
 ok("Tajne w trakcie: 1 głos, rozkład ukryty, wiadomo kto oddał", r.j?.castCount === 1 && r.j?.no === 0 && (r.j?.votedUserIds ?? []).includes(users[0].id), `oddanych ${r.j?.castCount}, PRZECIW ${r.j?.no}`);
 await api("POST", `/api/votes/${v2}/close`);
 r = await api("GET", `/api/votes/${v2}/counter`);

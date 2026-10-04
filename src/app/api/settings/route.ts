@@ -30,6 +30,7 @@ const schema = z.object({
   boardLogoMode: z.enum(["ORG", "CUSTOM", "NONE"]).optional(),
   boardText: z.string().max(600).nullable().optional(),
   boardOverlayOpacity: z.number().int().min(0).max(100).optional(),
+  boardFont: z.string().max(50).nullable().optional(),
   boardColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Kolor planszy w formacie #RRGGBB").nullable().optional(),
   firstVoteFinalOpen: z.boolean().optional(),
   firstVoteFinalSecret: z.boolean().optional(),

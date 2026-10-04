@@ -76,3 +76,22 @@ export async function setListLimitEnabled(listId: string, enabled: boolean) {
     for (const e of list.entries) await setEntryLimitEnabled(e, list, enabled, tx);
   });
 }
+
+/**
+ * Nowy domyślny limit listy (np. planowany limit punktu): oczekujące wystąpienia dostają limit
+ * wyliczony od nowa (przy wyłączonym limicie wartość trafia do savedLimitSec).
+ */
+export async function applyListDefaultToWaiting(listId: string, db: Db = prisma) {
+  const list = await db.speakerList.findUnique({
+    where: { id: listId },
+    include: { entries: { where: { status: "WAITING" } } },
+  });
+  if (!list) return;
+  for (const e of list.entries) {
+    const limit = await defaultLimitFor(list, e.entryType, db);
+    await db.speakerListEntry.update({
+      where: { id: e.id },
+      data: e.limitEnabled ? { timeLimitSec: limit } : { savedLimitSec: limit },
+    });
+  }
+}

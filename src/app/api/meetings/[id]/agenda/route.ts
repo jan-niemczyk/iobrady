@@ -14,6 +14,7 @@ const schema = z.object({
   committee: z.string().max(300).optional().nullable(),
   isSubItem: z.boolean().optional(),
   unnumbered: z.boolean().optional(),
+  speechLimitSec: z.number().int().min(0).max(36000).nullable().optional(),
   /** jeśli podane - wstaw za tym punktem; w przeciwnym razie dodaj na końcu */
   insertAfterOrder: z.number().int().optional().nullable(),
 }).refine((d) => d.unnumbered || (d.number && d.number.trim().length > 0), {
@@ -65,6 +66,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         committee: d.committee ?? null,
         isSubItem: d.isSubItem ?? false,
         unnumbered: d.unnumbered ?? false,
+        speechLimitSec: d.speechLimitSec ?? null,
       },
     });
   });

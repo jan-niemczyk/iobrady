@@ -1,5 +1,6 @@
 "use client";
 
+import { reloadOnNewVersion } from "@/components/presentation/ScreenGuard";
 import { fontStack } from "@/lib/presentationFonts";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { comparePl } from "@/lib/sortPl";
@@ -9,8 +10,8 @@ import { RepresentationBoard } from "@/components/presentation/RepresentationBoa
 interface DisplayData {
   meeting: { id: string; name: string; displayNameOverride?: string | null; number: string; scheduledAt: string; status: string; agendaAutoMode?: string; autoOpenSpeakerList?: boolean };
   organization: string;
-  presentation: { font: string; headerColor: string; logoUrl: string | null; overtimeSound: boolean };
-  board?: { visible: boolean; backgroundUrl: string | null; logoUrl: string | null; text: string; overlayOpacity: number; color?: string | null };
+  presentation: { font: string; headerColor: string; logoUrl: string | null; logoLightUrl?: string | null; overtimeSound: boolean };
+  board?: { visible: boolean; backgroundUrl: string | null; logoUrl: string | null; text: string; overlayOpacity: number; font?: string | null; color?: string | null };
   counts: { eligible: number; present: number };
   attendanceCheckOpen?: boolean;
   display: {
@@ -116,6 +117,7 @@ export function DisplayClient({ meetingId, bare }: { meetingId: string; bare?: b
         const r = await fetch(`/api/display/${meetingId}`, { cache: "no-store" });
         if (!r.ok) { setError(`Błąd ${r.status}`); return; }
         const j = await r.json();
+        reloadOnNewVersion(j.appVersion);
         if (!cancelled) { setData(j); setError(null); }
       } catch (e) {
         if (!cancelled) setError(String(e));
@@ -187,7 +189,7 @@ export function DisplayClient({ meetingId, bare }: { meetingId: string; bare?: b
           logoUrl={data.board.logoUrl}
           text={data.board.text}
           overlayOpacity={data.board.overlayOpacity}
-          fontFamily={fontStack(pres.font)}
+          fontFamily={fontStack(data.board.font ?? pres.font)}
         />
       </div>
     );
@@ -201,6 +203,7 @@ export function DisplayClient({ meetingId, bare }: { meetingId: string; bare?: b
           organization={data.organization}
           headerColor={pres.headerColor}
           logoUrl={pres.logoUrl}
+          logoLightUrl={pres.logoLightUrl ?? null}
           minimal={view === "default"}
         />
       )}
@@ -261,6 +264,7 @@ export function DisplayClient({ meetingId, bare }: { meetingId: string; bare?: b
             organization={data.organization}
             meetingName={meetingNameWithDate(data.meeting.name, data.meeting.scheduledAt)}
             logoUrl={pres.logoUrl}
+            logoLightUrl={pres.logoLightUrl ?? null}
           />
         )}
         {view === "break" && (
@@ -269,6 +273,7 @@ export function DisplayClient({ meetingId, bare }: { meetingId: string; bare?: b
             bare={bare}
             headerColor={pres.headerColor}
             logoUrl={pres.logoUrl}
+            logoLightUrl={pres.logoLightUrl ?? null}
             organization={data.organization}
             meetingName={meetingNameWithDate(data.meeting.name, data.meeting.scheduledAt)}
           />
@@ -374,12 +379,13 @@ function isColorDark(hex: string): boolean {
 }
 
 function TopBar({
-  meeting, organization, headerColor, logoUrl, minimal,
+  meeting, organization, headerColor, logoUrl, logoLightUrl, minimal,
 }: {
   meeting: DisplayData["meeting"];
   organization: string;
   headerColor: string;
   logoUrl: string | null;
+  logoLightUrl?: string | null;
   minimal?: boolean;
 }) {
   // Kolor tekstu dobierany automatycznie do jasności tła nagłówka (kontrast).
@@ -409,7 +415,7 @@ function TopBar({
       {!minimal && (
         <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0, flex: 1 }}>
           {logoUrl && (
-            <img src={logoUrl} alt="" style={{ height: 52, width: "auto", flexShrink: 0, objectFit: "contain" }} />
+            <img src={(dark && logoLightUrl) || logoUrl} alt="" style={{ height: 52, width: "auto", flexShrink: 0, objectFit: "contain" }} />
           )}
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: "0.16em", textTransform: "uppercase", color: fgMuted }}>
@@ -1747,12 +1753,13 @@ function SpeakerListView({ list, speaker, soundEnabled }: { list: NonNullable<Di
 // Widok przerwy: pełny ekran w kolorze nagłówka, wyśrodkowany herb, nazwa organu,
 // nazwa posiedzenia, „Przerwa w obradach", licznik odliczający i aktualny zegar.
 function BreakView({
-  breakUntil, bare, headerColor, logoUrl, organization, meetingName,
+  breakUntil, bare, headerColor, logoUrl, logoLightUrl, organization, meetingName,
 }: {
   breakUntil: string | null;
   bare?: boolean;
   headerColor?: string;
   logoUrl?: string | null;
+  logoLightUrl?: string | null;
   organization?: string;
   meetingName?: string;
 }) {
@@ -1794,7 +1801,7 @@ function BreakView({
         {nowClock}
       </div>
       {logoUrl && (
-        <img src={logoUrl} alt="" style={{ height: bare ? 70 : 110, width: "auto", objectFit: "contain", marginBottom: 20 }} />
+        <img src={(dark && logoLightUrl) || logoUrl} alt="" style={{ height: bare ? 70 : 110, width: "auto", objectFit: "contain", marginBottom: 20 }} />
       )}
       {organization && (
         <div style={{ fontSize: bare ? 16 : 22, fontWeight: 600, letterSpacing: "0.16em", textTransform: "uppercase", color: fgMuted }}>
@@ -1821,12 +1828,13 @@ function BreakView({
   );
 }
 
-function MessageView({ text, obsStyle, organization, meetingName, logoUrl }: {
+function MessageView({ text, obsStyle, organization, meetingName, logoUrl, logoLightUrl }: {
   text: string;
   obsStyle?: boolean;
   organization?: string;
   meetingName?: string;
   logoUrl?: string | null;
+  logoLightUrl?: string | null;
 }) {
   if (obsStyle) {
     // Styl transmisji/OBS: kolorowe tło, logo, organizacja, duży komunikat + nazwa posiedzenia z datą.
@@ -1842,7 +1850,7 @@ function MessageView({ text, obsStyle, organization, meetingName, logoUrl }: {
         <div style={{ position: "absolute", top: 28, right: 36 }}>
           <Clock color="rgba(255,255,255,0.9)" />
         </div>
-        {logoUrl && <img src={logoUrl} alt="" style={{ height: 96, width: "auto", objectFit: "contain" }} />}
+        {logoUrl && <img src={logoLightUrl || logoUrl} alt="" style={{ height: 96, width: "auto", objectFit: "contain" }} />}
         {organization && (
           <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)" }}>
             {organization}

@@ -1,5 +1,6 @@
 "use client";
 
+import { reloadOnNewVersion } from "@/components/presentation/ScreenGuard";
 import { fontStack } from "@/lib/presentationFonts";
 import { useEffect, useRef, useState } from "react";
 import { meetingNameWithDate } from "@/lib/meetingName";
@@ -29,7 +30,7 @@ interface LiveBallot { userId: string; userName: string; choice: string | null }
 interface OverlayData {
   meeting: { name: string; number: string; status: string; scheduledAt?: string };
   organization: string;
-  presentation: { font: string; logoUrl: string | null };
+  presentation: { font: string; logoUrl: string | null; logoLightUrl?: string | null };
   overlay: { font: string; resultsMode: string; boardTiming: string; showSpeechClock: boolean };
   barColors: { item: string; speaker: string; vote: string; session: string };
   display: { mode: string; customMessage: string | null; messageOnOverlay?: boolean; showByName: boolean; summaryAfterClose: boolean };
@@ -75,7 +76,7 @@ export function OverlayClient({ meetingId }: { meetingId: string }) {
     const fetchData = async () => {
       try {
         const r = await fetch(`/api/display/${meetingId}`, { cache: "no-store" });
-        if (r.ok && alive) setData(await r.json());
+        if (r.ok && alive) { const j = await r.json(); reloadOnNewVersion(j.appVersion); setData(j); }
       } catch { /* ignoruj */ }
     };
     fetchData();
@@ -119,9 +120,9 @@ export function OverlayClient({ meetingId }: { meetingId: string }) {
   return (
     <div style={{ width: "100vw", height: "100vh", background: "transparent", fontFamily: font, overflow: "hidden", position: "relative" }}>
       {isBreak ? (
-        <BreakScreen text="Przerwa w obradach" org={data.organization} logo={data.presentation.logoUrl} clock={`${hh}:${mm}`} font={font} variant="break" />
+        <BreakScreen text="Przerwa w obradach" org={data.organization} logo={data.presentation.logoLightUrl || data.presentation.logoUrl} clock={`${hh}:${mm}`} font={font} variant="break" />
       ) : isMessage ? (
-        <BreakScreen text={data.display.customMessage ?? ""} org={data.organization} logo={data.presentation.logoUrl} clock={`${hh}:${mm}`} font={font} variant="message" />
+        <BreakScreen text={data.display.customMessage ?? ""} org={data.organization} logo={data.presentation.logoLightUrl || data.presentation.logoUrl} clock={`${hh}:${mm}`} font={font} variant="message" />
       ) : (
         <>
           {/* ── GÓRNY BLOK: logo + organ (KAPITALIKI) + zegar ── */}
