@@ -242,6 +242,83 @@ Port 80 komputera musi być wolny. Adres w przeglądarce: `http://localhost`.
 
 Usunięcie próby lokalnej wraz z danymi **[USUWA DANE]**: `docker compose down -v` w katalogu aplikacji.
 
+## Serwer z inną aplikacją (porty 80/443 zajęte)
+
+Gdy na serwerze działa już inna aplikacja z własnym serwerem WWW (np. Caddy w Dockerze) na portach 80
+i 443, iOBRADY uruchamia się **bez własnego Caddy**. Aplikacja nasłuchuje wtedy tylko na adresie
+wewnętrznym Dockera `172.17.0.1:3100` (niedostępnym z internetu), a istniejący serwer WWW dostaje jeden
+blok dla domeny iOBRADY. Druga aplikacja działa bez zmian.
+
+**Sprawdzenie, czy to Twój przypadek (na serwerze):** `sudo ss -ltnp | grep -E ':(80|443) '` pokazuje
+zajęte porty, a `docker ps` - kontener innego serwera WWW (np. `...-caddy-1`).
+
+Kroki 1-4 jak wyżej, a na końcu kroku 4 dopisz do `.env`:
+
+```bash
+echo "COMPOSE_FILE=docker-compose.yml:docker-compose.external-proxy.yml" >> .env
+```
+
+Krok 5 bez zmian (`./scripts/update.sh --no-pull`). **Wynik:** `docker compose ps` pokazuje tylko `db`
+i `app`, przy `app` port `172.17.0.1:3100->3000/tcp`.
+
+Następnie, zamiast certyfikatu z własnego Caddy, dopisz blok do Caddyfile istniejącej aplikacji
+(PRZYKŁAD nazwy kontenera: `inna-caddy-1`; nazwę pokaże `docker ps`):
+
+1. Gdzie leży jej Caddyfile:
+
+   ```bash
+   docker inspect inna-caddy-1 --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{println}}{{end}}'
+   ```
+
+   Szukaj linii kończącej się na `/etc/caddy/Caddyfile` - po lewej jest plik na serwerze.
+
+2. Czy ten Caddy dosięga iOBRADY:
+
+   ```bash
+   docker exec inna-caddy-1 wget -qO- http://172.17.0.1:3100/api/health
+   ```
+
+   **Wynik:** `{"ok":true}`. Jeśli polecenie wisi, zapora blokuje ruch z Dockera:
+   `sudo ufw allow from 172.16.0.0/12 to 172.17.0.1 port 3100 proto tcp` i powtórz.
+
+3. Kopia zapasowa i dopisanie bloku (zamień ścieżkę i domenę - PRZYKŁAD):
+
+   ```bash
+   F=/ścieżka/do/Caddyfile
+   sudo cp "$F" "$F.przed-iobrady"
+   sudo tee -a "$F" > /dev/null <<'BLOK'
+
+   # iOBRADY
+   obrady.twoja-domena.pl {
+   	reverse_proxy 172.17.0.1:3100 {
+   		header_up X-Forwarded-For {remote_host}
+   		flush_interval -1
+   	}
+   	header {
+   		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+   		X-Content-Type-Options "nosniff"
+   		X-Frame-Options "SAMEORIGIN"
+   		Referrer-Policy "strict-origin-when-cross-origin"
+   		-Server
+   	}
+   	encode gzip zstd
+   }
+   BLOK
+   ```
+
+4. Sprawdzenie i przeładowanie (bez przerwy w działaniu drugiej aplikacji):
+
+   ```bash
+   docker exec inna-caddy-1 caddy validate --config /etc/caddy/Caddyfile
+   docker exec inna-caddy-1 caddy reload --config /etc/caddy/Caddyfile
+   ```
+
+   **Wynik:** `Valid configuration`, a po chwili `https://obrady.twoja-domena.pl/api/health` zwraca
+   `{"ok":true}`. Przy błędzie walidacji przywróć kopię: `sudo cp "$F.przed-iobrady" "$F"`.
+
+Uwaga: jeśli druga aplikacja przy swojej aktualizacji nadpisuje Caddyfile, blok iOBRADY trzeba dopisać
+ponownie. Aktualizacje iOBRADY (`./scripts/update.sh`) działają bez zmian i nie dotykają drugiej aplikacji.
+
 ---
 
 # Część B. Utrzymanie

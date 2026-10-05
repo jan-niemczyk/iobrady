@@ -1,0 +1,15 @@
+# Serwer, na którym porty 80/443 zajmuje już inny serwer WWW (np. Caddy innej aplikacji).
+# iOBRADY startuje BEZ własnego Caddy; aplikacja nasłuchuje tylko na adresie wewnętrznym Dockera
+# (domyślnie 172.17.0.1:3100 - niedostępnym z internetu), a istniejący serwer WWW przekazuje do
+# niej ruch dla domeny iOBRADY (blok konfiguracji: INSTALACJA.md, „Serwer z inną aplikacją”).
+#
+# Włączenie - w .env (wtedy także ./scripts/update.sh używa tego pliku):
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.external-proxy.yml
+# Opcjonalnie: APP_BIND (adres, domyślnie 172.17.0.1), APP_PORT (port, domyślnie 3100).
+services:
+  caddy:
+    # Własny Caddy wyłączony (nie uruchamia się bez profilu "wlasny-caddy").
+    profiles: ["wlasny-caddy"]
+  app:
+    ports:
+      - "${APP_BIND:-172.17.0.1}:${APP_PORT:-3100}:3000"

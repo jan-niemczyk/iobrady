@@ -41,7 +41,8 @@ jobs:
       - name: Skrypty powłoki i plik compose (składnia)
         run: |
           for f in scripts/*.sh; do sh -n "$f"; done
-          cp .env.example .env && docker compose config -q && rm .env
+          cp .env.example .env && docker compose config -q
+          docker compose -f docker-compose.yml -f docker-compose.external-proxy.yml config -q && rm .env
       - run: npm ci
       - name: Losowy sekret sesji (tylko na czas CI)
         run: echo "NEXTAUTH_SECRET=$(openssl rand -base64 32)" >> "$GITHUB_ENV"

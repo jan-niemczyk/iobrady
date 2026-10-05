@@ -1327,3 +1327,14 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
 - Sprawdzone (serwer deweloperski, dane syntetyczne): wszystkie powyższe scenariusze przez API i w przeglądarce
   (logo 1000x200 na planszy 1920x1080 -> 330x66 px, białe logo w ciemnym nagłówku i na planszy, czcionki),
   build produkcyjny.
+
+## ABA. Instalacja na serwerze z inną aplikacją
+
+- [x] `docker-compose.external-proxy.yml` (włączany w `.env`: `COMPOSE_FILE=docker-compose.yml:docker-compose.external-proxy.yml`):
+      bez własnego Caddy, aplikacja tylko na `172.17.0.1:3100` (adres wewnętrzny Dockera; `APP_BIND`, `APP_PORT`).
+      Ruch dla domeny iOBRADY przekazuje istniejący serwer WWW - blok Caddyfile i kroki: INSTALACJA.md,
+      „Serwer z inną aplikacją”. Bez wspólnej sieci Dockera (obie aplikacje mają usługę `app` - wspólna sieć
+      mieszałaby ruch). `./scripts/update.sh` działa bez zmian.
+- Sprawdzone: symulacja serwera z drugą aplikacją i jej Caddy na porcie 80 - instalacja z czystej kopii,
+  blok w cudzym Caddyfile, `caddy reload` bez przerwy drugiej aplikacji, test dymny 24/24 przez wspólny
+  Caddy (w tym czas rzeczywisty), druga aplikacja odpowiada bez zmian. CI sprawdza obie konfiguracje compose.
