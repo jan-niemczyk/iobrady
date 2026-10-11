@@ -1434,4 +1434,8 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
     brak dostępu po wyłączeniu publikacji. Jeden krok testu (klik w komórkę) najpierw nie przeszedł przez
     zbyt krótkie oczekiwanie w teście, ponownie sprawdzony osobno;
   - axe (WCAG 2.2 AA): logowanie, panel posiedzenia i widok publiczny bez naruszeń;
+  - `booth-mode.spec.ts` 7/7 i scenariusz 18/18 na buildzie produkcyjnym (`next start`);
   - `tsc`, `npm run build`.
+- [x] **Spójny kod odpowiedzi przy głosie po zamknięciu**: `cast` dla głosowania, które nie jest już otwarte,
+      zwraca zawsze 409 („głos nie został przyjęty”). Dotąd zależnie od chwili było 400 (sprawdzenie przed
+      transakcją) albo 409 (w transakcji) - test wyścigu „zamknięcie vs głos” przechodził tylko czasem.

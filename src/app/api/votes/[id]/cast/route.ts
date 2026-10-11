@@ -40,7 +40,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   });
   if (!vote) return new NextResponse("Not found", { status: 404 });
   if (vote.status !== VoteStatus.OPEN)
-    return new NextResponse("Głosowanie nie jest otwarte", { status: 400 });
+    return new NextResponse("Głosowanie nie jest otwarte - głos nie został przyjęty.", { status: 409 }); // jak w transakcji: stan, nie błąd danych
 
   // Ustal użytkownika, w imieniu którego oddajemy głos.
   // Domyślnie - zalogowany. Operator może podać `onBehalfUserId`, ale TYLKO dla głosowań JAWNYCH.
