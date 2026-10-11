@@ -1,0 +1,17 @@
+/* Publiczny widok posiedzenia - drobne uzupełnienia Bootstrapa (tylko klasy pub-*). */
+.pub-root { min-height: 100vh; background: #F5F7FA; color: #1B2330; }
+.pub-header { background: #FFFFFF; border-bottom: 1px solid #E3E7EE; }
+.pub-header .pub-accent { height: 4px; }
+.pub-logo { height: 56px; width: auto; max-width: 180px; object-fit: contain; }
+.pub-item + .pub-item { border-top: 1px solid #E8ECF1; }
+.pub-item-num { width: 2.75rem; flex-shrink: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.pub-sub { margin-left: 1.5rem; }
+.pub-vote { border-left: 3px solid #D5DCE6; padding-left: .75rem; }
+.pub-vote + .pub-vote { margin-top: .5rem; }
+.pub-table td, .pub-table th { font-variant-numeric: tabular-nums; }
+.pub-stat { min-width: 7.5rem; }
+.pub-stat .pub-stat-value { font-size: 1.75rem; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pub-root a:focus-visible, .pub-root button:focus-visible, .pub-root select:focus-visible, .pub-root input:focus-visible {
+  outline: 3px solid #1D4ED8; outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) { .pub-root * { transition: none !important; } }
