@@ -1480,3 +1480,4 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
 - [x] Przycisk „Wstrzymuję się” (i zaznaczona pozycja pakietu): żółty `#FFC107` z czarnym napisem, jak `btn-warning`
       w Bootstrapie 5 (najechanie `#FFCA2C`), także w trybie czarnym. Kontrast 12:1.
 - Bootstrap 6: na npm jest tylko `6.0.0-alpha.1` (8.10.2026), stabilna pozostaje 5.3.8 - migracja odłożona do wydania stabilnego.
+- [x] Przycisk „Zwiń” nad kartą głosowania wraca do dawnej, małej wielkości (strzałka zamiast znaku „▾”).

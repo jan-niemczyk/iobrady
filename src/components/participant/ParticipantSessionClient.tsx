@@ -1787,8 +1787,8 @@ function ActiveVotesOverlay({ showMeetingNames }: { showMeetingNames: boolean })
             {current.vote.alreadyVoted ? "Trwa głosowanie - możesz zmienić głos" : "Trwa głosowanie - oddaj głos"}
             {remainingToCast > 1 ? ` (do oddania: ${remainingToCast})` : ""}
           </div>
-          <button className="btn" style={{ minHeight: 44, padding: "0 16px", fontSize: 14 }} onClick={() => setMinimized(true)} title="Zwiń - wrócisz do panelu, głosowanie zostaje dostępne na pasku">
-            Zwiń <IconChevronDown size={14} />
+          <button className="btn" style={{ padding: "4px 12px", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 4 }} onClick={() => setMinimized(true)} title="Zwiń - wrócisz do panelu, głosowanie zostaje dostępne na pasku">
+            Zwiń <IconChevronDown size={12} />
           </button>
         </div>
 
