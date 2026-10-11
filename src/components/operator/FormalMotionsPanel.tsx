@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { CardHeader } from "@/components/operator/ui";
 import { useHotkeys } from "@/lib/useHotkeys";
 import { EntryLimitSwitch } from "@/components/operator/SpeakersPanel";
+import { IconArrowDown, IconArrowTop, IconArrowUp, IconClose } from "@/components/ui/Icon";
 
 interface Motion {
   id: string;
@@ -255,12 +256,12 @@ export function FormalMotionsPanel({
                   <span className="input-group-text">s</span>
                 </div>}
                 <div className="btn-group btn-group-sm" role="group" aria-label="Kolejność">
-                  <button className="btn" disabled={pending || i === 0} onClick={() => reorder(m.id, "up")} title="W górę">↑</button>
-                  <button className="btn" disabled={pending || i === waiting.length - 1} onClick={() => reorder(m.id, "down")} title="W dół">↓</button>
-                  <button className="btn" disabled={pending || i === 0} onClick={() => reorder(m.id, "top")} title="Na początek">⤒</button>
+                  <button className="btn" disabled={pending || i === 0} onClick={() => reorder(m.id, "up")} title="W górę" aria-label="W górę"><IconArrowUp size={15} /></button>
+                  <button className="btn" disabled={pending || i === waiting.length - 1} onClick={() => reorder(m.id, "down")} title="W dół" aria-label="W dół"><IconArrowDown size={15} /></button>
+                  <button className="btn" disabled={pending || i === 0} onClick={() => reorder(m.id, "top")} title="Na początek" aria-label="Na początek"><IconArrowTop size={15} /></button>
                 </div>
                 <button className="btn btn-primary btn-sm" disabled={pending || !!speaking} onClick={() => give(m.id)}>Udziel głosu</button>
-                <button className="btn btn-sm btn-outline-danger" disabled={pending} onClick={() => remove(m.id)} title="Odrzuć wniosek" aria-label="Odrzuć wniosek">✕</button>
+                <button className="btn btn-sm btn-outline-danger" disabled={pending} onClick={() => remove(m.id)} title="Odrzuć wniosek" aria-label="Odrzuć wniosek"><IconClose size={15} /></button>
               </div>
             </li>
           ))}

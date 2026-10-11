@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
+import { IconArrowLeft } from "@/components/ui/Icon";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export default async function AccountPage() {
         </div>
         {!forced && (
           <div className="card-footer">
-            <a href="/" className="btn btn-sm">← Powrót</a>
+            <a href="/" className="btn btn-sm d-inline-flex align-items-center gap-1"><IconArrowLeft size={14} /> Powrót</a>
           </div>
         )}
       </div>

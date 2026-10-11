@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { PageContainer, PageHeader } from "./ui";
 import { ask, notify, notifyFailure } from "@/lib/feedback";
+import { IconTrash } from "@/components/ui/Icon";
 
 interface Guest {
   id: string;
@@ -79,7 +80,7 @@ export function GuestsManagerClient({ initialGuests }: { initialGuests: Guest[] 
                 </div>
                 <div className="d-flex gap-2 flex-shrink-0">
                   <button className="btn btn-sm" onClick={() => { setEditing(g); setAdding(false); }}>Edytuj</button>
-                  <button className="btn btn-sm btn-outline-danger" disabled={pending} onClick={() => remove(g)}>Usuń</button>
+                  <button className="btn btn-sm btn-link text-body-secondary agenda-del p-0" style={{ minWidth: 36, minHeight: 36 }} disabled={pending} title="Usuń gościa" aria-label={`Usuń gościa ${g.firstName} ${g.lastName}`} onClick={() => remove(g)}><IconTrash size={16} /></button>
                 </div>
               </li>
             ))}

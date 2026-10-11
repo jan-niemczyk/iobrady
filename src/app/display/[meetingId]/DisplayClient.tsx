@@ -6,6 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { comparePl } from "@/lib/sortPl";
 import { meetingNameWithDate } from "@/lib/meetingName";
 import { RepresentationBoard } from "@/components/presentation/RepresentationBoard";
+import { IconCheck } from "@/components/ui/Icon";
 
 interface DisplayData {
   meeting: { id: string; name: string; displayNameOverride?: string | null; number: string; scheduledAt: string; status: string; agendaAutoMode?: string; autoOpenSpeakerList?: boolean };
@@ -610,7 +611,7 @@ function AgendaListView({
                 )}
               </span>
               {isPaused && <span style={{ fontSize: 14, color: C.ink3 }}>zawieszony</span>}
-              {isDone && <span style={{ fontSize: 20, color: C.yes }}>✓</span>}
+              {isDone && <span style={{ color: C.yes, display: "inline-flex" }} aria-label="zakończony"><IconCheck size={22} strokeWidth={2.4} /></span>}
             </li>
           );
         })}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MyAgendaItemNote } from "@/components/participant/MyAgendaItemNote";
 import { VoteResultsView } from "@/components/participant/VoteResultsView";
+import { IconPaperclip } from "@/components/ui/Icon";
 
 interface PointVote { id: string; number: number | null; title: string; type: string }
 interface PointAttachment { id: string; fileName: string; sizeBytes: number }
@@ -20,7 +21,7 @@ function formatSize(bytes: number): string {
 function AttachmentLink({ a }: { a: PointAttachment }) {
   return (
     <a href={`/api/attachments/${a.id}/download`} className="pt-attachment">
-      📎 {a.fileName} <span className="pt-muted">({formatSize(a.sizeBytes)})</span>
+      <IconPaperclip size={15} /> {a.fileName} <span className="pt-muted">({formatSize(a.sizeBytes)})</span>
     </a>
   );
 }

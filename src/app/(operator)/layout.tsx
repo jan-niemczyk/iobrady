@@ -40,7 +40,7 @@ function TopBar({ userName, logoUrl }: { userName: string; logoUrl: string | nul
             <img src={logoUrl} alt="" style={{ height: 32, width: "auto", objectFit: "contain" }} />
           )}
           <span className="fw-semibold">iOBRADY</span>
-          <span className="text-body-secondary small d-none d-xl-inline">Panel operatora</span>
+          <span className="text-body-secondary d-none d-xl-inline" style={{ fontSize: ".8125rem" }}>Panel operatora</span>
         </Link>
         <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#opNav" aria-controls="opNav" aria-expanded="false" aria-label="Pokaż menu">
           <span className="navbar-toggler-icon" />

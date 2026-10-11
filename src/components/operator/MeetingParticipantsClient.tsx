@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useTransition } from "react";
 import type { MeetingParticipantsData } from "@/lib/meetingParticipantsData";
 import Link from "next/link";
-import { IconArrowLeft } from "@/components/ui/Icon";
+import { IconArrowLeft, IconTrash } from "@/components/ui/Icon";
 import { CardHeader, PageContainer, PageHeader } from "./ui";
 import { ask, notify, notifyFailure } from "@/lib/feedback";
 
@@ -220,9 +220,12 @@ export function MeetingParticipantsClient({
                       </td>
                       <td className="text-end">
                         <button
-                          className="btn btn-outline-danger btn-sm"
+                          className="btn btn-sm btn-link text-body-secondary agenda-del p-0"
+                          style={{ minWidth: 36, minHeight: 36 }}
+                          title="Usuń z posiedzenia"
+                          aria-label={`Usuń z posiedzenia: ${p.name}`}
                           onClick={async () => { if (await ask({ title: "Usunąć z posiedzenia?", message: `${p.name} zostanie usunięty z listy uczestników tego posiedzenia.`, confirmLabel: "Usuń", danger: true })) act("DELETE", `/api/meeting-participants/${p.id}`); }}
-                        >Usuń</button>
+                        ><IconTrash size={16} /></button>
                       </td>
                     </tr>
                   ))}

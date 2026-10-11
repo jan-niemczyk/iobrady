@@ -5,6 +5,7 @@ import { useHotkeys } from "@/lib/useHotkeys";
 import { VoteErrorBoundary } from "./VoteErrorBoundary";
 import { ask, notify, notifyFailure, readUserError } from "@/lib/feedback";
 import type { AttendanceStatus, VoteType, VoteVisibility, MajorityType, MajorityKind, MajorityBase, VoteChoice } from "@prisma/client";
+import { IconBackspace, IconCheck, IconChevronDown, IconClose } from "@/components/ui/Icon";
 
 export interface ActiveVote {
   id: string;
@@ -170,6 +171,9 @@ function ToastHost({ toasts }: { toasts: ToastItem[] }) {
   );
 }
 
+// Przywrócenie zwiniętej nakładki głosowań z treści strony (przycisk „Otwórz kartę głosowania”).
+const OPEN_VOTE_EVENT = "iobrady:open-vote";
+
 export function ParticipantSessionClient({ initial }: { initial: InitialState }) {
   const [state, setState] = useState<SessionResponse>({ ...initial, activeVote: null });
   const [pending, startTransition] = useTransition();
@@ -310,7 +314,6 @@ export function ParticipantSessionClient({ initial }: { initial: InitialState })
                 Otwórz wyświetlacz
               </a>
             )}
-            <a href="/account" className="pt-btn pt-btn-sm">Zmień hasło</a>
           </span>
         </div>
       </header>
@@ -354,7 +357,7 @@ export function ParticipantSessionClient({ initial }: { initial: InitialState })
           <div className={`pt-stat${state.attendance === "PRESENT" ? " pt-stat-ok" : ""}`}>
             <div className="pt-label">Obecność</div>
             <div className="pt-stat-value">
-              {state.attendance === "PRESENT" ? "Potwierdzona ✓" : "Nie potwierdzona"}
+              {state.attendance === "PRESENT" ? <>Potwierdzona <IconCheck size={18} /></> : "Nie potwierdzona"}
             </div>
           </div>
         )}
@@ -445,6 +448,16 @@ export function ParticipantSessionClient({ initial }: { initial: InitialState })
         <div className="pt-panel">
           <div className="pt-panel-body">
             <p className="pt-text-sm pt-muted" style={{ margin: 0 }}>Trwa głosowanie.</p>
+            {state.hasVotingRight && (
+              <button
+                type="button"
+                className="pt-btn pt-btn-primary mt-3"
+                style={{ minHeight: 44 }}
+                onClick={() => window.dispatchEvent(new Event(OPEN_VOTE_EVENT))}
+              >
+                Otwórz kartę głosowania
+              </button>
+            )}
             {state.isChairperson && (
               <button
                 className="pt-btn pt-btn-sm pt-btn-outline-danger mt-3"
@@ -836,7 +849,7 @@ function StandardBallot({
               opacity: pending ? 0.7 : 1,
             }}
           >
-            {b.label}{isMine && !pending && " ✓"}{pending && !secret && sentChoice === b.choice && " - wysyłanie…"}
+            {b.label}{isMine && !pending && <> <IconCheck size={20} strokeWidth={2.4} /></>}{pending && !secret && sentChoice === b.choice && " - wysyłanie…"}
           </button>
         );
       })}
@@ -1061,7 +1074,7 @@ function SpeakerListView({
             )
           ) : (
             <button className="pt-btn pt-btn-wide" disabled={busy} onClick={() => withdraw(myRegular.id)}>
-              ✕ Wycofaj zapis
+              <IconClose size={14} /> Wycofaj zapis
             </button>
           )}
           {!myFormal ? (
@@ -1072,7 +1085,7 @@ function SpeakerListView({
             )
           ) : (
             <button className="pt-btn" disabled={busy} onClick={() => withdraw(myFormal.id)}>
-              ✕ Wycofaj wniosek
+              <IconClose size={14} /> Wycofaj wniosek
             </button>
           )}
           {!myAdVocem ? (
@@ -1083,7 +1096,7 @@ function SpeakerListView({
             )
           ) : (
             <button className="pt-btn" disabled={busy} onClick={() => withdraw(myAdVocem.id)}>
-              ✕ Wycofaj ad vocem
+              <IconClose size={14} /> Wycofaj ad vocem
             </button>
           )}
         </div>
@@ -1195,7 +1208,7 @@ function QuorumBallot({
           opacity: pending ? 0.6 : 1,
         }}
       >
-        {confirmed ? "Obecność potwierdzona ✓" : "OBECNY"}
+        {confirmed ? <>Obecność potwierdzona <IconCheck size={18} /></> : "OBECNY"}
       </button>
       {confirmed && (
         <p className="text-xs text-center" style={{ color: "var(--color-ink-3)" }}>
@@ -1391,7 +1404,7 @@ function PinGate({ voteId, onAuthorized }: { voteId: string; onAuthorized: () =>
         {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((d) => (
           <button key={d} type="button" className="btn btn-lg" disabled={pending} onClick={() => press(d)} style={{ fontSize: 22, padding: "14px 0" }}>{d}</button>
         ))}
-        <button type="button" className="btn btn-lg" disabled={pending} onClick={backspace} style={{ fontSize: 18, padding: "14px 0" }}>←</button>
+        <button type="button" className="btn btn-lg" disabled={pending} onClick={backspace} style={{ fontSize: 18, padding: "14px 0" }} aria-label="Usuń ostatnią cyfrę"><IconBackspace size={22} /></button>
         <button type="button" className="btn btn-lg" disabled={pending} onClick={() => press("0")} style={{ fontSize: 22, padding: "14px 0" }}>0</button>
         <button type="button" className="btn btn-lg" disabled style={{ padding: "14px 0", visibility: "hidden" }}></button>
       </div>
@@ -1478,7 +1491,7 @@ function PackageBallot({
                       padding: "12px 4px", fontSize: 12, fontWeight: 700,
                       border: `2px solid ${m.color}`,
                       background: active ? m.color : m.bg,
-                      color: active ? "#fff" : m.color,
+                      color: active ? (m.key === "ABSTAIN" ? "#111" : "#fff") : m.color,
                     }}
                   >
                     {m.label}
@@ -1705,6 +1718,11 @@ function AttendanceConfirm({
 function ActiveVotesOverlay({ showMeetingNames }: { showMeetingNames: boolean }) {
   const [items, setItems] = useState<{ meetingId: string; meetingName: string; meetingNumber: string; vote: ActiveVote }[]>([]);
   const [minimized, setMinimized] = useState(false);
+  useEffect(() => {
+    const open = () => setMinimized(false);
+    window.addEventListener(OPEN_VOTE_EVENT, open);
+    return () => window.removeEventListener(OPEN_VOTE_EVENT, open);
+  }, []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -1769,7 +1787,7 @@ function ActiveVotesOverlay({ showMeetingNames }: { showMeetingNames: boolean })
             {remainingToCast > 1 ? ` (do oddania: ${remainingToCast})` : ""}
           </div>
           <button className="btn" style={{ minHeight: 44, padding: "0 16px", fontSize: 14 }} onClick={() => setMinimized(true)} title="Zwiń - wrócisz do panelu, głosowanie zostaje dostępne na pasku">
-            Zwiń ▾
+            Zwiń <IconChevronDown size={14} />
           </button>
         </div>
 
@@ -1787,7 +1805,7 @@ function ActiveVotesOverlay({ showMeetingNames }: { showMeetingNames: boolean })
                   onClick={() => setSelectedId(it.vote.id)}
                 >
                   {multi ? `nr ${it.meetingNumber}: ` : ""}{it.vote.title.length > 24 ? it.vote.title.slice(0, 24) + "…" : it.vote.title}
-                  {it.vote.alreadyVoted ? " ✓" : ""}
+                  {it.vote.alreadyVoted ? <> <IconCheck size={12} /></> : ""}
                 </button>
               );
             })}
@@ -1896,7 +1914,7 @@ function FormalMotionsQueue({ formalMotions, isChairperson, pending, onUpdate }:
                       onClick={async () => { if (await ask({ title: "Wycofać swój wniosek formalny?", confirmLabel: "Wycofaj wniosek", danger: true })) act(`/api/speaker-entries/${e.id}`, "DELETE"); }}
                       title="Wycofaj swój wniosek"
                     >
-                      ✕ Wycofaj
+                      <IconClose size={14} /> Wycofaj
                     </button>
                   )}
                 </span>

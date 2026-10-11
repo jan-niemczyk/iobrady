@@ -152,7 +152,7 @@
     /* Kolorowe przyciski przyciemniają się, NIE wybielają */
     .btn-yes:hover { background: #18632F; border-color: #18632F; }
     .btn-no:hover  { background: #A40D26; border-color: #A40D26; }
-    .btn-abstain:hover { background: #854D0E; border-color: #854D0E; }
+    .btn-abstain:hover { background: #B07803; border-color: #B07803; }
   }
   .btn:active { transform: translateY(1px); }
   .btn:disabled { opacity: .4; cursor: not-allowed; }
@@ -171,8 +171,8 @@
 
   .btn-yes { background: var(--color-yes); color: #FFFFFF; border-color: var(--color-yes); }
   .btn-no  { background: var(--color-no);  color: #FFFFFF; border-color: var(--color-no);  }
-  /* Ciemniejsze złoto niż --color-abstain: biały napis z kontrastem 4,9:1 (WCAG AA). */
-  .btn-abstain { background: #A16207; color: #FFFFFF; border-color: #A16207; }
+  /* Złoty jak dotąd, napis czarny (jak btn-warning w Bootstrapie) - kontrast 7:1. */
+  .btn-abstain { background: var(--color-abstain); color: #111111; border-color: var(--color-abstain); }
 
   .btn-lg { padding: 18px 24px; font-size: 15px; }
   .btn-xl { padding: 28px 32px; font-size: 18px; }
@@ -226,6 +226,15 @@
   to { opacity: 1; transform: translateY(0); }
 }
 .slide-in { animation: slide-in 180ms ease-out; }
+
+/* Panel posiedzenia na tablecie (768-1199 px): dwie kolumny zamiast długiej jednej. */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  .row.panel-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); grid-template-rows: auto 1fr; gap: 1rem; margin: 0; }
+  .row.panel-grid > .pg-main, .row.panel-grid > .pg-left, .row.panel-grid > .pg-right { width: auto; max-width: none; min-width: 0; padding: 0; margin: 0; align-self: start; }
+  .row.panel-grid > .pg-main { grid-column: 1; grid-row: 1 / span 2; }
+  .row.panel-grid > .pg-left { grid-column: 2; grid-row: 1; }
+  .row.panel-grid > .pg-right { grid-column: 2; grid-row: 2; }
+}
 
 /* Pole wyboru w tabeli: klikalna cała komórka (min. 44 px), większy kwadrat. */
 .cell-hit { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; margin: 0 auto; cursor: pointer; }
@@ -284,5 +293,5 @@
   background: #D23148 !important; color: #FFFFFF !important; border-color: #D23148 !important;
 }
 [data-theme="dark"] .btn-abstain {
-  background: #A16207 !important; color: #FFFFFF !important; border-color: #A16207 !important;
+  background: #C9971F !important; color: #111111 !important; border-color: #C9971F !important;
 }

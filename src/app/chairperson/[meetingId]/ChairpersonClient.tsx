@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { meetingNameWithDate } from "@/lib/meetingName";
+import { IconCheck, IconChevronRight, IconClose } from "@/components/ui/Icon";
 
 const C = {
   ink: "#0F1115", ink2: "#3A3F49", ink3: "#7A8092",
@@ -324,7 +325,7 @@ function DiscussionView({ speaking, clock, waiting }: { speaking: Entry | null; 
               const badge = entryBadge(e.entryType, e.priority);
               return (
                 <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 13, color: i === 0 ? C.accent : C.ink3, fontWeight: i === 0 ? 700 : 400, width: 18 }}>{i === 0 ? "▸" : i + 1}</span>
+                  <span style={{ fontSize: 13, color: i === 0 ? C.accent : C.ink3, fontWeight: i === 0 ? 700 : 400, width: 18 }}>{i === 0 ? <IconChevronRight size={14} strokeWidth={2.4} /> : i + 1}</span>
                   <div style={{ flex: 1 }}>
                     <span style={{ fontSize: 15, fontWeight: 600 }}>{e.userName}</span>
                     <span style={{ fontSize: 13, color: C.ink2 }}>
@@ -485,7 +486,7 @@ function SidePanels({ data, isVoting }: { data: ChairData; isVoting: boolean }) 
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ background: met ? "#FFFFFF" : C.hlNoStrong, border: met ? `1px solid ${C.rule}` : `2px solid ${C.no}`, borderRadius: 8, padding: "12px 14px" }}>
         <div className="small" style={{ color: C.ink3, fontWeight: 600 }}>Kworum</div>
-        <div style={{ fontSize: 19, fontWeight: 600, color: met ? C.yes : C.no, marginTop: 3 }}>{met ? "✓ Osiągnięte" : "✕ Brak kworum"}</div>
+        <div style={{ fontSize: 19, fontWeight: 600, color: met ? C.yes : C.no, marginTop: 3 }}>{met ? <><IconCheck size={18} /> Osiągnięte</> : <><IconClose size={18} /> Brak kworum</>}</div>
         <div style={{ fontSize: 13, color: C.ink2, marginTop: 6 }}>Obecni <b>{data.counts.present}</b> / {data.counts.eligible}  wymagane {q.need}</div>
       </div>
 

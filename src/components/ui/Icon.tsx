@@ -100,6 +100,36 @@ export const IconClock = (p: Props) => (
 export const IconWarning = (p: Props) => (
   <Svg {...p}><path d="M12 4.5 21 19.5H3z" /><path d="M12 10v4M12 17h.01" /></Svg>
 );
+export const IconArrowTop = (p: Props) => (
+  <Svg {...p}><path d="M5 4h14" /><path d="M12 20V8" /><path d="M7 13l5-5 5 5" /></Svg>
+);
+export const IconChevronUp = (p: Props) => (
+  <Svg {...p}><path d="M6 15l6-6 6 6" /></Svg>
+);
+export const IconPaperclip = (p: Props) => (
+  <Svg {...p}><path d="M20 11.5 12.2 19.3a5 5 0 0 1-7.1-7.1l8.1-8.1a3.3 3.3 0 0 1 4.7 4.7l-8.1 8.1a1.7 1.7 0 0 1-2.4-2.4l7.4-7.4" /></Svg>
+);
+export const IconDownload = (p: Props) => (
+  <Svg {...p}><path d="M12 4v11" /><path d="M7 10l5 5 5-5" /><path d="M5 20h14" /></Svg>
+);
+export const IconPause = (p: Props) => (
+  <Svg {...p}><path d="M9 6v12M15 6v12" /></Svg>
+);
+export const IconBoard = (p: Props) => (
+  <Svg {...p}><rect x="3" y="5" width="18" height="14" rx="2" /><rect x="7" y="9" width="10" height="6" rx="1" /></Svg>
+);
+export const IconHome = (p: Props) => (
+  <Svg {...p}><path d="M4 11.5 12 5l8 6.5" /><path d="M6.5 10v9h11v-9" /></Svg>
+);
+export const IconEmpty = (p: Props) => (
+  <Svg {...p}><rect x="4" y="4" width="16" height="16" rx="2" /></Svg>
+);
+export const IconSubItem = (p: Props) => (
+  <Svg {...p}><path d="M7 5v8a3 3 0 0 0 3 3h9" /><path d="M15 12l4 4-4 4" /></Svg>
+);
+export const IconBackspace = (p: Props) => (
+  <Svg {...p}><path d="M21 6H9l-6 6 6 6h12z" /><path d="M12.5 9.5l5 5M17.5 9.5l-5 5" /></Svg>
+);
 export const IconDot = ({ size = 10, className, style }: Props) => (
   <svg width={size} height={size} viewBox="0 0 10 10" className={className}
     style={{ flexShrink: 0, display: "inline-block", verticalAlign: "0.05em", ...style }} aria-hidden="true">

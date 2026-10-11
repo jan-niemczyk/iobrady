@@ -8,6 +8,7 @@ import { VotesTable } from "@/components/public/VotesTable";
 import { PublicAutoRefresh } from "@/components/public/PublicAutoRefresh";
 import { PublicPdfButton } from "@/components/public/PublicPdfButton";
 import type { MeetingStatus } from "@prisma/client";
+import { IconDocument } from "@/components/ui/Icon";
 
 export const dynamic = "force-dynamic";
 
@@ -109,7 +110,7 @@ function Attachments({ items }: { items: { id: string; fileName: string; sizeByt
     <ul className="list-unstyled small mb-0 mt-1">
       {items.map((a) => (
         <li key={a.id} className="d-flex align-items-baseline gap-1">
-          <span aria-hidden className="text-body-secondary">📄</span>
+          <span aria-hidden className="text-body-secondary"><IconDocument size={15} /></span>
           <a href={`/api/attachments/${a.id}/download`} className="pub-tap" style={{ overflowWrap: "anywhere" }}>{a.fileName}</a>
           <span className="text-body-secondary text-nowrap">({fmtSize(a.sizeBytes)})</span>
         </li>

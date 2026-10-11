@@ -8,6 +8,7 @@ import { resolveBoardLogo } from "@/lib/board";
 import { PRESENTATION_FONTS, fontStack } from "@/lib/presentationFonts";
 import { ask, notify, notifyFailure, readUserError } from "@/lib/feedback";
 import type { MajorityKind, MajorityBase, QuorumRule, AttendanceMode, VoteVisibility } from "@prisma/client";
+import { IconCheck } from "@/components/ui/Icon";
 
 interface Settings {
   organizationName: string;
@@ -410,7 +411,7 @@ export function SettingsForm({ initial }: { initial: Settings }) {
 
       <div className="card position-sticky bottom-0 z-1">
         <div className="card-body py-2 d-flex align-items-center justify-content-end gap-3">
-          {saved && <span className="small text-success">✓ Zapisano</span>}
+          {saved && <span className="small text-success d-inline-flex align-items-center gap-1"><IconCheck size={14} /> Zapisano</span>}
           <button type="submit" className="btn btn-primary" disabled={pending}>
             {pending ? "Zapisuję…" : "Zapisz ustawienia"}
           </button>

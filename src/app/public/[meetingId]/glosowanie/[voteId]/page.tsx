@@ -6,6 +6,7 @@ import { fmtDate, fmtTime, TYPE_LABEL, plural } from "@/components/public/public
 import { ClubSummary, VotePeople } from "@/components/public/VotePeople";
 import { PublicAutoRefresh } from "@/components/public/PublicAutoRefresh";
 import { PublicPdfButton } from "@/components/public/PublicPdfButton";
+import { IconArrowLeft } from "@/components/ui/Icon";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export default async function PublicVotePage({ params, searchParams }: {
       <PublicAutoRefresh active={meeting.active && !closed} seconds={15} />
       <header className="pub-header">
         <div className="container-lg py-3" style={{ maxWidth: 1080 }}>
-          <Link href={back} className="small pub-tap">← Wróć do posiedzenia</Link>
+          <Link href={back} className="small pub-tap gap-1"><IconArrowLeft size={14} /> Wróć do posiedzenia</Link>
           <div className="small text-body-secondary mt-2" style={{ overflowWrap: "anywhere" }}>
             {meeting.name}{meeting.number ? `, posiedzenie nr ${meeting.number}` : ""}
           </div>

@@ -6,6 +6,7 @@ import {
   type ToastMessage, type ToastTone,
 } from "@/lib/feedback";
 import { Modal } from "@/components/operator/Modal";
+import { IconClose } from "@/components/ui/Icon";
 
 /**
  * Wyświetla komunikaty z `@/lib/feedback` (dymki + okno potwierdzenia). Montowany raz w layoucie.
@@ -169,9 +170,9 @@ function AppToast({ t }: { t: ToastMessage }) {
         type="button"
         aria-label="Zamknij komunikat"
         onClick={() => dismissToast(t.id)}
-        style={{ background: "transparent", border: 0, color: "var(--color-ink-2)", fontSize: 20, lineHeight: 1, width: 32, height: 32, cursor: "pointer", flexShrink: 0 }}
+        style={{ background: "transparent", border: 0, color: "var(--color-ink-2)", fontSize: 20, lineHeight: 1, width: 32, height: 32, cursor: "pointer", flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
       >
-        ×
+        <IconClose size={18} />
       </button>
     </div>
   );

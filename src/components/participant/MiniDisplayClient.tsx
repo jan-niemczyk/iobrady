@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { VoteBallot, type ActiveVote } from "@/components/participant/ParticipantSessionClient";
+import { IconClose } from "@/components/ui/Icon";
 
 // Widok "wyświetlacz" (mini) - wąskie, pełne okno nakładane na stream/prezentację.
 // Zamysł (wzorowany na wyświetlaczu sejmowym): pokazuje imię i nazwisko uczestnika (zamiast
@@ -68,7 +69,7 @@ export function MiniDisplayClient() {
         <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{fullName}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
           <div style={{ fontSize: 20, fontWeight: 700, fontVariantNumeric: "tabular-nums", opacity: 0.9 }}>{clock}</div>
-          <a href="/session" title="Wyjdź z wyświetlacza" style={{ color: "#fff", opacity: 0.7, textDecoration: "none", fontSize: 20, lineHeight: 1, padding: "2px 8px", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 6 }}>✕</a>
+          <a href="/session" title="Wyjdź z wyświetlacza" style={{ color: "#fff", opacity: 0.7, textDecoration: "none", fontSize: 20, lineHeight: 1, padding: "2px 8px", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 6, display: "inline-flex", alignItems: "center" }} aria-label="Wyjdź z wyświetlacza"><IconClose size={18} /></a>
         </div>
       </div>
 

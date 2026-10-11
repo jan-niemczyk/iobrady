@@ -7,7 +7,9 @@ import { z } from "zod";
 import { appOrigin, validationError } from "@/lib/http";
 
 const schema = z.object({
-  userIds: z.array(z.string()).min(1),
+  userIds: z.array(z.string().max(64)).max(2000).optional().default([]),
+  // Dodatkowe adresy spoza kont (np. media, urząd) - także osoby niebędące uczestnikami posiedzenia.
+  emails: z.array(z.string().trim().toLowerCase().email().max(254)).max(200).optional().default([]),
   subject: z.string().min(1).max(200),
   body: z.string().min(1).max(10000),
   includePublicLink: z.boolean().optional().default(false),
@@ -26,10 +28,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const [meeting, settings, users] = await Promise.all([
     prisma.meeting.findUnique({ where: { id: meetingId } }),
     prisma.settings.findUnique({ where: { id: "singleton" } }),
-    prisma.user.findMany({ where: { id: { in: d.userIds } }, select: { email: true } }),
+    d.userIds.length ? prisma.user.findMany({ where: { id: { in: d.userIds }, active: true }, select: { email: true } }) : Promise.resolve([]),
   ]);
   if (!meeting) return new NextResponse("Meeting not found", { status: 404 });
-  if (users.length === 0) return new NextResponse("Brak odbiorców", { status: 400 });
+  const recipients = [...new Set([...users.map((u) => u.email.toLowerCase()), ...d.emails])];
+  if (recipients.length === 0) return new NextResponse("Wybierz co najmniej jednego odbiorcę.", { status: 400 });
 
   const publicUrl = d.includePublicLink && meeting.publicEnabled
     ? `${appOrigin(req)}/public/${meeting.id}` : undefined;
@@ -41,7 +44,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   try {
     await sendMail({
-      to: users.map((u) => u.email), subject, html,
+      to: recipients, subject, html,
       kind: "meeting_adhoc", meetingId, sentByUserId: session.user.id,
     });
   } catch (e) {
@@ -50,5 +53,5 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     return new NextResponse(e instanceof MailNotConfiguredError ? e.message : "Nie udało się wysłać wiadomości. Sprawdź konfigurację SMTP (Ustawienia - test e-mail).", { status: 400 });
   }
 
-  return NextResponse.json({ ok: true, count: users.length });
+  return NextResponse.json({ ok: true, count: recipients.length });
 }

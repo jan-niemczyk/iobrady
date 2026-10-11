@@ -34,7 +34,7 @@ body {
   line-height: 1.4;
 }
 .text-sm {
-  font-size: .875rem;
+  font-size: .8125rem;
   line-height: 1.45;
 }
 h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
@@ -100,7 +100,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 .page-header .page-kicker {
   margin-bottom: .25rem;
-  font-size: .875rem;
+  font-size: .8125rem;
   font-weight: 500;
   color: $ink-3;
 }
@@ -249,7 +249,7 @@ label:has(> input[type="radio"]) {
   gap: .5rem;
   width: 100%;
   padding: .4rem 1rem .4rem 2.25rem;
-  font-size: .875rem;
+  font-size: .9375rem;
   text-align: left;
   color: $ink;
   background: transparent;
@@ -273,4 +273,14 @@ label:has(> input[type="radio"]) {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow-wrap: anywhere;
+}
+
+// Obrysowany przycisk akcji nieodwracalnej: ciemniejsza czerwień napisu (kontrast min. 4,5:1 na tle strony).
+.btn-outline-danger {
+  --bs-btn-color: #B91C1C;
+  --bs-btn-border-color: #B91C1C;
+  --bs-btn-hover-bg: #B91C1C;
+  --bs-btn-hover-border-color: #B91C1C;
+  --bs-btn-active-bg: #991B1B;
+  --bs-btn-active-border-color: #991B1B;
 }

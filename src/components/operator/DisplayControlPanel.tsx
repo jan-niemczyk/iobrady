@@ -4,7 +4,7 @@ import { screenUrl } from "@/lib/screenUrl";
 import { CardHeader } from "@/components/operator/ui";
 import { useState, useTransition } from "react";
 import { notify, notifyFailure } from "@/lib/feedback";
-import { IconAuto, IconMessage, IconCheck, IconList, IconMic } from "@/components/ui/Icon";
+import { IconAuto, IconBoard, IconCheck, IconEmpty, IconHome, IconList, IconMessage, IconMic, IconPause } from "@/components/ui/Icon";
 
 interface DisplayState {
   mode: string;
@@ -147,10 +147,10 @@ export function DisplayControlPanel({
           aria-pressed={!!state.boardVisible}
           onClick={() => patch({ displayBoardVisible: !state.boardVisible }, state.boardVisible ? "Plansza reprezentacyjna została zdjęta." : "Plansza reprezentacyjna jest wyświetlana.")}
         >
-          <span className="dcp-ico" aria-hidden>▣</span> Plansza reprezentacyjna
+          <span className="dcp-ico" aria-hidden><IconBoard size={14} /></span> Plansza reprezentacyjna
         </button>
         <button type="button" className={`list-group-item list-group-item-action${!state.boardVisible && state.mode === "DEFAULT" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "DEFAULT" })}>
-          <span className="dcp-ico" aria-hidden>◴</span> Ekran domyślny (nazwa posiedzenia)
+          <span className="dcp-ico" aria-hidden><IconHome size={14} /></span> Ekran domyślny (nazwa posiedzenia)
         </button>
         <button type="button" className={`list-group-item list-group-item-action${!state.boardVisible && state.mode === "SPEAKER_LIST" ? " active" : ""}`} disabled={pending} onClick={() => patch({ displayMode: "SPEAKER_LIST" })}>
           <span className="dcp-ico" aria-hidden><IconMic size={14} /></span> Lista mówców
@@ -231,7 +231,7 @@ export function DisplayControlPanel({
           className={`list-group-item list-group-item-action${!state.boardVisible && isBreak ? " active" : ""}`}
           onClick={() => setBreakOpen((v) => !v)}
         >
-          <span className="dcp-ico" aria-hidden>⏸</span> Przerwa w obradach
+          <span className="dcp-ico" aria-hidden><IconPause size={14} /></span> Przerwa w obradach
         </button>
         {(breakOpen || isBreak) && (
           <div className="list-group-item">
@@ -288,7 +288,7 @@ export function DisplayControlPanel({
           disabled={pending}
           onClick={() => patch({ displayMode: "BLANK" })}
         >
-          <span className="dcp-ico" aria-hidden>▪</span> Wyczyść ekran (pusty)
+          <span className="dcp-ico" aria-hidden><IconEmpty size={14} /></span> Wyczyść ekran (pusty)
         </button>
       </div>
 

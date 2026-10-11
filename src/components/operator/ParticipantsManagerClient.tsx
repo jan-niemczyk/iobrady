@@ -5,6 +5,7 @@ import type { Role } from "@prisma/client";
 import { CardHeader, PageContainer, PageHeader } from "./ui";
 import { Modal } from "./Modal";
 import { ask, notify, notifyFailure, readUserError } from "@/lib/feedback";
+import { IconCheck, IconClose } from "@/components/ui/Icon";
 
 interface User {
   id: string; email: string;
@@ -249,7 +250,7 @@ export function ParticipantsManagerClient({
                           <span className="text-body-secondary">-</span>
                         )}
                       </td>
-                      <td className="text-center d-none d-sm-table-cell">{u.active ? <span className="text-success" aria-label="tak">✓</span> : <span className="text-body-secondary" aria-label="nie">-</span>}</td>
+                      <td className="text-center d-none d-sm-table-cell">{u.active ? <span className="text-success" role="img" aria-label="tak"><IconCheck size={16} /></span> : <span className="text-body-secondary" aria-label="nie">-</span>}</td>
                       <td className="text-end">
                         <button className="btn btn-sm" onClick={() => setShowUserModal(u)}>
                           Edytuj
@@ -611,9 +612,9 @@ Maria,Wiśniewska,m.wisniewska@rada.pl,PARTICIPANT,,`}
                     <td>{r.email}</td>
                     <td className="font-monospace fw-semibold">{r.password ?? "-"}</td>
                     <td className="text-nowrap">
-                      {r.status === "created" && <span className="text-success">✓ utworzono</span>}
+                      {r.status === "created" && <span className="text-success d-inline-flex align-items-center gap-1"><IconCheck size={14} /> utworzono</span>}
                       {r.status === "skipped" && <span className="text-body-secondary">pominięto</span>}
-                      {r.status === "error" && <span className="text-danger" title={r.error}>✕ błąd</span>}
+                      {r.status === "error" && <span className="text-danger d-inline-flex align-items-center gap-1" title={r.error}><IconClose size={14} /> błąd</span>}
                     </td>
                   </tr>
                 ))}

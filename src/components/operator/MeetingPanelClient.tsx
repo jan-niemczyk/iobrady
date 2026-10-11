@@ -18,7 +18,7 @@ import { DisplayControlPanel } from "@/components/operator/DisplayControlPanel";
 import { MeetingSettingsPanel } from "@/components/operator/MeetingSettingsPanel";
 import { MeetingParticipantsLoader } from "@/components/operator/MeetingParticipantsClient";
 import { AttachmentsManager } from "@/components/operator/AttachmentsManager";
-import { IconClose, IconChevronDown, IconChevronRight, IconTrash, IconUsers } from "@/components/ui/Icon";
+import { IconArrowLeft, IconArrowRight, IconChevronDown, IconChevronRight, IconChevronUp, IconClose, IconDownload, IconTrash, IconUsers } from "@/components/ui/Icon";
 import { downloadReportsPdf, downloadReportsZip, downloadSignatureList, downloadAttendanceMergedList, downloadAttendanceLog, downloadCheckReportPdf } from "@/lib/generatePdf";
 import { downloadAgendaPdf, downloadAgendaDocx, downloadProtocolPdf, downloadProtocolDocx, type ProtocolData } from "@/lib/generateProtocol";
 import { downloadSpeechesReportPdf, downloadSpeechesReportDocx, type SpeechesReportData } from "@/lib/generateSpeechesReport";
@@ -738,7 +738,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
             </button>
           )}
           {(state.status === "OPEN" || state.status === "IN_PROGRESS") && (
-            <button className="btn btn-danger" disabled={pending} onClick={() => act(`/api/meetings/${state.id}/close`, {}, { title: "Zamknąć posiedzenie?", message: "Zamknięcie można później cofnąć.", confirmLabel: "Zamknij posiedzenie", danger: true }, "POST", "Posiedzenie zostało zamknięte.")}>
+            <button className="btn btn-outline-danger" disabled={pending} onClick={() => act(`/api/meetings/${state.id}/close`, {}, { title: "Zamknąć posiedzenie?", message: "Zamknięcie można później cofnąć.", confirmLabel: "Zamknij posiedzenie", danger: true }, "POST", "Posiedzenie zostało zamknięte.")}>
               Zamknij posiedzenie
             </button>
           )}
@@ -809,12 +809,13 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
       </section>
       <OnlineList participants={state.participants} />
 
-      {/* Trzy kolumny od 1200 px (środkowa - głosowanie - najszersza); węziej: głosowanie
-          na całą szerokość na górze, pod nim lewa i prawa kolumna obok siebie. */}
-      <div className="row g-3 align-items-start">
+      {/* Trzy kolumny od 1200 px (środkowa - głosowanie - najszersza). Tablet (768-1199 px):
+          dwie kolumny - głosowanie z listami po lewej, porządek obrad i sterowanie ekranem
+          po prawej (siatka .panel-grid). Telefon: jedna kolumna, głosowanie na górze. */}
+      <div className="row g-3 align-items-start panel-grid">
 
         {/* LEFT */}
-        <div className="col-12 col-md-6 col-xl-3 d-flex flex-column gap-3">
+        <div className="col-12 col-md-6 col-xl-3 d-flex flex-column gap-3 pg-left">
           <div className="card">
             <SectionHeader title="Aktualny punkt" />
             <div className="card-body">
@@ -958,7 +959,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
         </div>
 
         {/* MIDDLE - głosowanie (najszersza kolumna - tu mieści się aktywny ballot/wyniki) */}
-        <div className="col-12 col-xl-6 order-first order-xl-0 d-flex flex-column gap-3">
+        <div className="col-12 col-xl-6 order-first order-xl-0 d-flex flex-column gap-3 pg-main">
           {activeVote ? (
             <ActiveVotePanel
               vote={activeVote}
@@ -1073,7 +1074,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
         </div>
 
         {/* RIGHT - sterowanie ekranem, obecność, komunikaty */}
-        <div className="col-12 col-md-6 col-xl-3 d-flex flex-column gap-3">
+        <div className="col-12 col-md-6 col-xl-3 d-flex flex-column gap-3 pg-right">
 
           {/* Sterowanie widokiem prezentacyjnym */}
           <DisplayControlPanel
@@ -1108,7 +1109,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
           <div className="card">
             <SectionHeader title="E-mail" />
             <div className="card-body">
-              <button className="btn btn-sm" onClick={() => setEmailModalOpen(true)}>Wyślij e-mail do uczestników</button>
+              <button className="btn btn-sm" onClick={() => setEmailModalOpen(true)}>Wyślij e-mail</button>
             </div>
           </div>
         </div>
@@ -1142,7 +1143,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
               onClick={() => downloadOneReport(resultsModal.id, resultsModal.number)}
               title="Pobierz raport PDF z tego głosowania"
             >
-              {pdfBusy === resultsModal.id ? "Generowanie…" : "↓ Raport PDF"}
+              {pdfBusy === resultsModal.id ? "Generowanie…" : <><IconDownload size={15} /> Raport PDF</>}
             </button>
             <button className="btn btn-primary" onClick={closeResults}>Zamknij (ukryj z prezentacji)</button>
           </>}
@@ -1221,13 +1222,13 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                     className="btn btn-sm"
                     disabled={pending || (state.display?.candidatePage ?? 0) <= 0}
                     onClick={() => act(`/api/meetings/${state.id}/display`, { displayCandidatePage: Math.max(0, (state.display?.candidatePage ?? 0) - 1) }, undefined, "PATCH")}
-                  >← poprzednia strona</button>
+                  ><IconArrowLeft size={14} /> poprzednia strona</button>
                   <span className="small text-body-secondary">strona {(state.display?.candidatePage ?? 0) + 1}</span>
                   <button
                     className="btn btn-sm"
                     disabled={pending || (state.display?.candidatePage ?? 0) >= Math.max(0, resultsModal.options.length - 1)}
                     onClick={() => act(`/api/meetings/${state.id}/display`, { displayCandidatePage: Math.min(Math.max(0, resultsModal.options.length - 1), (state.display?.candidatePage ?? 0) + 1) }, undefined, "PATCH")}
-                  >następna strona →</button>
+                  >następna strona <IconArrowRight size={14} /></button>
                 </div>
               )}
         </Modal>
@@ -2643,7 +2644,7 @@ function OnlineList({ participants }: { participants: { userId: string; name: st
       <button type="button" className="btn btn-link btn-sm px-0 text-body-secondary text-decoration-none" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className={`d-inline-block rounded-circle ${online.length > 0 ? "bg-success" : "bg-secondary"}`} style={{ width: 8, height: 8 }} />
         <span>Online: {online.length} / {participants.length}</span>
-        <span aria-hidden>{open ? "▴" : "▾"}</span>
+        {open ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
       </button>
       {open && (
         <div className="mt-1 d-flex flex-wrap gap-1">
@@ -3068,7 +3069,7 @@ function FutureSignupsPanel({
     <div className="card">
       <button type="button" className="card-header border-0 w-100 text-start" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className="card-title-text">Zapisy do przyszłych punktów{totalSignups > 0 ? ` (${totalSignups})` : ""}</span>
-        <span className="text-body-secondary small">{open ? "Zwiń ▴" : "Rozwiń ▾"}</span>
+        <span className="text-body-secondary small d-inline-flex align-items-center gap-1">{open ? <>Zwiń <IconChevronUp size={14} /></> : <>Rozwiń <IconChevronDown size={14} /></>}</span>
       </button>
       <div className={`collapse${open ? " show" : ""}`}>
         <ul className="list-group list-group-flush">
@@ -3312,41 +3313,81 @@ function EmailMeetingModal({ meetingId, participants, onClose }: {
   const [includePublicLink, setIncludePublicLink] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Odbiorcy spoza posiedzenia: pozostałe konta w systemie i dowolne adresy e-mail.
+  const [others, setOthers] = useState<{ id: string; name: string; email: string }[] | null>(null);
+  const [otherQuery, setOtherQuery] = useState("");
+  const [extra, setExtra] = useState("");
+
+  useEffect(() => {
+    const inMeeting = new Set(participants.map((p) => p.userId));
+    fetch("/api/users", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list: { id: string; email: string; firstName: string; lastName: string; active: boolean }[]) =>
+        setOthers(list.filter((u) => u.active && !inMeeting.has(u.id))
+          .map((u) => ({ id: u.id, name: `${u.firstName} ${u.lastName}`, email: u.email }))
+          .sort((x, y) => x.name.localeCompare(y.name, "pl"))))
+      .catch(() => setOthers([]));
+  }, [participants]);
 
   const toggle = (id: string) => setSelected((prev) => {
     const next = new Set(prev);
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
   });
+  const setMany = (ids: string[], on: boolean) => setSelected((prev) => {
+    const next = new Set(prev);
+    for (const id of ids) { if (on) next.add(id); else next.delete(id); }
+    return next;
+  });
+
+  const extraList = extra.split(/[\s,;]+/).map((x) => x.trim()).filter(Boolean);
+  const badExtra = extraList.filter((x) => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+  const total = selected.size + extraList.length - badExtra.length;
+  const q = otherQuery.trim().toLowerCase();
+  const visibleOthers = (others ?? []).filter((u) => !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
 
   async function submit() {
+    if (badExtra.length) { setError(`Niepoprawne adresy: ${badExtra.join(", ")}`); return; }
     setBusy(true); setError(null);
-    const r = await fetch(`/api/meetings/${meetingId}/email`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userIds: Array.from(selected), subject, body, includePublicLink }),
-    });
-    setBusy(false);
-    if (!r.ok) { setError(await readUserError(r)); return; }
-    onClose();
+    try {
+      const r = await fetch(`/api/meetings/${meetingId}/email`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userIds: Array.from(selected), emails: extraList, subject, body, includePublicLink }),
+      });
+      if (!r.ok) { setError(await readUserError(r)); return; }
+      const j = await r.json().catch(() => null);
+      notify.success("Wiadomość wysłana.", j?.count ? `Odbiorców: ${j.count}` : undefined);
+      onClose();
+    } catch {
+      setError("Nie udało się wysłać wiadomości. Spróbuj ponownie.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <Modal
-      title="Wyślij e-mail do uczestników"
+      title="Wyślij e-mail"
       onClose={onClose}
       closeOnBackdrop={false}
       footer={
         <>
           <button className="btn" onClick={onClose} disabled={busy}>Anuluj</button>
-          <button className="btn btn-primary" onClick={submit} disabled={busy || selected.size === 0 || !subject.trim() || !body.trim()}>
-            {busy ? "Wysyłam…" : "Wyślij"}
+          <button className="btn btn-primary" onClick={submit} disabled={busy || total <= 0 || !subject.trim() || !body.trim()}>
+            {busy ? "Wysyłam…" : `Wyślij (${Math.max(0, total)})`}
           </button>
         </>
       }
     >
       <div className="d-flex flex-column gap-3">
         <div>
-          <div className="form-label">Odbiorcy ({selected.size})</div>
+          <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
+            <div className="form-label mb-0">Uczestnicy posiedzenia</div>
+            <div className="d-flex gap-1">
+              <button type="button" className="btn btn-sm" onClick={() => setMany(participants.map((p) => p.userId), true)}>Zaznacz wszystkich</button>
+              <button type="button" className="btn btn-sm" onClick={() => setMany(participants.map((p) => p.userId), false)}>Odznacz</button>
+            </div>
+          </div>
           <div className="list-group overflow-y-auto" style={{ maxHeight: 180 }}>
             {participants.map((p) => (
               <label key={p.userId} className="list-group-item list-group-item-action d-flex align-items-center gap-2 py-1">
@@ -3354,6 +3395,27 @@ function EmailMeetingModal({ meetingId, participants, onClose }: {
                 {p.name}
               </label>
             ))}
+          </div>
+        </div>
+        <div>
+          <label className="form-label mb-1" htmlFor="em-others">Inne osoby z kontem w systemie (spoza posiedzenia)</label>
+          <input id="em-others" className="form-control form-control-sm mb-1" placeholder="Szukaj po nazwisku lub adresie" value={otherQuery} onChange={(e) => setOtherQuery(e.target.value)} />
+          <div className="list-group overflow-y-auto" style={{ maxHeight: 160 }}>
+            {others === null && <div className="list-group-item small text-body-secondary">Wczytywanie…</div>}
+            {others !== null && visibleOthers.length === 0 && <div className="list-group-item small text-body-secondary">Brak osób do wyboru.</div>}
+            {visibleOthers.map((u) => (
+              <label key={u.id} className="list-group-item list-group-item-action d-flex align-items-center gap-2 py-1">
+                <input className="form-check-input" type="checkbox" checked={selected.has(u.id)} onChange={() => toggle(u.id)} />
+                <span className="min-w-0">{u.name} <span className="small text-body-secondary">{u.email}</span></span>
+              </label>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="form-label mb-1" htmlFor="em-extra">Dodatkowe adresy e-mail</label>
+          <textarea id="em-extra" className={`form-control${badExtra.length ? " is-invalid" : ""}`} rows={2} placeholder="np. media@gmina.pl, sekretariat@gmina.pl" value={extra} onChange={(e) => setExtra(e.target.value)} aria-describedby="em-extra-help" />
+          <div id="em-extra-help" className={badExtra.length ? "invalid-feedback d-block" : "form-text"}>
+            {badExtra.length ? `Niepoprawne adresy: ${badExtra.join(", ")}` : "Oddziel przecinkiem, średnikiem albo nową linią. Przy kilku odbiorcach adresy są ukryte (UDW)."}
           </div>
         </div>
         <div>

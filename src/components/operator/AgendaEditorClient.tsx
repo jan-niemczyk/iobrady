@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { IconArrowUp, IconArrowDown, IconArrowLeft } from "@/components/ui/Icon";
+import { IconArrowDown, IconArrowLeft, IconArrowUp, IconSubItem } from "@/components/ui/Icon";
 import type { AgendaItemStatus } from "@prisma/client";
 import { AGENDA_ITEM_STATUS_LABEL } from "@/lib/labels";
 import { AttachmentsManager } from "@/components/operator/AttachmentsManager";
@@ -150,7 +150,7 @@ export function AgendaEditorClient({
                     <div className="d-flex align-items-start justify-content-between gap-2">
                       <div className="min-w-0">
                         <div className="fw-medium">
-                          {a.isSubItem && <span className="text-body-secondary">↳ </span>}
+                          {a.isSubItem && <span className="text-body-secondary me-1" aria-hidden><IconSubItem size={14} /></span>}
                           {a.title}
                           {a.hiddenFromDisplay && <span className="ms-2 small text-body-secondary">(ukryty na prezentacji)</span>}
                         </div>

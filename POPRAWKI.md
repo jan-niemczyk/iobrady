@@ -1439,3 +1439,38 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
 - [x] **Spójny kod odpowiedzi przy głosie po zamknięciu**: `cast` dla głosowania, które nie jest już otwarte,
       zwraca zawsze 409 („głos nie został przyjęty”). Dotąd zależnie od chwili było 400 (sprawdzenie przed
       transakcją) albo 409 (w transakcji) - test wyścigu „zamknięcie vs głos” przechodził tylko czasem.
+
+## ABD. Kolor „Wstrzymuję się”, e-mail spoza posiedzenia, ikony, przegląd interfejsu - etapy 2-3
+
+- [x] **„Wstrzymuję się”**: wraca dawny złoty kolor, napis czarny (jak `btn-warning` w Bootstrapie,
+      kontrast 7:1), także w trybie czarnym i na zaznaczonej pozycji pakietu.
+- [x] **E-mail z posiedzenia także do osób spoza posiedzenia**:
+      - w oknie „Wyślij e-mail” są trzy grupy odbiorców: uczestnicy, inne konta w systemie (z wyszukiwarką)
+        i dowolne dodatkowe adresy;
+      - błędne adresy są oznaczane przed wysłaniem;
+      - przy kilku odbiorcach wiadomość idzie w ukrytej kopii (UDW) - dotąd wszyscy widzieli wszystkie adresy;
+      - API: `emails` obok `userIds`, tylko aktywne konta, adresy bez powtórzeń.
+- [x] **Ikony zamiast emotek i znaków** (spinacz, dokument, strzałki, ptaszki, krzyżyki, „▾”, „⏸” itd.) w całej
+      aplikacji, także w widoku przewodniczącego, na ekranie sali (znacznik zakończonego punktu) i w powiadomieniach.
+      Przyciski z samą ikoną mają opis dla czytnika ekranu.
+- [x] **Akcje nieodwracalne mniej wyróżnione**:
+      - „Zamknij posiedzenie” jest przyciskiem obrysowanym (ciemniejsza czerwień, kontrast AA);
+      - usuwanie w wierszach list (uczestnicy posiedzenia, materiały, goście) to szara ikona kosza,
+        czerwona przy wskazaniu. Potwierdzenie bez zmian.
+- [x] **Panel posiedzenia na tablecie** (768-1199 px): dwie kolumny - głosowanie, mówcy i lista głosowań
+      po lewej, porządek obrad i sterowanie ekranem po prawej. Usunięty poziomy przewijany pasek
+      przy długich listach wyboru.
+- [x] **Panel radnego**:
+      - „Konto” w górnym pasku zamiast „Zmień hasło” w treści;
+      - przy zwiniętym głosowaniu w treści jest przycisk „Otwórz kartę głosowania”.
+- [x] **Skala pisma panelu operatora**: 12 / 13 / 15 / 17 / 20+ px (dotąd m.in. 13,1 / 14 / 14,9).
+      Nawigacja i menu 15 px, etykiety i tekst pomocniczy 13 px.
+- Sprawdzone (build produkcyjny, dane syntetyczne):
+  - scenariusz 14/14: kolor przycisku, okno e-mail (lista spoza posiedzenia, błędny adres, odpowiedź bez SMTP),
+    API e-mail, siatka na tablecie, brak poziomego przewijania na tablecie i telefonie, „Konto”,
+    przycisk otwierający kartę, brak emotek w widoku publicznym;
+  - `booth-mode.spec.ts` 7/7;
+  - axe (WCAG 2.2 AA): panel posiedzenia i widok publiczny bez naruszeń;
+  - `tsc`, `next build`.
+- Pozostaje: w karcie ostatniego wyniku u radnego etykiety „Przeciw” i „Wstrz.” w kolorach głosów mają
+  kontrast 4,4:1 i 2,7:1 (bez zmian, bo to te same kolory co przyciski głosowania).

@@ -42,7 +42,8 @@ export async function sendMail(params: {
     });
     await transport.sendMail({
       from: settings.smtpFrom || settings.smtpUser || undefined,
-      to: recipients.join(", "),
+      // Kilku odbiorców: ukryta kopia (BCC) - adresaci nie widzą swoich adresów.
+      ...(recipients.length > 1 ? { bcc: recipients.join(", ") } : { to: recipients[0] }),
       subject: params.subject,
       html: params.html,
     });

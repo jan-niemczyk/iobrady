@@ -34,6 +34,7 @@ export default async function ParticipantLayout({ children }: { children: React.
             <span className="pt-user hidden md:inline">
               {session.user.firstName} {session.user.lastName}
             </span>
+            <a href="/account" className="pt-btn pt-btn-sm" title="Konto - zmiana hasła">Konto</a>
             <ThemeToggle />
             <form action={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}>
               <button className="pt-btn pt-btn-sm" type="submit">Wyloguj</button>

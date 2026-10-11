@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getMeetingParticipant } from "@/lib/participantAccess";
 import { formatDateTime } from "@/lib/labels";
+import { IconPaperclip } from "@/components/ui/Icon";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +49,7 @@ export default async function UpcomingMeetingPage({ params }: { params: Promise<
           <div className="pt-panel-body flex flex-col gap-2">
             {meetingAttachments.map((a) => (
               <a key={a.id} href={`/api/attachments/${a.id}/download`} className="pt-attachment">
-                📎 {a.fileName} <span className="pt-muted">({formatSize(a.sizeBytes)})</span>
+                <IconPaperclip size={15} /> {a.fileName} <span className="pt-muted">({formatSize(a.sizeBytes)})</span>
               </a>
             ))}
           </div>
@@ -75,7 +76,7 @@ export default async function UpcomingMeetingPage({ params }: { params: Promise<
                     <div className="flex flex-col gap-1" style={{ marginTop: 6 }}>
                       {(attByItem.get(a.id) ?? []).map((att) => (
                         <a key={att.id} href={`/api/attachments/${att.id}/download`} className="pt-attachment">
-                          📎 {att.fileName} <span className="pt-muted">({formatSize(att.sizeBytes)})</span>
+                          <IconPaperclip size={15} /> {att.fileName} <span className="pt-muted">({formatSize(att.sizeBytes)})</span>
                         </a>
                       ))}
                     </div>

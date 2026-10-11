@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ask, readUserError } from "@/lib/feedback";
+import { IconTrash } from "@/components/ui/Icon";
 
 interface AttachmentRow {
   id: string;
@@ -75,7 +76,7 @@ export function AttachmentsManager({ meetingId, agendaItemId }: { meetingId: str
                 <input className="form-check-input" type="checkbox" id={`att-pub-${a.id}`} checked={a.visibleToPublic} onChange={(e) => toggle(a.id, "visibleToPublic", e.target.checked)} />
                 <label className="form-check-label" htmlFor={`att-pub-${a.id}`}>publiczne</label>
               </div>
-              <button className="btn btn-sm btn-outline-danger" onClick={() => remove(a.id)}>Usuń</button>
+              <button className="btn btn-sm btn-link text-body-secondary agenda-del p-0" style={{ minWidth: 36, minHeight: 36 }} title="Usuń plik" aria-label={`Usuń plik ${a.fileName}`} onClick={() => remove(a.id)}><IconTrash size={16} /></button>
             </li>
           ))}
         </ul>

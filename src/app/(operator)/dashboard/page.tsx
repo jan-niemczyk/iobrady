@@ -3,6 +3,7 @@ import { PageContainer, PageHeader, CardHeader } from "@/components/operator/ui"
 import { prisma } from "@/lib/db";
 import { MEETING_STATUS_LABEL, formatDateTime } from "@/lib/labels";
 import { MeetingStatus } from "@prisma/client";
+import { IconArrowRight } from "@/components/ui/Icon";
 
 export const dynamic = "force-dynamic";
 
@@ -99,7 +100,7 @@ export default async function DashboardPage() {
         {/* Niedawne */}
         <section className="col-12 col-lg-5">
           <div className="card h-100">
-            <CardHeader title="Niedawno zakończone" right={<Link href="/meetings" className="small">Wszystkie posiedzenia →</Link>} />
+            <CardHeader title="Niedawno zakończone" right={<Link href="/meetings" className="small d-inline-flex align-items-center gap-1">Wszystkie posiedzenia <IconArrowRight size={14} /></Link>} />
             {recent.length === 0 ? (
               <div className="card-body small text-body-secondary">Brak zakończonych posiedzeń.</div>
             ) : (
