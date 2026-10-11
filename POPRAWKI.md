@@ -1338,3 +1338,51 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
 - Sprawdzone: symulacja serwera z drugą aplikacją i jej Caddy na porcie 80 - instalacja z czystej kopii,
   blok w cudzym Caddyfile, `caddy reload` bez przerwy drugiej aplikacji, test dymny 24/24 przez wspólny
   Caddy (w tym czas rzeczywisty), druga aplikacja odpowiada bez zmian. CI sprawdza obie konfiguracje compose.
+
+## ABB. Goście, głosowania, widok publiczny, przegląd interfejsu
+
+- [x] **Goście** nie mają prawa głosu (wymuszane przy zapisie i migracją dla trwających posiedzeń), więc nie są
+      liczeni w głosowaniach ani w kworum. Zgłaszają się do dyskusji bez potwierdzania obecności.
+- [x] **Transmisja**: przy punktach bez numeru nie ma oznaczenia „Pkt … porz. obrad”.
+- [x] **Automatyczne zamykanie głosowania** (`Meeting.autoCloseVotes`, domyślnie wyłączone): przełącznik nad kartą
+      głosowania w panelu operatora, można go zmienić w trakcie głosowania, a ustawienie obowiązuje na całe posiedzenie.
+      Zamyka głosowanie, gdy głos oddali wszyscy obecni uprawnieni (nie dotyczy kworum). Wspólna logika zamknięcia
+      z ręcznym (`lib/closeVote.ts`, ta sama transakcja i blokada).
+- [x] **Rejestr czynności** w raportach (dotąd 404): `GET /api/audit/csv?meeting=`.
+- [x] **Punkt głosowania**: wybór punktu albo „bez przypisania” w oknie głosowania oraz „Zmień punkt” przed
+      rozpoczęciem i po zakończeniu (w trakcie odrzucane). Reasumpcja dostaje punkt głosowania pierwotnego.
+- [x] **Formy żeńskie** (`User.femaleForms`): „obecna”, „nieobecna”, „wykluczona” na tablicy i w prezentacji.
+- [x] **Widok publiczny posiedzenia** (przebudowa, Bootstrap tylko w tej części):
+      - dwa widoki: „Porządek obrad” (z materiałami i głosowaniami pod punktami) i „Wszystkie głosowania”
+        (tabela lub bloki na telefonie, wyszukiwanie, stała numeracja);
+      - strona szczegółów głosowania z własnym adresem, podsumowaniem i rozstrzygnięciem z systemu;
+      - pełna lista imienna z kolumną, filtrem i grupowaniem według klubów oraz zestawieniem klubów
+        (wiersz „Razem” równy podsumowaniu);
+      - przynależność z migawki głosowania;
+      - głosowania tajne: tylko „oddał / nie oddał głosu”, także w danych strony;
+      - w trakcie głosowania bez liczników.
+- [x] **Pewność oddania głosu** (karta radnego i widok mini, bez zmiany wyglądu kart):
+      - blokada podwójnego wysłania;
+      - limit czasu 15 s;
+      - rozróżnienie stanów:
+        - przyjęty: potwierdzenie dopiero po odpowiedzi serwera;
+        - odrzucony: komunikat serwera bez surowego JSON;
+        - nieznany: „Brak potwierdzenia z serwera” i ponowne pobranie stanu karty;
+      - komunikat „Wysyłanie głosu” dla czytników ekranu.
+- [x] **Utrata połączenia** w panelu radnego: komunikat po dwóch nieudanych odświeżeniach, znika po powrocie sieci.
+- [x] **Panel operatora**: panel kabiny (tryb kotarkowy) od razu po wczytaniu strony (dotąd do 5 s opóźnienia - brakujące
+      pola w danych startowych), pełny stan z API zaraz po wczytaniu.
+- [x] **Ograniczenie ruchu** (ustawienie systemu): bez wsuwania kart i dymków w panelach operatora i radnego.
+- [x] Bramka PIN: komunikat błędu użytkowy zamiast surowej odpowiedzi.
+- **Do zatwierdzenia (ekran sali i transmisja - niewdrożone)**:
+  1. pulsujące wskaźniki „trwa głosowanie” (`esog-pulse`, `ovPulse`) zastąpić stałym oznaczeniem;
+  2. przewijany tytuł na transmisji: dla tytułów do ok. 2 linii zawijanie zamiast przesuwu;
+  3. respektowanie ograniczenia ruchu na komputerze ekranu sali (wejścia plansz bez animacji);
+  4. kontrola kontrastu tekstu na kolorowych paskach transmisji przy jasnych kolorach z ustawień
+     (automatyczny ciemny tekst).
+- Sprawdzone (serwer deweloperski, dane syntetyczne):
+  - widok publiczny 35/35: komputer i telefon 390 px, kluby wyłączone, tajne, trwające, lista, pakiet, 404;
+  - pewność głosu 6/6: brak odpowiedzi, odrzucenie, podwójne naciśnięcie, przyjęcie, utrata i powrót połączenia;
+  - `booth-mode.spec.ts` 7/7;
+  - test dymny 24/24 na czystej bazie;
+  - `tsc`, `npm run build`.

@@ -106,6 +106,7 @@ export default async function MeetingPanelPage({ params }: { params: Promise<{ i
       status: v.status,
       pinRequired: v.pinRequired,
       pinCode: v.pinCode,
+      firstVoteFinal: v.firstVoteFinal, boothMode: v.boothMode,
       majority: v.majority,
       majorityKind: v.majorityKind,
       majorityBase: v.majorityBase,

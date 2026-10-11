@@ -321,6 +321,8 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
     const es = new EventSource(`/api/meetings/${initial.id}/stream`);
     evtRef.current = es;
     es.onmessage = () => refetch();
+    // Od razu pełny stan z API (dane z renderu serwera nie zawierają wszystkich pól).
+    refetch();
     // Dodatkowy polling co 5 s - by lista online odświeżała się także bez zdarzeń SSE
     // (np. gdy ktoś się wyloguje/zamknie kartę - brak eventu, a stan trzeba odświeżyć).
     const poll = setInterval(refetch, 5000);

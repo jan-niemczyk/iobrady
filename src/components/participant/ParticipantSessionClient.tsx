@@ -202,16 +202,26 @@ export function ParticipantSessionClient({ initial }: { initial: InitialState })
     prevAttendanceActive.current = active;
   }, [state.attendanceCheck?.active, state.attendanceCheck?.selfEnabled, pushToast]);
 
+  // Utrata połączenia: dwa kolejne nieudane odświeżenia (ok. 3-6 s) -> widoczny komunikat.
+  // Pojedynczy błąd (chwilowe zerwanie) nie migocze komunikatem.
+  const [offline, setOffline] = useState(false);
+  const failCount = useRef(0);
   async function refetch() {
     try {
       const r = await fetch(`/api/me/session?m=${initial.meetingId}`, { cache: "no-store" });
       if (r.ok) {
         const j = await r.json();
+        failCount.current = 0;
+        setOffline(false);
         // Posiedzenie zamknięte / brak aktywnego -> przeładuj widok serwerowy (ekran „brak posiedzeń").
         if (!j?.meetingId) { window.location.reload(); return; }
         setState((s) => ({ ...s, ...j }));
+        return;
       }
-    } catch { /* */ }
+      if (r.status < 500) { failCount.current = 0; setOffline(false); return; }
+    } catch { /* brak sieci */ }
+    failCount.current += 1;
+    if (failCount.current >= 2) setOffline(true);
   }
 
   useEffect(() => {
@@ -304,6 +314,12 @@ export function ParticipantSessionClient({ initial }: { initial: InitialState })
           </span>
         </div>
       </header>
+
+      {offline && (
+        <div role="alert" className="pt-panel pt-panel-body pt-text-sm" style={{ borderColor: "var(--color-no)", color: "var(--color-no)" }}>
+          Brak połączenia z serwerem. Widok może być nieaktualny, a oddany teraz głos może nie dotrzeć. Ponawiam połączenie...
+        </div>
+      )}
 
       {state.openMeetings && state.openMeetings.length > 1 && (
         <section>
@@ -560,17 +576,41 @@ export function VoteBallot({ vote, onCast }: { vote: ActiveVote; onCast: () => v
   // głosowania. NIE synchronizujemy z pollingiem - inaczej refetch co 3s nadpisałby
   // niewysłane jeszcze zaznaczenia radnego pustą tablicą z serwera.
 
+  // Pewność oddania głosu: wysyłanie -> przyjęty przez serwer (toast) / odrzucony (komunikat
+  // serwera) / nieznany (brak odpowiedzi - stan pobierany ponownie z serwera, bez fałszywego
+  // potwierdzenia). Blokada ref chroni przed podwójnym wysłaniem (np. dwa szybkie skróty).
+  const inFlight = useRef(false);
+  const [sending, setSending] = useState(false);
   function cast(payload: { choice?: string; selectedOptionIds?: string[]; packageChoices?: { optionId: string; choice: VoteChoice }[]; invalid?: boolean }) {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setSending(true);
     setError(null);
     startTransition(async () => {
-      const r = await fetch(`/api/votes/${vote.id}/cast`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!r.ok) { setError(await r.text()); return; }
-      showCastToast(payload);
-      onCast();
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 15000);
+      try {
+        const r = await fetch(`/api/votes/${vote.id}/cast`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: ctrl.signal,
+        });
+        if (!r.ok) {
+          setError(`Głos nie został przyjęty. ${await readUserError(r)}`);
+          onCast();
+          return;
+        }
+        showCastToast(payload);
+        onCast();
+      } catch {
+        setError("Brak potwierdzenia z serwera - nie wiadomo, czy głos dotarł. Stan karty został pobrany ponownie; jeśli nie widzisz swojego głosu, zagłosuj jeszcze raz.");
+        onCast();
+      } finally {
+        clearTimeout(timer);
+        inFlight.current = false;
+        setSending(false);
+      }
     });
   }
 
@@ -684,8 +724,9 @@ export function VoteBallot({ vote, onCast }: { vote: ActiveVote; onCast: () => v
           );
         })()}
 
+        <span className="sr-only" role="status" aria-live="polite">{sending ? "Wysyłanie głosu" : ""}</span>
         {error && (
-          <div className="mt-4 px-3 py-2 text-sm" style={{ background: "var(--color-no-bg)", border: "1px solid var(--color-no)", color: "var(--color-no)" }}>
+          <div role="alert" className="mt-4 px-3 py-2 text-sm" style={{ background: "var(--color-no-bg)", border: "1px solid var(--color-no)", color: "var(--color-no)" }}>
             {error}
           </div>
         )}
@@ -1317,7 +1358,7 @@ function PinGate({ voteId, onAuthorized }: { voteId: string; onAuthorized: () =>
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pin: code }),
       });
-      if (!r.ok) { setError(await r.text()); setPin(""); return; }
+      if (!r.ok) { setError(await readUserError(r)); setPin(""); return; }
       onAuthorized();
     });
   }

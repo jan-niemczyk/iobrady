@@ -226,6 +226,13 @@
 }
 .slide-in { animation: slide-in 180ms ease-out; }
 
+/* Ograniczenie ruchu (ustawienie systemu): bez wsuwania kart i dymków w panelach operatora i radnego.
+   Ekran sali i transmisja mają własne animacje (np. przewijanie długich tytułów) - bez zmian. */
+@media (prefers-reduced-motion: reduce) {
+  .slide-in { animation: none; }
+  .pt-page *, .pt-page *::before, .pt-page *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}
+
 /* ─── TRYB CZARNY (aplikacja uczestnika) ─────────────────────────────
    Włączany atrybutem data-theme="dark" na <html>. Czarne tło, biały tekst
    i białe obramowania. Kolory głosów rozjaśnione dla kontrastu. */
