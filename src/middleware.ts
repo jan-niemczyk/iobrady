@@ -58,6 +58,12 @@ export default auth((req) => {
 
   if (path === "/api/health") return NextResponse.next();
 
+  // Widok publiczny bez logowania: dane raportów (/api/public) i pobieranie załączników.
+  // Same trasy sprawdzają Meeting.publicEnabled (i visibleToPublic dla załącznika).
+  if (path.startsWith("/api/public/") || /^\/api\/attachments\/[A-Za-z0-9_-]{1,64}\/download$/.test(path)) {
+    return NextResponse.next();
+  }
+
   if (path === "/login" || path.startsWith("/api/auth") || path.startsWith("/display") || path.startsWith("/api/display") || path.startsWith("/overlay") || path.startsWith("/public") || path.startsWith("/api/uploads/")) {
     if (isLoggedIn && path === "/login") {
       const target = role === "OPERATOR" ? "/dashboard" : "/session";

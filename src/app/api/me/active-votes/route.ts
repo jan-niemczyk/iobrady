@@ -22,7 +22,7 @@ export async function GET() {
       attendance: true,
       meeting: {
         include: {
-          votes: { where: { status: "OPEN" }, include: { options: { orderBy: { order: "asc" } } } },
+          votes: { where: { status: "OPEN" }, include: { options: { orderBy: { order: "asc" } }, agendaItem: { select: { title: true, number: true, unnumbered: true } } } },
         },
       },
     },
@@ -69,6 +69,8 @@ export async function GET() {
         meetingNumber: p.meeting.number,
         vote: {
           id: open.id, title: open.title, description: open.description, type: open.type, visibility: open.visibility,
+          agendaItemTitle: open.agendaItem?.title ?? null,
+          agendaItemNumber: open.agendaItem ? (open.agendaItem.unnumbered ? null : open.agendaItem.number) : null,
           majority: open.majority, majorityKind: open.majorityKind, majorityBase: open.majorityBase,
           minSelections: open.minSelections, maxSelections: open.maxSelections,
           options: open.options.map((o) => ({ id: o.id, order: o.order, label: o.label, positionNumber: o.positionNumber, description: o.description })),

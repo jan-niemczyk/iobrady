@@ -68,7 +68,7 @@ export function VotePeople({ vote }: { vote: PublicVoteDetail }) {
         <p className="small text-warning-emphasis mb-2">Przynależność według bieżących danych - dla tego głosowania nie zapisano przynależności z dnia głosowania.</p>
       )}
 
-      <div className="table-responsive">
+      <div className="table-responsive" tabIndex={0} role="region" aria-label="Tabela (przewijana)">
         <table className="table table-sm align-middle pub-table mb-0">
           <caption className="visually-hidden">Wyniki indywidualne</caption>
           <thead>
@@ -144,7 +144,7 @@ export function ClubSummary({ vote }: { vote: PublicVoteDetail }) {
         ];
 
   return (
-    <div className="table-responsive">
+    <div className="table-responsive" tabIndex={0} role="region" aria-label="Tabela (przewijana)">
       <table className="table table-sm align-middle pub-table mb-0">
         <caption className="visually-hidden">Zestawienie według klubów i kół</caption>
         <thead>

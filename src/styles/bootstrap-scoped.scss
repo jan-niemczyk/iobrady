@@ -185,7 +185,7 @@ label:has(> input[type="radio"]) {
   display: inline-flex;
   align-items: center;
   gap: .4em;
-  color: $live;
+  color: #BE123C; // ciemniejszy niż $live - kontrast 5,7:1 na różowym tle
   background: #FFF1F2;
   border: 1px solid #FECDD3;
 }

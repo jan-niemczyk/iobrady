@@ -151,7 +151,7 @@ function toneColors(tone: ToastTone): { bg: string; fg: string; bar: string } {
 
 function ToastHost({ toasts }: { toasts: ToastItem[] }) {
   return (
-    <div style={{ position: "fixed", left: 0, right: 0, bottom: 16, zIndex: 200, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, pointerEvents: "none", padding: "0 16px" }}>
+    <div style={{ position: "fixed", left: 0, right: 0, bottom: 80 /* nad paskiem zwiniętego głosowania (64 px) */, zIndex: 200, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, pointerEvents: "none", padding: "0 16px" }}>
       {toasts.map((t) => {
         const c = toneColors(t.tone);
         return (
@@ -661,7 +661,7 @@ export function VoteBallot({ vote, onCast }: { vote: ActiveVote; onCast: () => v
   return (
     <div className="card slide-in" style={{ borderColor: "var(--color-live)", borderWidth: 2 }}>
       <div className="px-5 py-3 border-b flex items-center justify-between" style={{ background: "var(--color-no-bg)", borderColor: "var(--color-live)" }}>
-        <span className="pill pill-live">
+        <span className="pill pill-live" style={{ fontSize: 13 }}>
           Trwa głosowanie - {vote.visibility === "SECRET" ? "tajne" : "jawne"}
         </span>
       </div>
@@ -807,10 +807,13 @@ function StandardBallot({
   ];
   // Skróty: Z/P/W oddają głos od razu (auto-wysłanie). N - głos nieważny (tajne).
   const canVote = !pending && !locked;
+  // Który przycisk wysłano - w jawnym pokazujemy „wysyłanie…” na nim, w tajnym tylko ogólny napis.
+  const [sentChoice, setSentChoice] = useState<VoteChoice | null>(null);
+  const cast = (c: VoteChoice) => { setSentChoice(c); onCast(c); };
   useHotkeys([
-    { key: "z", enabled: canVote, action: () => onCast("YES"), description: "Głos: Za" },
-    { key: "p", enabled: canVote, action: () => onCast("NO"), description: "Głos: Przeciw" },
-    { key: "w", enabled: canVote, action: () => onCast("ABSTAIN"), description: "Głos: Wstrzymuję się" },
+    { key: "z", enabled: canVote, action: () => cast("YES"), description: "Głos: Za" },
+    { key: "p", enabled: canVote, action: () => cast("NO"), description: "Głos: Przeciw" },
+    { key: "w", enabled: canVote, action: () => cast("ABSTAIN"), description: "Głos: Wstrzymuję się" },
     { key: "o", enabled: canVote && secret, action: () => onInvalid(), description: "Głos nieważny (obecny)" },
   ], [canVote, secret]);
   return (
@@ -825,7 +828,7 @@ function StandardBallot({
           <button
             key={b.choice}
             disabled={pending || locked}
-            onClick={() => onCast(b.choice)}
+            onClick={() => cast(b.choice)}
             className={`btn ${b.cls} btn-xl`}
             style={{
               outline: isMine ? "3px solid var(--color-ink)" : undefined,
@@ -833,7 +836,7 @@ function StandardBallot({
               opacity: pending ? 0.7 : 1,
             }}
           >
-            {b.label}{isMine && " ✓"}
+            {b.label}{isMine && !pending && " ✓"}{pending && !secret && sentChoice === b.choice && " - wysyłanie…"}
           </button>
         );
       })}
@@ -850,6 +853,7 @@ function StandardBallot({
           Obecny
         </button>
       )}
+      {pending && secret && <div aria-hidden="true" className="text-sm text-center" style={{ color: "var(--color-ink-2)" }}>Wysyłanie głosu…</div>}
     </div>
   );
 }
@@ -1742,16 +1746,17 @@ function ActiveVotesOverlay({ showMeetingNames }: { showMeetingNames: boolean })
   // Zminimalizowane: pasek na dole ekranu z możliwością przywrócenia.
   if (minimized) {
     return (
-      <div
-        style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 100, background: "var(--color-seal)", color: "#fff", padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 -4px 16px rgba(0,0,0,0.2)" }}
+      <button
+        type="button"
+        style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 100, width: "100%", minHeight: 64, border: 0, textAlign: "left", background: "#B91C1C", color: "#fff", padding: "10px 16px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, boxShadow: "0 -4px 16px rgba(0,0,0,0.2)" }}
         onClick={() => setMinimized(false)}
       >
-        <span style={{ fontSize: 14, fontWeight: 600 }}>
+        <span style={{ fontSize: 15, fontWeight: 600 }}>
           Trwa głosowanie{overlayVotes.length > 1 ? ` (${overlayVotes.length})` : ""}
           {remainingToCast > 0 ? ` - do oddania: ${remainingToCast}` : " - oddano"}
         </span>
-        <span className="btn" style={{ padding: "4px 12px", fontSize: 12, background: "#fff", color: "var(--color-seal)" }}>Otwórz głosowanie</span>
-      </div>
+        <span style={{ display: "inline-flex", alignItems: "center", minHeight: 44, padding: "0 16px", borderRadius: 8, fontSize: 15, fontWeight: 600, background: "#fff", color: "#B91C1C", flexShrink: 0 }}>Otwórz głosowanie</span>
+      </button>
     );
   }
 
@@ -1759,11 +1764,11 @@ function ActiveVotesOverlay({ showMeetingNames }: { showMeetingNames: boolean })
     <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "var(--color-paper)", overflowY: "auto", padding: "20px 16px" }}>
       <div className="max-w-[720px] mx-auto">
         <div className="flex items-center justify-between mb-2">
-          <div className="eyebrow" style={{ color: "var(--color-seal)" }}>
+          <div className="eyebrow" style={{ color: "var(--color-seal)", fontSize: 12 }}>
             {current.vote.alreadyVoted ? "Trwa głosowanie - możesz zmienić głos" : "Trwa głosowanie - oddaj głos"}
             {remainingToCast > 1 ? ` (do oddania: ${remainingToCast})` : ""}
           </div>
-          <button className="btn" style={{ padding: "4px 12px", fontSize: 12 }} onClick={() => setMinimized(true)} title="Zwiń - wrócisz do panelu, głosowanie zostaje dostępne na pasku">
+          <button className="btn" style={{ minHeight: 44, padding: "0 16px", fontSize: 14 }} onClick={() => setMinimized(true)} title="Zwiń - wrócisz do panelu, głosowanie zostaje dostępne na pasku">
             Zwiń ▾
           </button>
         </div>

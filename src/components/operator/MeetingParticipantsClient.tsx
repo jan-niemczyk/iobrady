@@ -124,8 +124,8 @@ export function MeetingParticipantsClient({
                 <thead>
                   <tr>
                     <th>Osoba</th>
-                    <th className="text-center">Głos</th>
-                    <th className="text-center">Gość</th>
+                    <th className="text-center" title="Prawo głosu w tym posiedzeniu">Głos</th>
+                    <th className="text-center" title="Zaproszony gość - bez prawa głosu, może zgłaszać się do dyskusji">Gość</th>
                     <th className="text-center" title="Przewodniczący tego posiedzenia - prowadzi obrady i głosuje">Przew.</th>
                     <th className="text-center" title="Prawo zgłoszenia się do dyskusji z priorytetem">Priorytet</th>
                     <th className="text-center" title="Dostęp do widoku 'wyświetlacz' (wąskie okno nakładane na stream/prezentację)">Wyświetlacz</th>
@@ -146,22 +146,30 @@ export function MeetingParticipantsClient({
                         )}
                       </td>
                       <td className="text-center">
-                        <input className="form-check-input" type="checkbox" aria-label={`Prawo głosu: ${p.name}`}
+                        <label className="cell-hit">
+                        <input className="form-check-input m-0" type="checkbox" aria-label={`Prawo głosu: ${p.name}`}
                           title={p.isInvitedGuest ? "Gość nie głosuje i nie wlicza się do kworum" : undefined}
                           disabled={p.isInvitedGuest}
                           checked={p.hasVotingRight && !p.isInvitedGuest} onChange={(e) => patch(p, { hasVotingRight: e.target.checked })} />
+                        </label>
                       </td>
                       <td className="text-center">
-                        <input className="form-check-input" type="checkbox" aria-label={`Gość: ${p.name}`}
+                        <label className="cell-hit">
+                        <input className="form-check-input m-0" type="checkbox" aria-label={`Gość: ${p.name}`}
                           checked={p.isInvitedGuest} onChange={(e) => patch(p, e.target.checked ? { isInvitedGuest: true, hasVotingRight: false } : { isInvitedGuest: false })} />
+                        </label>
                       </td>
                       <td className="text-center">
-                        <input className="form-check-input" type="checkbox" aria-label={`Przewodniczący: ${p.name}`} title="Przewodniczący tego posiedzenia"
+                        <label className="cell-hit">
+                        <input className="form-check-input m-0" type="checkbox" aria-label={`Przewodniczący: ${p.name}`} title="Przewodniczący tego posiedzenia"
                           checked={p.isChairperson ?? false} onChange={(e) => patch(p, { isChairperson: e.target.checked })} />
+                        </label>
                       </td>
                       <td className="text-center">
-                        <input className="form-check-input" type="checkbox" aria-label={`Priorytet: ${p.name}`}
+                        <label className="cell-hit">
+                        <input className="form-check-input m-0" type="checkbox" aria-label={`Priorytet: ${p.name}`}
                           checked={p.hasPriorityRight ?? false} onChange={(e) => patch(p, { hasPriorityRight: e.target.checked })} />
+                        </label>
                         {p.hasPriorityRight && agenda.length > 0 && (
                           <div className="mt-1">
                             <div className="small text-body-secondary">Zakres priorytetu</div>
@@ -198,13 +206,17 @@ export function MeetingParticipantsClient({
                         )}
                       </td>
                       <td className="text-center">
-                        <input className="form-check-input" type="checkbox" aria-label={`Wyświetlacz: ${p.name}`}
+                        <label className="cell-hit">
+                        <input className="form-check-input m-0" type="checkbox" aria-label={`Wyświetlacz: ${p.name}`}
                           title="Dostęp do widoku 'wyświetlacz' (wąskie okno nakładane na stream)"
                           checked={p.canUseMiniDisplay ?? false} onChange={(e) => patch(p, { canUseMiniDisplay: e.target.checked })} />
+                        </label>
                       </td>
                       <td className="text-center">
-                        <input className="form-check-input" type="checkbox" aria-label={`Wykluczony: ${p.name}`} title="Wykluczony z posiedzenia"
+                        <label className="cell-hit">
+                        <input className="form-check-input m-0" type="checkbox" aria-label={`Wykluczony: ${p.name}`} title="Wykluczony z posiedzenia"
                           checked={p.excludedFromMeeting ?? false} onChange={(e) => patch(p, { excludedFromMeeting: e.target.checked })} />
+                        </label>
                       </td>
                       <td className="text-end">
                         <button

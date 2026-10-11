@@ -1386,3 +1386,52 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
   - `booth-mode.spec.ts` 7/7;
   - test dymny 24/24 na czystej bazie;
   - `tsc`, `npm run build`.
+
+## ABC. Przegląd interfejsu - etap 1, cofnięcie posiedzenia, PDF w widoku publicznym
+
+- [x] **Auto-zamknięcie głosowania**: przełącznik „Auto-zamknięcie głosowania” w nagłówku karty głosowania,
+      po prawej (trwające głosowanie i karta bez głosowania).
+- [x] **Wiersz głosowania**: widoczne „Raport PDF”, „Reasumpcja” (i „Otwórz”, „Edytuj” dla przygotowanych).
+      Pozostałe czynności są w menu „Więcej”: CSV, odświeżenie obecności, przeliczenie, zmiana punktu,
+      zmiana nazwy i usuwanie (oddzielone kreską, na czerwono).
+- [x] **Punkt porządku obrad**: wszystkie czynności nadal widoczne, pogrupowane:
+      - status i ikona usuwania przy tytule (ikona szara, czerwona przy wskazaniu);
+      - pod tytułem „Rozpocznij” i grupa „Zapisy / Zapisani / + Głosowanie”.
+- [x] **Cofnięcie posiedzenia do statusu „Przygotowane”** (`POST /api/meetings/[id]/revert`, przycisk
+      „Cofnij do przygotowania”):
+      - dostępne z otwartego, trwającego, przerwanego i zamkniętego posiedzenia;
+      - zmienia tylko status, dane zostają;
+      - odrzucane, gdy trwa głosowanie albo sprawdzanie obecności;
+      - wpis w rejestrze czynności.
+- [x] **Karta głosowania** (za zgodą):
+      - „Wstrzymuję się” ciemniejszym złotem (kontrast 4,9:1 zamiast 2,9:1, także w trybie czarnym);
+      - karta pokazuje punkt porządku obrad (brakowało go w `me/active-votes`);
+      - większa plakietka;
+      - podczas wysyłania napis „- wysyłanie…” na naciśniętym przycisku (w tajnym tylko ogólny napis).
+- [x] **Panel radnego**:
+      - pasek zwiniętego głosowania jest przyciskiem (klawiatura, czytnik ekranu), ma 64 px wysokości
+        i ciemniejszą czerwień (kontrast 6,5:1 także w trybie czarnym);
+      - powiadomienia nie zasłaniają paska;
+      - większy przycisk „Zwiń”;
+      - linki do materiałów mają min. 44 px wysokości.
+- [x] **Panel operatora**:
+      - kontrast tekstu pomocniczego i plakietki „Na żywo” zgodny z WCAG AA;
+      - w tabeli uczestników klikalna cała komórka (44 px) i większe pola wyboru;
+      - opisy kolumn „Głos” i „Gość”;
+      - nazwa paska postępu dla czytnika ekranu;
+      - „Wstrzymało się” w licznikach.
+- [x] **Widok publiczny**:
+      - pobieranie raportu PDF głosowania i PDF wszystkich zakończonych głosowań (ten sam szablon co raporty
+        operatora, `GET /api/public/meetings/[id]/report-data`; tajne bez treści głosu);
+      - linki min. 44 px wysokości;
+      - przewijane tabele dostępne z klawiatury.
+- [x] **Błąd**: materiały w widoku publicznym nie pobierały się bez logowania (middleware odpowiadał 401,
+      zanim trasa sprawdziła `visibleToPublic`). Teraz trasa decyduje sama, a po wyłączeniu publikacji jest 404.
+- Sprawdzone (serwer deweloperski, dane syntetyczne):
+  - scenariusz 18/18: przełącznik w obu kartach, menu „Więcej”, przyciski punktu, cofnięcie (blokada przy
+    głosowaniu, status, dane bez zmian, ponowne otwarcie), klik w komórkę tabeli, punkt i „wysyłanie…”
+    na karcie, pasek 64 px, PDF jednego i wszystkich głosowań, dane PDF tajnego, załącznik bez logowania,
+    brak dostępu po wyłączeniu publikacji. Jeden krok testu (klik w komórkę) najpierw nie przeszedł przez
+    zbyt krótkie oczekiwanie w teście, ponownie sprawdzony osobno;
+  - axe (WCAG 2.2 AA): logowanie, panel posiedzenia i widok publiczny bez naruszeń;
+  - `tsc`, `npm run build`.

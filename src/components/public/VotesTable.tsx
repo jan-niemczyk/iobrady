@@ -71,7 +71,7 @@ export function VotesTable({ meetingId, votes, itemNumber }: {
                     </td>
                     <td className="small">{resultShort(v)}</td>
                     <td>{decision(v)}</td>
-                    <td className="text-end"><Link href={href(v)} className="text-nowrap">Szczegóły<span className="visually-hidden"> głosowania nr {v.number}</span></Link></td>
+                    <td className="text-end"><Link href={href(v)} className="text-nowrap pub-tap">Szczegóły<span className="visually-hidden"> głosowania nr {v.number}</span></Link></td>
                   </tr>
                 ))}
               </tbody>
@@ -92,7 +92,7 @@ export function VotesTable({ meetingId, votes, itemNumber }: {
                 <div className="d-flex flex-wrap align-items-center gap-2 small mt-1">
                   <span><span className="text-body-secondary">Wynik:</span> {resultShort(v)}</span>
                   {decision(v)}
-                  <Link href={href(v)} className="ms-auto">Szczegóły</Link>
+                  <Link href={href(v)} className="ms-auto pub-tap">Szczegóły</Link>
                 </div>
               </li>
             ))}

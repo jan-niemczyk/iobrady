@@ -15,3 +15,7 @@
   outline: 3px solid #1D4ED8; outline-offset: 2px;
 }
 @media (prefers-reduced-motion: reduce) { .pub-root * { transition: none !important; } }
+
+/* Cele dotyku/kliknięcia: min. 44 px wysokości (linki w tekście listy). */
+.pub-root .pub-tap { display: inline-flex; align-items: center; min-height: 44px; }
+.pub-root .table-responsive:focus-visible { outline: 2px solid var(--bs-primary); outline-offset: 2px; }

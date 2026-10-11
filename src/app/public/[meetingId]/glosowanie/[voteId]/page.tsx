@@ -5,6 +5,7 @@ import { loadPublicMeeting, loadPublicVote, type PublicVoteDetail } from "@/lib/
 import { fmtDate, fmtTime, TYPE_LABEL, plural } from "@/components/public/publicFormat";
 import { ClubSummary, VotePeople } from "@/components/public/VotePeople";
 import { PublicAutoRefresh } from "@/components/public/PublicAutoRefresh";
+import { PublicPdfButton } from "@/components/public/PublicPdfButton";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export default async function PublicVotePage({ params, searchParams }: {
       <PublicAutoRefresh active={meeting.active && !closed} seconds={15} />
       <header className="pub-header">
         <div className="container-lg py-3" style={{ maxWidth: 1080 }}>
-          <Link href={back} className="small">← Wróć do posiedzenia</Link>
+          <Link href={back} className="small pub-tap">← Wróć do posiedzenia</Link>
           <div className="small text-body-secondary mt-2" style={{ overflowWrap: "anywhere" }}>
             {meeting.name}{meeting.number ? `, posiedzenie nr ${meeting.number}` : ""}
           </div>
@@ -65,6 +66,9 @@ export default async function PublicVotePage({ params, searchParams }: {
           </section>
         ) : (
           <>
+            <div>
+              <PublicPdfButton meetingId={meeting.id} voteId={vote.id} fileName={`glosowanie-${vote.number ?? vote.id}`} label="Pobierz raport PDF" />
+            </div>
             <Summary vote={vote} />
             {vote.groupsEnabled && !vote.secret && vote.type !== "PACKAGE" && vote.people.length > 0 && (
               <section className="card" aria-labelledby="pv-clubs">
@@ -125,7 +129,7 @@ function Summary({ vote }: { vote: PublicVoteDetail }) {
           </div>
         )}
         {vote.type === "LIST" && (
-          <div className="table-responsive">
+          <div className="table-responsive" tabIndex={0} role="region" aria-label="Tabela wyników (przewijana)">
             <table className="table table-sm align-middle pub-table mb-0" style={{ maxWidth: 640 }}>
               <caption className="visually-hidden">Głosy na kandydatury</caption>
               <thead><tr><th scope="col">Kandydatura</th><th scope="col" className="text-end">Głosy za</th>{(r.options ?? []).some((o) => o.passed != null) && <th scope="col">Rozstrzygnięcie</th>}</tr></thead>
@@ -142,7 +146,7 @@ function Summary({ vote }: { vote: PublicVoteDetail }) {
           </div>
         )}
         {vote.type === "PACKAGE" && (
-          <div className="table-responsive">
+          <div className="table-responsive" tabIndex={0} role="region" aria-label="Tabela wyników (przewijana)">
             <table className="table table-sm align-middle pub-table mb-0">
               <caption className="visually-hidden">Wyniki pozycji pakietu</caption>
               <thead><tr><th scope="col">Poz.</th><th scope="col">Treść</th><th scope="col" className="text-end">Za</th><th scope="col" className="text-end">Przeciw</th><th scope="col" className="text-end">Wstrz.</th><th scope="col">Rozstrzygnięcie</th></tr></thead>

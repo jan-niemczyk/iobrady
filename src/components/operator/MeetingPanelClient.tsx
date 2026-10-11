@@ -18,7 +18,7 @@ import { DisplayControlPanel } from "@/components/operator/DisplayControlPanel";
 import { MeetingSettingsPanel } from "@/components/operator/MeetingSettingsPanel";
 import { MeetingParticipantsLoader } from "@/components/operator/MeetingParticipantsClient";
 import { AttachmentsManager } from "@/components/operator/AttachmentsManager";
-import { IconClose, IconChevronDown, IconChevronRight, IconUsers } from "@/components/ui/Icon";
+import { IconClose, IconChevronDown, IconChevronRight, IconTrash, IconUsers } from "@/components/ui/Icon";
 import { downloadReportsPdf, downloadReportsZip, downloadSignatureList, downloadAttendanceMergedList, downloadAttendanceLog, downloadCheckReportPdf } from "@/lib/generatePdf";
 import { downloadAgendaPdf, downloadAgendaDocx, downloadProtocolPdf, downloadProtocolDocx, type ProtocolData } from "@/lib/generateProtocol";
 import { downloadSpeechesReportPdf, downloadSpeechesReportDocx, type SpeechesReportData } from "@/lib/generateSpeechesReport";
@@ -407,6 +407,17 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
   const isPreparation = state.status === "PREPARED" || state.status === "DRAFT";
   const currentItem = state.agenda.find((a) => a.id === state.currentAgendaItemId);
   const activeVote = state.votes.find((v) => v.status === "OPEN");
+  // Auto-zamknięcie głosowania: ustawienie na całe posiedzenie, zmienialne także w trakcie głosowania.
+  const autoCloseSwitch = state.status !== "CLOSED" ? (
+    <div className="form-check form-switch mb-0 small text-nowrap"
+      title="Głosowanie zamknie się samo po oddaniu głosów przez wszystkich obecnych uczestników z prawem głosu (nie dotyczy kworum). Ustawienie obowiązuje do końca posiedzenia.">
+      <input className="form-check-input" type="checkbox" role="switch" id="auto-close-votes"
+        checked={!!state.autoCloseVotes} disabled={pending}
+        onChange={(e) => act(`/api/meetings/${state.id}`, { autoCloseVotes: e.target.checked }, undefined, "PATCH",
+          e.target.checked ? "Głosowania zamkną się po oddaniu głosów przez wszystkich obecnych." : "Automatyczne zamykanie wyłączone.")} />
+      <label className="form-check-label fw-normal" htmlFor="auto-close-votes">Auto-zamknięcie głosowania</label>
+    </div>
+  ) : null;
 
   // Skróty operatora (bezpieczne: destrukcyjne akcje wymagają potwierdzenia; skróty nie działają
   // w polach tekstowych). C - zamknij trwające głosowanie; Esc - zamknij okno wyników (odpina z
@@ -524,44 +535,13 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                         </button>
                       )}
                       {(v.status === "CLOSED" || v.status === "INTERRUPTED") && (
-                        <>
-                          <button
-                            className="btn btn-sm"
-                            disabled={pdfBusy === v.id}
-                            onClick={() => downloadOneReport(v.id, v.number)}
-                            title="Pobierz raport PDF"
-                          >
-                            {pdfBusy === v.id ? "…" : "Raport PDF"}
-                          </button>
-                          <a href={`/api/votes/${v.id}/report.csv`} className="btn btn-sm" title="Pobierz CSV">
-                            CSV
-                          </a>
-                          {v.type !== "QUORUM" && (
-                            <button
-                              className="btn btn-sm"
-                              disabled={pending}
-                              onClick={() => {
-                                act(`/api/votes/${v.id}/recompute-roster`, undefined, {
-                                  title: "Odświeżyć obecność w wydruku?",
-                                  message: "Obecność w wydruku tego głosowania zostanie ustalona na podstawie bieżącego stanu obecności.\n\nUżyj po korekcie lub usunięciu błędnej migawki, aby ktoś obecny (a niegłosujący) nie był pokazany jako nieobecny.",
-                                  confirmLabel: "Odśwież obecność",
-                                }, "POST", "Obecność w wydruku została odświeżona.");
-                              }}
-                              title="Odśwież stan obecności w wydruku po korekcie migawki"
-                            >
-                              Odśwież obecność
-                            </button>
-                          )}
-                        </>
-                      )}
-                      {v.status === "CLOSED" && v.type === "STANDARD" && (
                         <button
                           className="btn btn-sm"
-                          disabled={pending}
-                          onClick={() => setRecomputeVote(v)}
-                          title="Przelicz wynik po korekcie zadeklarowanej większości"
+                          disabled={pdfBusy === v.id}
+                          onClick={() => downloadOneReport(v.id, v.number)}
+                          title="Pobierz raport PDF"
                         >
-                          Przelicz
+                          {pdfBusy === v.id ? "…" : "Raport PDF"}
                         </button>
                       )}
                       <button
@@ -582,32 +562,58 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                           Edytuj
                         </button>
                       )}
-                      {v.status !== "READY" && v.status !== "OPEN" && (
-                        <button
-                          className="btn btn-sm"
-                          disabled={pending}
-                          onClick={() => setItemVote(v)}
-                          title="Przypisz głosowanie do innego punktu porządku obrad albo pozostaw bez punktu"
-                        >
-                          Zmień punkt
+                      {/* Rzadziej używane czynności w menu - wiersz zostaje czytelny. */}
+                      <div className="dropdown">
+                        <button className="btn btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                          aria-label={`Więcej czynności: głosowanie ${v.number != null ? `nr ${v.number}` : v.title}`}>
+                          Więcej
                         </button>
-                      )}
-                      <button
-                        className="btn btn-sm"
-                        disabled={pending}
-                        onClick={() => renameVote(v.id, v.title, v.adHoc, v.contextLabel)}
-                        title="Zmień nazwę głosowania (można także po zamknięciu)"
-                      >
-                        Zmień nazwę
-                      </button>
-                      <button
-                        className="btn btn-sm btn-outline-danger"
-                        disabled={pending}
-                        onClick={() => act(`/api/votes/${v.id}`, undefined, { title: "Usunąć głosowanie?", message: `Głosowanie „${v.title}” zostanie usunięte. Tego nie można cofnąć.`, confirmLabel: "Usuń", danger: true }, "DELETE", "Głosowanie zostało usunięte.")}
-                        title="Usuń głosowanie"
-                      >
-                        Usuń
-                      </button>
+                        <ul className="dropdown-menu">
+                          {(v.status === "CLOSED" || v.status === "INTERRUPTED") && (
+                            <li><a href={`/api/votes/${v.id}/report.csv`} className="dropdown-item">Pobierz CSV</a></li>
+                          )}
+                          {(v.status === "CLOSED" || v.status === "INTERRUPTED") && v.type !== "QUORUM" && (
+                            <li>
+                              <button type="button" className="dropdown-item" disabled={pending}
+                                onClick={() => {
+                                  act(`/api/votes/${v.id}/recompute-roster`, undefined, {
+                                    title: "Odświeżyć obecność w wydruku?",
+                                    message: "Obecność w wydruku tego głosowania zostanie ustalona na podstawie bieżącego stanu obecności.\n\nUżyj po korekcie lub usunięciu błędnej migawki, aby ktoś obecny (a niegłosujący) nie był pokazany jako nieobecny.",
+                                    confirmLabel: "Odśwież obecność",
+                                  }, "POST", "Obecność w wydruku została odświeżona.");
+                                }}>
+                                Odśwież obecność w wydruku
+                              </button>
+                            </li>
+                          )}
+                          {v.status === "CLOSED" && v.type === "STANDARD" && (
+                            <li>
+                              <button type="button" className="dropdown-item" disabled={pending} onClick={() => setRecomputeVote(v)}>
+                                Przelicz wynik (korekta większości)
+                              </button>
+                            </li>
+                          )}
+                          {v.status !== "READY" && v.status !== "OPEN" && (
+                            <li>
+                              <button type="button" className="dropdown-item" disabled={pending} onClick={() => setItemVote(v)}>
+                                Zmień punkt porządku obrad
+                              </button>
+                            </li>
+                          )}
+                          <li>
+                            <button type="button" className="dropdown-item" disabled={pending} onClick={() => renameVote(v.id, v.title, v.adHoc, v.contextLabel)}>
+                              Zmień nazwę
+                            </button>
+                          </li>
+                          <li><hr className="dropdown-divider" /></li>
+                          <li>
+                            <button type="button" className="dropdown-item text-danger" disabled={pending}
+                              onClick={() => act(`/api/votes/${v.id}`, undefined, { title: "Usunąć głosowanie?", message: `Głosowanie „${v.title}” zostanie usunięte. Tego nie można cofnąć.`, confirmLabel: "Usuń", danger: true }, "DELETE", "Głosowanie zostało usunięte.")}>
+                              Usuń głosowanie
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
       </li>
     );
@@ -745,6 +751,20 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
               Cofnij zakończenie
             </button>
           )}
+          {(state.status === "OPEN" || state.status === "IN_PROGRESS" || state.status === "PAUSED" || state.status === "CLOSED") && (
+            <button
+              className="btn"
+              disabled={pending}
+              title="Przywróć status „Przygotowane” (przed otwarciem). Dane posiedzenia zostają."
+              onClick={() => act(`/api/meetings/${state.id}/revert`, {}, {
+                title: "Cofnąć posiedzenie do statusu „Przygotowane”?",
+                message: "Posiedzenie wróci do stanu przed otwarciem. Głosowania, obecność, listy mówców i pozostałe dane zostaną bez zmian. Radni zobaczą je jako nadchodzące.",
+                confirmLabel: "Cofnij do przygotowania",
+              }, "POST", "Posiedzenie wróciło do statusu „Przygotowane”.")}
+            >
+              Cofnij do przygotowania
+            </button>
+          )}
           {state.status !== "OPEN" && state.status !== "IN_PROGRESS" && (
             <button
               className="btn btn-outline-danger"
@@ -841,10 +861,45 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                   <div className="d-flex align-items-start gap-2 min-w-0">
                     <span className="row-num mono small pt-1">{a.unnumbered ? "-" : a.number}</span>
                     <div className="min-w-0 flex-grow-1">
-                      <div style={{ overflowWrap: "anywhere" }}>{a.title}</div>
-                      <div className="d-flex flex-wrap align-items-center gap-1 mt-2">
-                    <AgendaStatusPill status={a.status} />
-                    {state.status !== "CLOSED" && (() => {
+                      <div className="d-flex align-items-start gap-2">
+                        <div className="flex-grow-1 min-w-0" style={{ overflowWrap: "anywhere" }}>{a.title}</div>
+                        <AgendaStatusPill status={a.status} />
+                        {a.status !== "CURRENT" && state.status !== "CLOSED" && (
+                          <button
+                            className="btn btn-sm btn-link text-body-secondary agenda-del p-0 lh-1" style={{ minWidth: 36, minHeight: 36 }}
+                            title="Usuń punkt z porządku obrad"
+                            aria-label={`Usuń punkt ${a.unnumbered ? a.title : a.number}`}
+                            onClick={() => act(`/api/agenda/${a.id}`, undefined, {
+                              title: "Usunąć punkt?",
+                              message: `Punkt „${a.title.length > 80 ? a.title.slice(0, 80) + "…" : a.title}” zostanie usunięty z porządku obrad. Głosowania tego punktu zostaną zachowane jako głosowania bez punktu.`,
+                              confirmLabel: "Usuń punkt",
+                              danger: true,
+                            }, "DELETE", "Punkt został usunięty.")}
+                          >
+                            <IconTrash size={16} />
+                          </button>
+                        )}
+                      </div>
+                      {/* Wszystkie czynności widoczne, pogrupowane: rozpoczęcie punktu, dyskusja i głosowania, usunięcie (ikona z prawej). */}
+                      <div className="d-flex flex-wrap align-items-center gap-2 mt-2">
+                    {a.status !== "CURRENT" && state.status !== "CLOSED" && (
+                      <button
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={() =>
+                          act(`/api/agenda/${a.id}/start`, undefined,
+                            a.status === "COMPLETED"
+                              ? { title: "Otworzyć punkt ponownie?", message: "Punkt został już zakończony. Punkty zakończone wcześniej można zakończyć ponownie po skończeniu pracy.", confirmLabel: "Otwórz ponownie" }
+                              : undefined,
+                            "POST",
+                            a.status === "PAUSED" ? "Punkt został wznowiony." : "Punkt został rozpoczęty.")
+                        }
+                      >
+                        {a.status === "PAUSED" ? "Wznów" : a.status === "COMPLETED" ? "Otwórz ponownie" : "Rozpocznij"}
+                      </button>
+                    )}
+                    {state.status !== "CLOSED" && (
+                    <div className="btn-group btn-group-sm" role="group" aria-label={`Dyskusja i głosowania: punkt ${a.unnumbered ? a.title : a.number}`}>
+                    {(() => {
                       const sl = state.speakerLists?.find((x) => x.agendaItemId === a.id);
                       const on = sl?.selfSignupEnabled ?? false;
                       return (
@@ -864,7 +919,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                         </button>
                       );
                     })()}
-                    {a.status === "PENDING" && a.id !== state.currentAgendaItemId && state.status !== "CLOSED" && (() => {
+                    {a.status === "PENDING" && a.id !== state.currentAgendaItemId && (() => {
                       const sl = state.speakerLists?.find((x) => x.agendaItemId === a.id);
                       if (!sl) return null;
                       const n = sl.entries.filter((e) => e.status === "WAITING").length;
@@ -879,7 +934,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                         </button>
                       );
                     })()}
-                    {a.status !== "COMPLETED" && state.status !== "CLOSED" && (
+                    {a.status !== "COMPLETED" && (
                       <button
                         className="btn btn-sm"
                         title="Zaplanuj głosowanie do tego punktu (zapis w stanie 'Przygotowane', uruchamia ręcznie)"
@@ -891,35 +946,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                         + Głosowanie
                       </button>
                     )}
-                    {a.status !== "CURRENT" && state.status !== "CLOSED" && (
-                      <button
-                        className="btn btn-sm"
-                        onClick={() =>
-                          act(`/api/agenda/${a.id}/start`, undefined,
-                            a.status === "COMPLETED"
-                              ? { title: "Otworzyć punkt ponownie?", message: "Punkt został już zakończony. Punkty zakończone wcześniej można zakończyć ponownie po skończeniu pracy.", confirmLabel: "Otwórz ponownie" }
-                              : undefined,
-                            "POST",
-                            a.status === "PAUSED" ? "Punkt został wznowiony." : "Punkt został rozpoczęty.")
-                        }
-                      >
-                        {a.status === "PAUSED" ? "Wznów" : a.status === "COMPLETED" ? "Otwórz ponownie" : "Rozpocznij"}
-                      </button>
-                    )}
-                    {a.status !== "CURRENT" && state.status !== "CLOSED" && (
-                      <button
-                        className="btn btn-sm btn-outline-danger"
-                        title="Usuń punkt z porządku obrad"
-                        aria-label={`Usuń punkt ${a.unnumbered ? a.title : a.number}`}
-                        onClick={() => act(`/api/agenda/${a.id}`, undefined, {
-                          title: "Usunąć punkt?",
-                          message: `Punkt „${a.title.length > 80 ? a.title.slice(0, 80) + "…" : a.title}” zostanie usunięty z porządku obrad. Głosowania tego punktu zostaną zachowane jako głosowania bez punktu.`,
-                          confirmLabel: "Usuń punkt",
-                          danger: true,
-                        }, "DELETE", "Punkt został usunięty.")}
-                      >
-                        Usuń
-                      </button>
+                    </div>
                     )}
                       </div>
                     </div>
@@ -932,19 +959,10 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
 
         {/* MIDDLE - głosowanie (najszersza kolumna - tu mieści się aktywny ballot/wyniki) */}
         <div className="col-12 col-xl-6 order-first order-xl-0 d-flex flex-column gap-3">
-          {state.status !== "CLOSED" && (
-            <div className="form-check form-switch small mb-0"
-              title="Głosowanie zamknie się samo po oddaniu głosów przez wszystkich obecnych uczestników z prawem głosu (nie dotyczy kworum). Ustawienie obowiązuje do końca posiedzenia; można je zmienić w trakcie głosowania.">
-              <input className="form-check-input" type="checkbox" role="switch" id="auto-close-votes"
-                checked={!!state.autoCloseVotes} disabled={pending}
-                onChange={(e) => act(`/api/meetings/${state.id}`, { autoCloseVotes: e.target.checked }, undefined, "PATCH",
-                  e.target.checked ? "Głosowania zamkną się po oddaniu głosów przez wszystkich obecnych." : "Automatyczne zamykanie wyłączone.")} />
-              <label className="form-check-label" htmlFor="auto-close-votes">Zamknij głosowanie automatycznie, gdy zagłosują wszyscy obecni uprawnieni</label>
-            </div>
-          )}
           {activeVote ? (
             <ActiveVotePanel
               vote={activeVote}
+              headerRight={autoCloseSwitch}
               onClose={async () => {
                 if (!(await confirmCloseVote(activeVote, false))) return;
                 setJustClosedId(activeVote.id); act(`/api/votes/${activeVote.id}/close`, undefined, undefined, "POST", "Głosowanie zostało zakończone.");
@@ -974,12 +992,15 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                 title="Głosowanie"
                 right={
                   state.status !== "CLOSED" && (
-                    <button
-                      className="btn btn-sm"
-                      onClick={() => setComposerMode("adhoc")}
-                    >
-                      + Nowe ad hoc
-                    </button>
+                    <div className="d-flex align-items-center gap-3">
+                      {autoCloseSwitch}
+                      <button
+                        className="btn btn-sm"
+                        onClick={() => setComposerMode("adhoc")}
+                      >
+                        + Nowe ad hoc
+                      </button>
+                    </div>
                   )
                 }
               />
@@ -1517,9 +1538,10 @@ function VotePlannerCard({
 // ─────────────────────────────────────────────────────────────────────────
 
 function ActiveVotePanel({
-  vote, onClose, onInterrupt, onCancel, pending, participants, onCastByOperator, onCastListByOperator, onCastPackageByOperator, onResetByOperator,
+  vote, headerRight, onClose, onInterrupt, onCancel, pending, participants, onCastByOperator, onCastListByOperator, onCastPackageByOperator, onResetByOperator,
 }: {
   vote: VoteState;
+  headerRight?: React.ReactNode;
   onClose: () => void;
   onInterrupt: () => void;
   onCancel: () => void;
@@ -1559,7 +1581,7 @@ function ActiveVotePanel({
 
   return (
     <div className="card border-danger-subtle">
-      <SectionHeader title="Trwa głosowanie" tone="live" />
+      <SectionHeader title="Trwa głosowanie" tone="live" right={headerRight} />
       <div className="card-body d-flex flex-column gap-3">
         <div>
           <div className="small text-body-secondary">
@@ -1584,7 +1606,7 @@ function ActiveVotePanel({
               <span className="text-body-secondary fw-normal"> / {denom || "?"}</span>
             </span>
           </div>
-          <div className="progress" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} style={{ height: 8 }}>
+          <div className="progress" role="progressbar" aria-label="Oddane głosy" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} style={{ height: 8 }}>
             <div className="progress-bar" style={{ width: `${pct}%`, transition: "width 300ms ease" }} />
           </div>
         </div>
@@ -1628,7 +1650,7 @@ function ActiveVotePanel({
           <div className="row row-cols-3 g-0 border rounded-2 overflow-hidden">
             <BallotCounter label="Za" color="yes" value={counter?.yes} bordered />
             <BallotCounter label="Przeciw" color="no" value={counter?.no} bordered />
-            <BallotCounter label="Wstrzymał się" color="abstain" value={counter?.abstain} />
+            <BallotCounter label="Wstrzymało się" color="abstain" value={counter?.abstain} />
           </div>
         ) : (
           <ul className="list-group">

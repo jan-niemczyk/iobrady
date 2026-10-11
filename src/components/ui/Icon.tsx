@@ -85,6 +85,9 @@ export const IconDocument = (p: Props) => (
     <path d="M14 3v5h5" /><path d="M9 13h6M9 17h4" />
   </Svg>
 );
+export const IconTrash = (p: Props) => (
+  <Svg {...p}><path d="M4 7h16M10 11v6M14 11v6" /><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12" /><path d="M9 7V4h6v3" /></Svg>
+);
 export const IconList = (p: Props) => (
   <Svg {...p}><path d="M9 6h11M9 12h11M9 18h11" /><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01" /></Svg>
 );

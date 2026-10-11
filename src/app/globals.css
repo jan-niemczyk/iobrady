@@ -6,7 +6,7 @@
   --color-paper-2:      #F1F5F9;   /* sekundarne tło / hover - chłodny jasnoszary */
   --color-ink:          #0F172A;   /* tekst główny - granatowy grafit */
   --color-ink-2:        #334155;   /* tekst sekundarny */
-  --color-ink-3:        #64748B;   /* tekst tertiary / etykiety */
+  --color-ink-3:        #5B6B80;   /* tekst tertiary / etykiety (kontrast min. 4,5:1 na tle strony) */
   --color-rule:         #0F172A;   /* linie rozdzielające */
   --color-rule-soft:    #E2E8F0;   /* subtelne linie - chłodny szary */
 
@@ -152,7 +152,7 @@
     /* Kolorowe przyciski przyciemniają się, NIE wybielają */
     .btn-yes:hover { background: #18632F; border-color: #18632F; }
     .btn-no:hover  { background: #A40D26; border-color: #A40D26; }
-    .btn-abstain:hover { background: #9C720A; border-color: #9C720A; }
+    .btn-abstain:hover { background: #854D0E; border-color: #854D0E; }
   }
   .btn:active { transform: translateY(1px); }
   .btn:disabled { opacity: .4; cursor: not-allowed; }
@@ -171,7 +171,8 @@
 
   .btn-yes { background: var(--color-yes); color: #FFFFFF; border-color: var(--color-yes); }
   .btn-no  { background: var(--color-no);  color: #FFFFFF; border-color: var(--color-no);  }
-  .btn-abstain { background: var(--color-abstain); color: #FFFFFF; border-color: var(--color-abstain); }
+  /* Ciemniejsze złoto niż --color-abstain: biały napis z kontrastem 4,9:1 (WCAG AA). */
+  .btn-abstain { background: #A16207; color: #FFFFFF; border-color: #A16207; }
 
   .btn-lg { padding: 18px 24px; font-size: 15px; }
   .btn-xl { padding: 28px 32px; font-size: 18px; }
@@ -226,6 +227,13 @@
 }
 .slide-in { animation: slide-in 180ms ease-out; }
 
+/* Pole wyboru w tabeli: klikalna cała komórka (min. 44 px), większy kwadrat. */
+.cell-hit { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; margin: 0 auto; cursor: pointer; }
+.cell-hit .form-check-input { width: 1.25em; height: 1.25em; cursor: pointer; }
+
+/* Usunięcie punktu porządku obrad: ikona wyciszona, czerwona dopiero przy wskazaniu. */
+.agenda-del:hover, .agenda-del:focus-visible { color: var(--bs-danger, #dc2626) !important; }
+
 /* Ograniczenie ruchu (ustawienie systemu): bez wsuwania kart i dymków w panelach operatora i radnego.
    Ekran sali i transmisja mają własne animacje (np. przewijanie długich tytułów) - bez zmian. */
 @media (prefers-reduced-motion: reduce) {
@@ -276,5 +284,5 @@
   background: #D23148 !important; color: #FFFFFF !important; border-color: #D23148 !important;
 }
 [data-theme="dark"] .btn-abstain {
-  background: #C9971F !important; color: #FFFFFF !important; border-color: #C9971F !important;
+  background: #A16207 !important; color: #FFFFFF !important; border-color: #A16207 !important;
 }

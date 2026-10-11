@@ -6,6 +6,7 @@ import { MEETING_STATUS_LABEL } from "@/lib/labels";
 import { fmtDate, fmtSize, fmtTime, resultShort } from "@/components/public/publicFormat";
 import { VotesTable } from "@/components/public/VotesTable";
 import { PublicAutoRefresh } from "@/components/public/PublicAutoRefresh";
+import { PublicPdfButton } from "@/components/public/PublicPdfButton";
 import type { MeetingStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -57,7 +58,12 @@ export default async function PublicMeetingPage({ params, searchParams }: {
               ? <AgendaView meeting={meeting} />
               : (
                 <>
-                  <h2 className="h5 mb-3">Wszystkie głosowania</h2>
+                  <div className="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+                    <h2 className="h5 mb-0">Wszystkie głosowania</h2>
+                    {meeting.votes.some((v) => v.status === "CLOSED") && (
+                      <PublicPdfButton meetingId={meeting.id} fileName={`glosowania-posiedzenie-${meeting.number ?? meeting.id}`.replace(/[^\p{L}\p{N}_-]+/gu, "-")} label="Pobierz wyniki wszystkich głosowań (PDF)" />
+                    )}
+                  </div>
                   <VotesTable meetingId={meeting.id} votes={meeting.votes} itemNumber={itemNumber} />
                 </>
               )}
@@ -104,7 +110,7 @@ function Attachments({ items }: { items: { id: string; fileName: string; sizeByt
       {items.map((a) => (
         <li key={a.id} className="d-flex align-items-baseline gap-1">
           <span aria-hidden className="text-body-secondary">📄</span>
-          <a href={`/api/attachments/${a.id}/download`} style={{ overflowWrap: "anywhere" }}>{a.fileName}</a>
+          <a href={`/api/attachments/${a.id}/download`} className="pub-tap" style={{ overflowWrap: "anywhere" }}>{a.fileName}</a>
           <span className="text-body-secondary text-nowrap">({fmtSize(a.sizeBytes)})</span>
         </li>
       ))}
@@ -125,7 +131,7 @@ function VoteLine({ v, meetingId, itemTitle }: { v: PublicVoteSummary; meetingId
         <span>{resultShort(v)}</span>
         {v.decision && <span className={`badge ${v.decision.positive ? "text-bg-success" : "text-bg-danger"}`}>{v.decision.label}</span>}
         {v.status === "OPEN" && <span className="badge text-bg-warning">Trwa</span>}
-        <Link href={`/public/${meetingId}/glosowanie/${v.id}`}>Szczegóły<span className="visually-hidden"> głosowania nr {v.number}</span></Link>
+        <Link href={`/public/${meetingId}/glosowanie/${v.id}`} className="pub-tap">Szczegóły<span className="visually-hidden"> głosowania nr {v.number}</span></Link>
       </div>
     </div>
   );

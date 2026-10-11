@@ -365,6 +365,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
+  min-height: 44px; /* cel dotyku */
   font-size: 14px;
   color: var(--color-ink-2);
   text-decoration: none;
