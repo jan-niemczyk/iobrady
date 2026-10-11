@@ -1489,9 +1489,10 @@ function PackageBallot({
                     className="btn"
                     style={{
                       padding: "12px 4px", fontSize: 12, fontWeight: 700,
-                      border: `2px solid ${m.color}`,
-                      background: active ? m.color : m.bg,
-                      color: active ? (m.key === "ABSTAIN" ? "#111" : "#fff") : m.color,
+                      // Zaznaczone „wstrzymuję się”: żółty Bootstrapa z czarnym napisem, jak przycisk zwykłego głosowania.
+                      border: `2px solid ${active && m.key === "ABSTAIN" ? "#FFC107" : m.color}`,
+                      background: active ? (m.key === "ABSTAIN" ? "#FFC107" : m.color) : m.bg,
+                      color: active ? (m.key === "ABSTAIN" ? "#000" : "#fff") : m.color,
                     }}
                   >
                     {m.label}

@@ -152,7 +152,7 @@
     /* Kolorowe przyciski przyciemniają się, NIE wybielają */
     .btn-yes:hover { background: #18632F; border-color: #18632F; }
     .btn-no:hover  { background: #A40D26; border-color: #A40D26; }
-    .btn-abstain:hover { background: #B07803; border-color: #B07803; }
+    .btn-abstain:hover { background: #FFCA2C; border-color: #FFC720; }
   }
   .btn:active { transform: translateY(1px); }
   .btn:disabled { opacity: .4; cursor: not-allowed; }
@@ -171,8 +171,8 @@
 
   .btn-yes { background: var(--color-yes); color: #FFFFFF; border-color: var(--color-yes); }
   .btn-no  { background: var(--color-no);  color: #FFFFFF; border-color: var(--color-no);  }
-  /* Złoty jak dotąd, napis czarny (jak btn-warning w Bootstrapie) - kontrast 7:1. */
-  .btn-abstain { background: var(--color-abstain); color: #111111; border-color: var(--color-abstain); }
+  /* Żółty i czarny napis jak btn-warning w Bootstrapie 5 (#FFC107, kontrast 12:1). */
+  .btn-abstain { background: #FFC107; color: #000000; border-color: #FFC107; }
 
   .btn-lg { padding: 18px 24px; font-size: 15px; }
   .btn-xl { padding: 28px 32px; font-size: 18px; }
@@ -293,5 +293,5 @@
   background: #D23148 !important; color: #FFFFFF !important; border-color: #D23148 !important;
 }
 [data-theme="dark"] .btn-abstain {
-  background: #C9971F !important; color: #111111 !important; border-color: #C9971F !important;
+  background: #FFC107 !important; color: #000000 !important; border-color: #FFC107 !important;
 }

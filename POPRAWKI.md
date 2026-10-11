@@ -1474,3 +1474,9 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
   - `tsc`, `next build`.
 - Pozostaje: w karcie ostatniego wyniku u radnego etykiety „Przeciw” i „Wstrz.” w kolorach głosów mają
   kontrast 4,4:1 i 2,7:1 (bez zmian, bo to te same kolory co przyciski głosowania).
+
+## ABE. „Wstrzymuję się” w żółtym Bootstrapa
+
+- [x] Przycisk „Wstrzymuję się” (i zaznaczona pozycja pakietu): żółty `#FFC107` z czarnym napisem, jak `btn-warning`
+      w Bootstrapie 5 (najechanie `#FFCA2C`), także w trybie czarnym. Kontrast 12:1.
+- Bootstrap 6: na npm jest tylko `6.0.0-alpha.1` (8.10.2026), stabilna pozostaje 5.3.8 - migracja odłożona do wydania stabilnego.
