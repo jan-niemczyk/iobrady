@@ -31,7 +31,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     await prisma.meetingParticipant.create({
       data: {
         meetingId, userId,
-        hasVotingRight: parsed.data.hasVotingRight ?? true,
+        // gość nigdy nie ma prawa głosu
+        hasVotingRight: parsed.data.isInvitedGuest ? false : (parsed.data.hasVotingRight ?? true),
         isInvitedGuest: parsed.data.isInvitedGuest ?? false,
       },
     });

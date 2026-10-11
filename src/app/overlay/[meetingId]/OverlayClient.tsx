@@ -34,8 +34,8 @@ interface OverlayData {
   overlay: { font: string; resultsMode: string; boardTiming: string; showSpeechClock: boolean };
   barColors: { item: string; speaker: string; vote: string; session: string };
   display: { mode: string; customMessage: string | null; messageOnOverlay?: boolean; showByName: boolean; summaryAfterClose: boolean };
-  currentAgendaItem: { number: string; title: string } | null;
-  pinnedAgendaItem: { number: string; title: string } | null;
+  currentAgendaItem: { number: string; title: string; unnumbered?: boolean } | null;
+  pinnedAgendaItem: { number: string; title: string; unnumbered?: boolean } | null;
   activeVote: VoteView | null;
   lastClosedVote: VoteView | null;
   pinnedVote: VoteView | null;
@@ -213,7 +213,9 @@ export function OverlayClient({ meetingId }: { meetingId: string }) {
             )}
             {!openVote && item && (
               <Strip key={`item-${item.number}-${item.title}`} color={data.barColors.item}>
-                <strong style={{ flexShrink: 0 }}>Pkt {item.number}. porz. obrad:</strong>&nbsp;<Marquee text={item.title} />
+                {/* Punkt bez numeru (np. otwarcie, przerwa): sama nazwa, bez oznaczenia "Pkt ... porz. obrad". */}
+                {!item.unnumbered && item.number && <><strong style={{ flexShrink: 0 }}>Pkt {item.number}. porz. obrad:</strong>&nbsp;</>}
+                <Marquee text={item.title} />
               </Strip>
             )}
 

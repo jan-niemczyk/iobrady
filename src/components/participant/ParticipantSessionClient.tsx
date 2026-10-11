@@ -254,8 +254,10 @@ export function ParticipantSessionClient({ initial }: { initial: InitialState })
 
   const isPresent = state.attendance === "PRESENT";
   const quorumActive = !!state.activeVote && state.activeVote.type === "QUORUM";
+  // Gość nie potwierdza obecności - zgłasza się do dyskusji i wniosków jak obecny (nie głosuje).
+  const isGuest = !!state.isInvitedGuest;
   // Nieobecni (poza aktywnym głosowaniem kworum) nie widzą nic poza statusem obecności.
-  const notPresent = !isPresent && !quorumActive;
+  const notPresent = !isPresent && !quorumActive && !isGuest;
   // Trwa głosowanie (także kotarkowe, gdy karta nie jest udostępniona tej osobie).
   const voteInProgress = !!state.activeVote || !!state.booth;
   boothActiveRef.current = !!state.booth;
@@ -332,12 +334,14 @@ export function ParticipantSessionClient({ initial }: { initial: InitialState })
             {state.hasVotingRight ? "Z prawem głosu" : state.isInvitedGuest ? "Gość" : "Bez prawa głosu"}
           </div>
         </div>
-        <div className={`pt-stat${state.attendance === "PRESENT" ? " pt-stat-ok" : ""}`}>
-          <div className="pt-label">Obecność</div>
-          <div className="pt-stat-value">
-            {state.attendance === "PRESENT" ? "Potwierdzona ✓" : "Nie potwierdzona"}
+        {!isGuest && (
+          <div className={`pt-stat${state.attendance === "PRESENT" ? " pt-stat-ok" : ""}`}>
+            <div className="pt-label">Obecność</div>
+            <div className="pt-stat-value">
+              {state.attendance === "PRESENT" ? "Potwierdzona ✓" : "Nie potwierdzona"}
+            </div>
           </div>
-        </div>
+        )}
       </div>
       </div>
 
@@ -451,7 +455,7 @@ export function ParticipantSessionClient({ initial }: { initial: InitialState })
 
       {/* Poza głosowaniem: wniosek, lista mówców, zapisy - tylko dla obecnych, POD głosowaniem (D3). */}
       <div className="pt-col pt-col-side">
-        {!notPresent && !voteInProgress && isPresent && (
+        {!notPresent && !voteInProgress && (isPresent || isGuest) && (
           <>
             {state.allowFormalMotions && !state.excludedFromMeeting && (
               <FormalMotionButton meetingId={state.meetingId} />

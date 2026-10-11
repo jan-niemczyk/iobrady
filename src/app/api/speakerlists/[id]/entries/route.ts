@@ -98,7 +98,8 @@ async function handlePost(req: Request, ctx: { params: Promise<{ id: string }> }
   if (mp.excludedFromMeeting)
     return new NextResponse("Uczestnik został wykluczony z posiedzenia", { status: 403 });
   // Nieobecni tracą funkcje - radny sam nie zapisze się będąc nieobecnym (operator w imieniu może).
-  if (session.user.role !== "OPERATOR") {
+  // Goście zgłaszają się do dyskusji bez potwierdzania obecności.
+  if (session.user.role !== "OPERATOR" && !mp.isInvitedGuest) {
     const att = await prisma.attendance.findUnique({ where: { participantId: mp.id } });
     if (att?.status !== "PRESENT")
       return new NextResponse("Musisz być obecny, aby zapisać się do dyskusji", { status: 403 });

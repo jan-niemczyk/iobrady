@@ -54,6 +54,14 @@ async function main() {
     UPDATE "SecretBallotMarker" m SET "resetPayload" = NULL
     FROM "Vote" v WHERE v.id = m."voteId" AND v.status <> 'OPEN' AND m."resetPayload" IS NOT NULL`;
   if (purged) console.log(`[migrate] Wyczyszczono dane zerowania zakończonych głosowań: ${purged}`);
+
+  // Goście nie głosują i nie wliczają się do kworum - także ci, którym wcześniej zaznaczono prawo głosu.
+  // Dotyczy wyłącznie posiedzeń jeszcze niezakończonych (historia zakończonych posiedzeń bez zmian).
+  const guests = await prisma.$executeRaw`
+    UPDATE "MeetingParticipant" mp SET "hasVotingRight" = false
+    FROM "Meeting" m WHERE m.id = mp."meetingId" AND mp."isInvitedGuest" = true AND mp."hasVotingRight" = true
+      AND m.status NOT IN ('CLOSED', 'ARCHIVED', 'CANCELLED')`;
+  if (guests) console.log(`[migrate] Goście bez prawa głosu: ${guests}`);
 }
 
 main()

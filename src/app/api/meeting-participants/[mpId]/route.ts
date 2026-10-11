@@ -30,7 +30,11 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ mpId: string 
   const mp = await prisma.meetingParticipant.findUnique({ where: { id: mpId } });
   if (!mp) return new NextResponse("Not found", { status: 404 });
 
-  await prisma.meetingParticipant.update({ where: { id: mpId }, data: parsed.data });
+  // Gość nigdy nie ma prawa głosu (nie głosuje i nie wlicza się do kworum).
+  const data = { ...parsed.data };
+  if (data.isInvitedGuest === true || (mp.isInvitedGuest && data.isInvitedGuest !== false)) data.hasVotingRight = false;
+
+  await prisma.meetingParticipant.update({ where: { id: mpId }, data });
 
   await audit({
     action: "PARTICIPANT_RIGHT_CHANGED",

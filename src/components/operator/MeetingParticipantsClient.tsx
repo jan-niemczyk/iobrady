@@ -147,11 +147,13 @@ export function MeetingParticipantsClient({
                       </td>
                       <td className="text-center">
                         <input className="form-check-input" type="checkbox" aria-label={`Prawo głosu: ${p.name}`}
-                          checked={p.hasVotingRight} onChange={(e) => patch(p, { hasVotingRight: e.target.checked })} />
+                          title={p.isInvitedGuest ? "Gość nie głosuje i nie wlicza się do kworum" : undefined}
+                          disabled={p.isInvitedGuest}
+                          checked={p.hasVotingRight && !p.isInvitedGuest} onChange={(e) => patch(p, { hasVotingRight: e.target.checked })} />
                       </td>
                       <td className="text-center">
                         <input className="form-check-input" type="checkbox" aria-label={`Gość: ${p.name}`}
-                          checked={p.isInvitedGuest} onChange={(e) => patch(p, { isInvitedGuest: e.target.checked })} />
+                          checked={p.isInvitedGuest} onChange={(e) => patch(p, e.target.checked ? { isInvitedGuest: true, hasVotingRight: false } : { isInvitedGuest: false })} />
                       </td>
                       <td className="text-center">
                         <input className="form-check-input" type="checkbox" aria-label={`Przewodniczący: ${p.name}`} title="Przewodniczący tego posiedzenia"
