@@ -18,6 +18,7 @@ export default async function ParticipantsPage() {
         id: u.id, email: u.email,
         firstName: u.firstName, lastName: u.lastName,
         functionTitle: u.functionTitle,
+        femaleForms: u.femaleForms,
         role: u.role, active: u.active,
         groupId: u.groupId,
         groupShort: u.group?.shortName ?? null,

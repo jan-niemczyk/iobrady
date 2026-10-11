@@ -40,7 +40,7 @@ interface DisplayData {
   messages: { id: string; content: string }[];
   formalMotionsList?: { entries: SpeakerEntry[] } | null;
   agenda: { id?: string; number: string; title: string; status: string; isSubItem?: boolean; unnumbered?: boolean; presenter?: string | null; committee?: string | null }[];
-  voters?: { id: string; name: string; present: boolean; groupShort?: string | null; excluded?: boolean }[];
+  voters?: { id: string; name: string; present: boolean; groupShort?: string | null; excluded?: boolean; female?: boolean }[];
   liveBallots?: { userId: string; userName: string; choice: string | null }[];
 }
 
@@ -1386,30 +1386,30 @@ function NameGrid({
 
             if (c === "_EXCLUDED_") {
               // Wykluczony z posiedzenia - wyszarzony (nie czarny), nie liczy się do obecności/głosowania.
-              label = "wykluczony";
+              label = v.female ? "wykluczona" : "wykluczony";
               color = C.ink3;
               bg = "rgba(15,17,21,0.12)";
             } else if (!v.present && !isQuorum) {
-              label = "nieobecny";
+              label = v.female ? "nieobecna" : "nieobecny";
               color = C.ink3;
               bg = C.highlightAbsent;
             } else if (showIndividualVotes && c) {
               if (isQuorum) {
-                label = "obecny";
+                label = v.female ? "obecna" : "obecny";
                 color = C.accent;
                 bg = C.highlightCast;
               } else {
-                label = c === "YES" ? "za" : c === "NO" ? "przeciw" : c === "ABSTAIN" ? "wstrzymuję się" : "obecny";
+                label = c === "YES" ? "za" : c === "NO" ? "przeciw" : c === "ABSTAIN" ? "wstrzymuję się" : (v.female ? "obecna" : "obecny");
                 color = c === "YES" ? C.yes : c === "NO" ? C.no : c === "ABSTAIN" ? C.abstain : C.ink3;
                 bg = c === "YES" ? C.highlightYes : c === "NO" ? C.highlightNo : c === "ABSTAIN" ? C.highlightAbstain : "transparent";
               }
             } else if (hasVoted) {
-              label = c === "_PRESENT_" ? "obecny" : (isQuorum ? "obecny" : "oddany");
+              label = c === "_PRESENT_" || isQuorum ? (v.female ? "obecna" : "obecny") : "oddany";
               color = C.accent;
               bg = C.highlightCast;
             } else {
               if (isQuorum) {
-                label = "nieobecny";
+                label = v.female ? "nieobecna" : "nieobecny";
                 color = C.ink3;
                 bg = C.highlightAbsent;
               } else if (live) {
@@ -1417,7 +1417,7 @@ function NameGrid({
                 color = C.ink3;
                 bg = "transparent";
               } else {
-                label = "obecny";
+                label = v.female ? "obecna" : "obecny";
                 color = C.accent;
                 bg = C.highlightCast;
               }

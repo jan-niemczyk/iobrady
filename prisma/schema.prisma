@@ -210,6 +210,8 @@ model User {
   role         Role     @default(PARTICIPANT)
   // Funkcja/rola osoby w organie (np. „Przewodniczący", „Wiceprzewodnicząca") - pokazywana na prezentacji i transmisji.
   functionTitle String?
+  // Formy żeńskie określeń na tablicy i w prezentacji („obecna”, „nieobecna”, „wykluczona”).
+  femaleForms  Boolean  @default(false)
   active       Boolean  @default(true)
   /// Hasło startowe / nadane przez operatora - przy najbliższym logowaniu trzeba je zmienić.
   mustChangePassword Boolean @default(false)

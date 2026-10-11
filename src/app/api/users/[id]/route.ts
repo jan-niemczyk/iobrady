@@ -13,6 +13,7 @@ const patchSchema = z.object({
   firstName: z.string().min(1).max(100).optional(),
   lastName: z.string().min(1).max(100).optional(),
   functionTitle: z.string().max(120).nullable().optional(),
+  femaleForms: z.boolean().optional(),
   role: z.nativeEnum(Role).optional(),
   groupId: z.string().nullable().optional(),
   active: z.boolean().optional(),
@@ -40,6 +41,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   if (parsed.data.firstName !== undefined) data.firstName = parsed.data.firstName;
   if (parsed.data.lastName !== undefined) data.lastName = parsed.data.lastName;
   if (parsed.data.functionTitle !== undefined) data.functionTitle = parsed.data.functionTitle;
+  if (parsed.data.femaleForms !== undefined) data.femaleForms = parsed.data.femaleForms;
   if (parsed.data.role !== undefined) data.role = parsed.data.role;
   if (parsed.data.groupId !== undefined) data.groupId = parsed.data.groupId;
   if (parsed.data.active !== undefined) data.active = parsed.data.active;

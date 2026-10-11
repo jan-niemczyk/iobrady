@@ -113,6 +113,8 @@ async function buildDisplayPayload(meetingId: string) {
     present: checkPresence ? (checkPresence.get(p.userId) ?? false) : (p.attendance?.status === "PRESENT"),
     groupShort: groupsEnabled ? (p.user.group?.shortName ?? null) : null,
     excluded: p.excludedFromMeeting,
+    // formy żeńskie określeń na tablicy (obecna / nieobecna)
+    female: p.user.femaleForms,
   }));
 
   const activeVote = m.votes.find((v) => v.status === "OPEN") ?? null;
@@ -151,12 +153,17 @@ async function buildDisplayPayload(meetingId: string) {
       orderBy: { order: "asc" },
     });
     if (roster.length > 0) {
+      const femaleIds = new Set((await prisma.user.findMany({
+        where: { id: { in: roster.map((r) => r.userId).filter((x): x is string => !!x) }, femaleForms: true },
+        select: { id: true },
+      })).map((u) => u.id));
       boardVoters = roster.map((r) => ({
         id: r.userId ?? r.id,
         name: `${r.lastName} ${r.firstName}`,
         present: r.present,
         groupShort: groupsEnabled ? (r.clubShort ?? null) : null,
         excluded: false,
+        female: !!r.userId && femaleIds.has(r.userId),
       }));
     }
   }

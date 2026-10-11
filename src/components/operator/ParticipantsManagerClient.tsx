@@ -10,6 +10,7 @@ interface User {
   id: string; email: string;
   firstName: string; lastName: string;
   functionTitle?: string | null;
+  femaleForms?: boolean;
   role: Role; active: boolean;
   groupId: string | null;
   groupShort: string | null;
@@ -641,6 +642,7 @@ function UserModal({ user, groups, onClose, onSave, onDelete, pending }: {
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
   const [functionTitle, setFunctionTitle] = useState(user?.functionTitle ?? "");
+  const [femaleForms, setFemaleForms] = useState(user?.femaleForms ?? false);
   const [role, setRole] = useState<Role>(user?.role ?? "PARTICIPANT");
   const [groupId, setGroupId] = useState(user?.groupId ?? "");
   const [password, setPassword] = useState("");
@@ -654,6 +656,7 @@ function UserModal({ user, groups, onClose, onSave, onDelete, pending }: {
     const payload: Record<string, unknown> = {
       email, firstName, lastName, role,
       functionTitle: functionTitle.trim() || null,
+      femaleForms,
       groupId: groupId || null, active,
     };
     if (isNew) {
@@ -702,6 +705,13 @@ function UserModal({ user, groups, onClose, onSave, onDelete, pending }: {
           <label className="form-label" htmlFor="um-func">Funkcja <span className="fw-normal text-body-secondary">(opcjonalnie)</span></label>
           <input id="um-func" className="form-control" placeholder="np. Przewodniczący, Wiceprzewodnicząca" value={functionTitle} onChange={(e) => setFunctionTitle(e.target.value)} />
           <div className="form-text">Pokazywana na liście mówców, prezentacji i transmisji.</div>
+        </div>
+        <div className="col-12">
+          <div className="form-check">
+            <input className="form-check-input" type="checkbox" id="um-female" checked={femaleForms} onChange={(e) => setFemaleForms(e.target.checked)} />
+            <label className="form-check-label" htmlFor="um-female">Formy żeńskie na tablicy i w prezentacji</label>
+          </div>
+          <div className="form-text">Np. „obecna”, „nieobecna” zamiast „obecny”, „nieobecny”.</div>
         </div>
         <div className="col-12 col-sm-6">
           <label className="form-label" htmlFor="um-role">Rola</label>
