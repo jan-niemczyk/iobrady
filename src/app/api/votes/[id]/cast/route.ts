@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { publishToMeeting } from "@/lib/events";
 import { NextResponse } from "next/server";
+import { autoCloseIfAllVoted } from "@/lib/closeVote";
 import { z } from "zod";
 import { Prisma, VoteChoice, VoteStatus, VoteType } from "@prisma/client";
 import { lockVoteRow } from "@/lib/booth";
@@ -332,5 +333,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   // sumę castów audytujemy na zamknięciu (VOTE_CLOSED).
 
   publishToMeeting(vote.meetingId, { type: "vote.opened", voteId }); // wystarczy by liczniki się odświeżyły
+  // Przełącznik posiedzenia: zamknięcie, gdy zagłosowali wszyscy obecni uprawnieni.
+  // Głos jest już zapisany - błąd automatycznego zamknięcia nie może wyglądać jak odrzucenie głosu.
+  await autoCloseIfAllVoted(voteId).catch((e) => console.error("[głosowanie] automatyczne zamknięcie nieudane", e));
   return NextResponse.json({ ok: true });
 }

@@ -44,6 +44,7 @@ export default async function MeetingPanelPage({ params }: { params: Promise<{ i
     attendanceMode: meeting.attendanceMode,
     attendanceOpen: meeting.attendanceOpen,
     allowFormalMotionsAnytime: meeting.allowFormalMotionsAnytime,
+    autoCloseVotes: meeting.autoCloseVotes,
     activeAttendanceCheckId: meeting.activeAttendanceCheckId,
     attendanceSelfCheckEnabled: meeting.attendanceSelfCheckEnabled,
     currentAgendaItemId: meeting.currentAgendaItemId,

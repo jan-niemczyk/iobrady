@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { publishToMeeting } from "@/lib/events";
 import { NextResponse } from "next/server";
+import { autoCloseIfAllVoted } from "@/lib/closeVote";
 import { z } from "zod";
 import { validationError } from "@/lib/http";
 
@@ -21,6 +22,7 @@ const schema = z.object({
   allowFormalMotionsAnytime: z.boolean().optional(),
   attendanceSelfCheckEnabled: z.boolean().optional(),
   speakerDefaultRegular: z.boolean().optional(),
+  autoCloseVotes: z.boolean().optional(),
   speakerDefaultAdVocem: z.boolean().optional(),
   speakerDefaultFormalMotion: z.boolean().optional(),
   publicEnabled: z.boolean().optional(),
@@ -54,6 +56,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   if (parsed.data.speakerDefaultAdVocem !== undefined) data.speakerDefaultAdVocem = parsed.data.speakerDefaultAdVocem;
   if (parsed.data.speakerDefaultFormalMotion !== undefined) data.speakerDefaultFormalMotion = parsed.data.speakerDefaultFormalMotion;
   if (parsed.data.publicEnabled !== undefined) data.publicEnabled = parsed.data.publicEnabled;
+  if (parsed.data.autoCloseVotes !== undefined) data.autoCloseVotes = parsed.data.autoCloseVotes;
 
   await prisma.meeting.update({ where: { id }, data });
 
@@ -66,6 +69,12 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   });
 
   publishToMeeting(id, { type: "meeting.updated" });
+
+  // Włączenie automatycznego zamykania w trakcie głosowania: jeśli wszyscy już zagłosowali - zamknij teraz.
+  if (parsed.data.autoCloseVotes === true) {
+    const open = await prisma.vote.findFirst({ where: { meetingId: id, status: "OPEN" }, select: { id: true } });
+    if (open) await autoCloseIfAllVoted(open.id).catch((e) => console.error("[głosowanie] automatyczne zamknięcie nieudane", e));
+  }
   return NextResponse.json({ ok: true });
 }
 

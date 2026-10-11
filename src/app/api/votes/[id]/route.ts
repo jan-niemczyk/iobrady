@@ -11,6 +11,8 @@ const patchSchema = z.object({
   title: z.string().min(1).max(5000).optional(),
   description: z.string().max(2000).nullable().optional(),
   contextLabel: z.string().max(500).nullable().optional(),
+  // Punkt porządku obrad (null = bez przypisania) - przed rozpoczęciem i po zakończeniu, nie w trakcie.
+  agendaItemId: z.string().max(64).nullable().optional(),
   // Pełna edycja PRZED otwarciem:
   type: z.enum(["STANDARD", "LIST", "QUORUM", "PACKAGE"]).optional(),
   visibility: z.enum(["OPEN", "SECRET"]).optional(),
@@ -50,6 +52,18 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   if (d.title !== undefined) data.title = d.title;
   if (d.description !== undefined) data.description = d.description;
   if (d.contextLabel !== undefined) data.contextLabel = d.contextLabel;
+  if (d.agendaItemId !== undefined && d.agendaItemId !== vote.agendaItemId) {
+    if (vote.status === "OPEN")
+      return new NextResponse("Punktu nie można zmienić w trakcie głosowania.", { status: 400 });
+    if (d.agendaItemId) {
+      const item = await prisma.agendaItem.findFirst({ where: { id: d.agendaItemId, meetingId: vote.meetingId }, select: { id: true } });
+      if (!item) return new NextResponse("Wybrany punkt nie należy do tego posiedzenia.", { status: 400 });
+    }
+    data.agendaItemId = d.agendaItemId;
+    // Głosowanie bez punktu = ad hoc (np. wniosek formalny); z punktem - bez kontekstu ad hoc.
+    data.adHoc = d.agendaItemId === null;
+    if (d.agendaItemId) data.contextLabel = null;
+  }
 
   // Pola strukturalne wolno zmieniać tylko przed otwarciem głosowania.
   const structuralKeys = ["type", "visibility", "majorityKind", "majorityBase", "minSelections", "maxSelections", "requireAllPositions", "pinRequired", "pinCode", "options", "boothMode"] as const;

@@ -57,6 +57,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     attendanceMode: meeting.attendanceMode,
     attendanceOpen: meeting.attendanceOpen,
     allowFormalMotionsAnytime: meeting.allowFormalMotionsAnytime,
+    autoCloseVotes: meeting.autoCloseVotes,
     activeAttendanceCheckId: meeting.activeAttendanceCheckId,
     attendanceSelfCheckEnabled: meeting.attendanceSelfCheckEnabled,
     currentAgendaItemId: meeting.currentAgendaItemId,

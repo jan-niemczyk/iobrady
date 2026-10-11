@@ -58,6 +58,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   // Ad hoc nie ma agendaItemId
   const effectiveAgendaItemId = d.adHoc ? null : (d.agendaItemId ?? null);
+  if (effectiveAgendaItemId && !(await prisma.agendaItem.findFirst({ where: { id: effectiveAgendaItemId, meetingId }, select: { id: true } })))
+    return new NextResponse("Wybrany punkt nie należy do tego posiedzenia.", { status: 400 });
 
   if (d.boothMode && (d.visibility !== VoteVisibility.SECRET || d.type === VoteType.QUORUM))
     return new NextResponse("Tryb kotarkowy jest dostępny tylko dla głosowania tajnego (bez kworum).", { status: 400 });

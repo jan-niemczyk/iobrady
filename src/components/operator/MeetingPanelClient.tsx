@@ -82,6 +82,8 @@ export interface MeetingClientState {
   attendanceMode: AttendanceMode;
   attendanceOpen: boolean;
   allowFormalMotionsAnytime?: boolean;
+  /** Automatyczne zamknięcie głosowania, gdy zagłosują wszyscy obecni uprawnieni (pamięć na posiedzenie). */
+  autoCloseVotes?: boolean;
   activeAttendanceCheckId?: string | null;
   attendanceSelfCheckEnabled?: boolean;
   currentAgendaItemId: string | null;
@@ -171,6 +173,8 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
   const [resultsModal, setResultsModal] = useState<VoteState | null>(null);
   // Reasumpcja: przechowuje głosowanie, z którego kopiujemy ustawienia do nowego (ad hoc).
   const [reasumpcjaFrom, setReasumpcjaFrom] = useState<VoteState | null>(null);
+  // Zmiana punktu porządku obrad zakończonego głosowania.
+  const [itemVote, setItemVote] = useState<VoteState | null>(null);
   const [recomputeVote, setRecomputeVote] = useState<VoteState | null>(null);
   const [pdfBusy, setPdfBusy] = useState<string | null>(null); // id głosowania lub "all"
 
@@ -500,7 +504,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                           )}
                           {v.agendaItemId && (() => {
                             const a = state.agenda.find((x) => x.id === v.agendaItemId);
-                            return a ? <span> - <span className="mono">Pkt {a.number}</span></span> : null;
+                            return a ? <span> - {a.unnumbered || !a.number ? a.title.slice(0, 40) : <span className="mono">Pkt {a.number}</span>}</span> : null;
                           })()}
                           {v.adHoc && <span> - ad hoc</span>}
                         </div>
@@ -574,6 +578,16 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                           title="Edytuj głosowanie przed rozpoczęciem (typ, opcje, większość, PIN)"
                         >
                           Edytuj
+                        </button>
+                      )}
+                      {v.status !== "READY" && v.status !== "OPEN" && (
+                        <button
+                          className="btn btn-sm"
+                          disabled={pending}
+                          onClick={() => setItemVote(v)}
+                          title="Przypisz głosowanie do innego punktu porządku obrad albo pozostaw bez punktu"
+                        >
+                          Zmień punkt
                         </button>
                       )}
                       <button
@@ -916,6 +930,16 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
 
         {/* MIDDLE - głosowanie (najszersza kolumna - tu mieści się aktywny ballot/wyniki) */}
         <div className="col-12 col-xl-6 order-first order-xl-0 d-flex flex-column gap-3">
+          {state.status !== "CLOSED" && (
+            <div className="form-check form-switch small mb-0 px-1 d-flex align-items-center gap-2" style={{ paddingLeft: "2.5em" }}
+              title="Głosowanie zamknie się samo po oddaniu głosów przez wszystkich obecnych uczestników z prawem głosu (nie dotyczy kworum). Ustawienie obowiązuje do końca posiedzenia; można je zmienić w trakcie głosowania.">
+              <input className="form-check-input" type="checkbox" role="switch" id="auto-close-votes"
+                checked={!!state.autoCloseVotes} disabled={pending}
+                onChange={(e) => act(`/api/meetings/${state.id}`, { autoCloseVotes: e.target.checked }, undefined, "PATCH",
+                  e.target.checked ? "Głosowania zamkną się po oddaniu głosów przez wszystkich obecnych." : "Automatyczne zamykanie wyłączone.")} />
+              <label className="form-check-label" htmlFor="auto-close-votes">Zamknij głosowanie automatycznie, gdy zagłosują wszyscy obecni uprawnieni</label>
+            </div>
+          )}
           {activeVote ? (
             <ActiveVotePanel
               vote={activeVote}
@@ -1211,6 +1235,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
             : composerMode === "plan" ? planningItem?.title
             : undefined
           }
+          agenda={state.agenda}
           participants={state.participants.filter((p) => p.hasVotingRight).map((p) => ({
             id: p.id, name: p.name, groupShort: p.groupShort,
           }))}
@@ -1220,12 +1245,22 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
         />
       )}
 
+      {itemVote && (
+        <VoteItemDialog
+          vote={itemVote}
+          agenda={state.agenda}
+          onClose={() => setItemVote(null)}
+          onSaved={() => { setItemVote(null); refetch(); }}
+        />
+      )}
+
       {editComposerVote && (
         <VoteComposerModal
           meetingId={state.id}
           meetingName={state.name}
           mode={editComposerVote.adHoc ? "adhoc" : "item"}
           agendaItemId={null}
+          agenda={state.agenda}
           participants={state.participants.map((p) => ({ id: p.id, name: p.name, groupShort: p.groupShort ?? null }))}
           editVote={editComposerVote}
           onClose={() => setEditComposerVote(null)}
@@ -1856,14 +1891,74 @@ function OnBehalfPackagePicker({ vote, pending, onSubmit }: { vote: VoteState; p
 //  Modal tworzenia głosowania
 // ─────────────────────────────────────────────────────────────────────────
 
+/** Zmiana punktu porządku obrad głosowania (po zakończeniu; przed rozpoczęciem - w oknie edycji). */
+function VoteItemDialog({ vote, agenda, onClose, onSaved }: {
+  vote: VoteState;
+  agenda: { id: string; number: string; title: string; unnumbered?: boolean }[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [itemId, setItemId] = useState<string>(vote.agendaItemId ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true); setError(null);
+    const r = await fetch(`/api/votes/${vote.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ agendaItemId: itemId || null }),
+    });
+    setSaving(false);
+    if (!r.ok) { setError(await readUserError(r)); return; }
+    notify.success(itemId ? "Głosowanie przypisano do punktu." : "Głosowanie nie jest przypisane do punktu.");
+    onSaved();
+  }
+  return (
+    <>
+      <div className="modal-backdrop show" />
+      <div className="modal d-block" tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="vid-title" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+        <div className="modal-dialog modal-dialog-centered">
+          <form className="modal-content" onSubmit={save}>
+            <div className="modal-header">
+              <h2 id="vid-title" className="modal-title fs-6 fw-semibold me-auto">Punkt porządku obrad</h2>
+              <button type="button" className="btn-close" aria-label="Zamknij" onClick={onClose} />
+            </div>
+            <div className="modal-body d-flex flex-column gap-2">
+              <div className="small text-body-secondary" style={{ overflowWrap: "anywhere" }}>
+                Głosowanie{vote.number != null ? ` nr ${vote.number}` : ""}: {vote.title}
+              </div>
+              <label className="form-label mb-0" htmlFor="vid-item">Przypisz do punktu</label>
+              <select id="vid-item" className="form-select" autoFocus value={itemId} onChange={(e) => setItemId(e.target.value)}>
+                <option value="">Bez przypisania do punktu</option>
+                {agenda.map((a) => (
+                  <option key={a.id} value={a.id}>{a.unnumbered || !a.number ? "" : `${a.number}. `}{a.title.length > 90 ? `${a.title.slice(0, 90)}…` : a.title}</option>
+                ))}
+              </select>
+              {error && <div className="alert alert-danger py-2 mb-0 small">{error}</div>}
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn" onClick={onClose}>Anuluj</button>
+              <button type="submit" className="btn btn-primary" disabled={saving || itemId === (vote.agendaItemId ?? "")}>
+                {saving ? "Zapisuję…" : "Zapisz"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function VoteComposerModal({
-  meetingId, meetingName, mode, agendaItemId, agendaItemTitle, participants, prefill, editVote, onClose, onCreated,
+  meetingId, meetingName, mode, agendaItemId, agendaItemTitle, agenda, participants, prefill, editVote, onClose, onCreated,
 }: {
   meetingId: string;
   meetingName: string;
   mode: "item" | "adhoc" | "plan";
   agendaItemId: string | null;
   agendaItemTitle?: string;
+  /** Punkty porządku obrad do wyboru przypisania głosowania. */
+  agenda: { id: string; number: string; title: string; unnumbered?: boolean }[];
   participants: { id: string; name: string; groupShort: string | null }[];
   prefill?: VoteState | null;
   editVote?: VoteState | null;
@@ -1877,6 +1972,11 @@ function VoteComposerModal({
   const [title, setTitle] = useState(editVote ? editVote.title : (prefill ? `Reasumpcja: ${prefill.title}` : defaultTitle));
   const [description, setDescription] = useState(editVote?.description ?? "");
   const [contextLabel, setContextLabel] = useState(editVote?.contextLabel ?? "");
+  // Punkt porządku obrad: edycja - obecny; reasumpcja - punkt głosowania pierwotnego (także brak punktu);
+  // nowe - punkt z kontekstu (bieżący / planowany), ad hoc - bez punktu.
+  const [itemId, setItemId] = useState<string>(
+    (editVote ? editVote.agendaItemId : prefill ? prefill.agendaItemId : mode === "adhoc" ? null : agendaItemId) ?? "",
+  );
   const [type, setType] = useState<VoteType>(src?.type ?? "STANDARD");
   const [visibility, setVisibility] = useState<VoteVisibility>(src?.visibility ?? "OPEN");
   const [majorityKind, setMajorityKind] = useState<MajorityKind>(src?.majorityKind ?? "SIMPLE");
@@ -1941,15 +2041,16 @@ function VoteComposerModal({
       ? {
           title, description: description || null,
           type, visibility, majorityKind, majorityBase,
-          contextLabel: editVote?.adHoc ? (contextLabel.trim() || null) : undefined,
+          agendaItemId: itemId || null,
+          contextLabel: itemId === "" ? (contextLabel.trim() || null) : undefined,
         }
       : {
           title, description: description || null,
           type, visibility,
           majorityKind, majorityBase,
-          adHoc: mode === "adhoc",
-          contextLabel: mode === "adhoc" ? (contextLabel.trim() || null) : null,
-          agendaItemId: mode === "adhoc" ? null : agendaItemId,
+          adHoc: itemId === "",
+          contextLabel: itemId === "" ? (contextLabel.trim() || null) : null,
+          agendaItemId: itemId || null,
           openImmediately: excludedIds.length > 0 ? false : openImmediately,
         };
     if (type === "LIST") {
@@ -2039,7 +2140,17 @@ function VoteComposerModal({
                 <textarea id="vc-desc" className="form-control" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
 
-              {mode === "adhoc" && (
+              <div>
+                <label className="form-label" htmlFor="vc-item">Punkt porządku obrad</label>
+                <select id="vc-item" className="form-select" value={itemId} onChange={(e) => setItemId(e.target.value)}>
+                  <option value="">Bez przypisania do punktu (np. wniosek formalny)</option>
+                  {agenda.map((a) => (
+                    <option key={a.id} value={a.id}>{a.unnumbered || !a.number ? "" : `${a.number}. `}{a.title.length > 90 ? `${a.title.slice(0, 90)}…` : a.title}</option>
+                  ))}
+                </select>
+              </div>
+
+              {itemId === "" && (
                 <div>
                   <label className="form-label" htmlFor="vc-context">Kontekst w raporcie (opcjonalnie)</label>
                   <input id="vc-context" className="form-control" placeholder="np. Wniosek zgłoszony w pkt 4" value={contextLabel} onChange={(e) => setContextLabel(e.target.value)} />

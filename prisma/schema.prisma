@@ -406,6 +406,8 @@ model Meeting {
   // Przełącznik "limit / bez limitu" zapamiętywany na całe posiedzenie: lista mówców w punktach
   // oraz kolejka wniosków formalnych. Nowe wpisy dostają ten stan; bez limitu czas liczy się w górę.
   speechLimitEnabled         Boolean @default(true)
+  // Automatyczne zamknięcie głosowania, gdy zagłosują wszyscy obecni uprawnieni (pamięć na posiedzenie).
+  autoCloseVotes             Boolean @default(false)
   formalMotionLimitEnabled   Boolean @default(true)
 
   /// Licznik netto czasu dyskusji (opcjonalny; podgląd tylko operator + przewodniczący).
