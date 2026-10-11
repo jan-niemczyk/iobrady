@@ -933,7 +933,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
         {/* MIDDLE - głosowanie (najszersza kolumna - tu mieści się aktywny ballot/wyniki) */}
         <div className="col-12 col-xl-6 order-first order-xl-0 d-flex flex-column gap-3">
           {state.status !== "CLOSED" && (
-            <div className="form-check form-switch small mb-0 px-1 d-flex align-items-center gap-2" style={{ paddingLeft: "2.5em" }}
+            <div className="form-check form-switch small mb-0"
               title="Głosowanie zamknie się samo po oddaniu głosów przez wszystkich obecnych uczestników z prawem głosu (nie dotyczy kworum). Ustawienie obowiązuje do końca posiedzenia; można je zmienić w trakcie głosowania.">
               <input className="form-check-input" type="checkbox" role="switch" id="auto-close-votes"
                 checked={!!state.autoCloseVotes} disabled={pending}
