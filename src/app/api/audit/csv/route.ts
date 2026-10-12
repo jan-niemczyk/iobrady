@@ -22,6 +22,7 @@ export async function GET(req: Request) {
     where: { meetingId },
     include: { user: { select: { firstName: true, lastName: true } } },
     orderBy: { createdAt: "asc" },
+    take: 100_000, // H-03: twardy limit wielkości eksportu
   });
 
   const rows: (string | number | null | undefined | boolean)[][] = [["Data i godzina", "Osoba", "Czynność"]];

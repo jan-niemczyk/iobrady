@@ -8,11 +8,11 @@ const patchSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().max(1000).nullable().optional(),
   // hurtowe dodanie członków (np. cały klub naraz)
-  addUserIds: z.array(z.string()).optional(),
+  addUserIds: z.array(z.string().max(64)).max(5000).optional(),
   // usunięcie członków
-  removeUserIds: z.array(z.string()).optional(),
+  removeUserIds: z.array(z.string().max(64)).max(5000).optional(),
   // zmiana prawa głosu konkretnego członka
-  setVotingRight: z.object({ userId: z.string(), hasVotingRight: z.boolean() }).optional(),
+  setVotingRight: z.object({ userId: z.string().max(64), hasVotingRight: z.boolean() }).optional(),
 });
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {

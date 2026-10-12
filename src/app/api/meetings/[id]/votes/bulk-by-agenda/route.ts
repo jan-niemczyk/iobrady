@@ -9,7 +9,7 @@ import { validationError } from "@/lib/http";
 
 // Tworzy po jednym głosowaniu na każdy zaznaczony punkt porządku, z nazwą = tytuł punktu.
 const schema = z.object({
-  agendaItemIds: z.array(z.string()).min(1),
+  agendaItemIds: z.array(z.string().max(64)).min(1).max(5000),
   type: z.nativeEnum(VoteType).default(VoteType.STANDARD),
   visibility: z.nativeEnum(VoteVisibility).default(VoteVisibility.OPEN),
   majorityKind: z.nativeEnum(MajorityKind).default(MajorityKind.SIMPLE),

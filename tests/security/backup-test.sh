@@ -36,10 +36,31 @@ run tar-garbage "$OK_DB" "echo nie-tar"; rc=$?
 check "Uszkodzone archiwum plików: kod błędu" "$([ $rc -ne 0 ] && [ "$(published tar-garbage)" = 0 ] && echo 1)"
 
 run ok "$OK_DB" "$OK_TAR"; rc=$?
-check "Poprawne źródła: kod 0 i trzy pliki" "$([ $rc -eq 0 ] && [ "$(published ok)" = 3 ] && echo 1)"
+check "Poprawne źródła: kod 0 i cztery pliki (2 kopie, .sha256, .mac)" "$([ $rc -eq 0 ] && [ "$(published ok)" = 4 ] && echo 1)"
 DB=$(ls "$W/ok"/iobrady-db-*.enc)
 check "Kopia bazy odszyfrowuje się do treści źródła" "$(openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass "file:$W/key" < "$DB" | gzip -dc | grep -q 'SELECT 1;' && echo 1)"
 check "Suma kontrolna zgodna" "$(cd "$W/ok" && sha256sum -c iobrady-*.sha256 > /dev/null 2>&1 && echo 1)"
+check "Podpis HMAC obok kopii" "$([ -f "$(ls "$W/ok"/iobrady-*.mac 2>/dev/null | head -n 1)" ] && echo 1)"
+STAMP=$(basename "$DB" | sed 's/^iobrady-db-\(.*\)\.sql\.gz\.enc$/\1/')
+restore() { # $1 katalog kopii; dalsze zmienne środowiska z wywołania
+  BACKUP_KEY_FILE="${RKEY:-$W/key}" DB_RESTORE_CMD="cat > $W/restored.sql" FILES_UNTAR_CMD="tar -tf - > /dev/null" \
+    ${BACKUP_SH:-sh} "$ROOT/scripts/restore.sh" "$1" "$STAMP" > "$W/restore.log" 2>&1
+}
+rm -f "$W/restored.sql"; restore "$W/ok"; rc=$?
+check "Odtworzenie poprawnej kopii: kod 0 i treść bazy" "$([ $rc -eq 0 ] && grep -q 'SELECT 1;' "$W/restored.sql" && echo 1)"
+# Podmiana pliku przez kogoś bez klucza: nowa (poprawna) suma SHA-256, ale podpis HMAC się nie zgadza.
+cp -r "$W/ok" "$W/tamper"; openssl rand -base64 48 > "$W/key2"
+printf -- "--\n-- PostgreSQL database dump\n--\nDROP TABLE x;\n" | gzip | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass "file:$W/key2" > "$(ls "$W/tamper"/iobrady-db-*.enc)"
+(cd "$W/tamper" && sha256sum iobrady-db-*.enc iobrady-files-*.enc > "iobrady-$STAMP.sha256")
+rm -f "$W/restored.sql"; restore "$W/tamper"; rc=$?
+check "Podmieniona kopia (zgodna suma SHA-256): odrzucona przed wgraniem" "$([ $rc -ne 0 ] && [ ! -f "$W/restored.sql" ] && grep -q 'HMAC' "$W/restore.log" && echo 1)"
+cp -r "$W/ok" "$W/unsigned"; rm -f "$W/unsigned"/*.mac
+restore "$W/unsigned"; rc=$?
+check "Kopia bez podpisu: odrzucona bez jawnej zgody" "$([ $rc -ne 0 ] && echo 1)"
+rm -f "$W/restored.sql"; ALLOW_UNSIGNED_BACKUP=1 restore "$W/unsigned"; rc=$?
+check "Kopia bez podpisu: odtworzona z ALLOW_UNSIGNED_BACKUP=1" "$([ $rc -eq 0 ] && [ -f "$W/restored.sql" ] && echo 1)"
+rm -f "$W/restored.sql"; RKEY="$W/key2" restore "$W/ok"; rc=$?
+check "Inny klucz: odtworzenie odrzucone" "$([ $rc -ne 0 ] && [ ! -f "$W/restored.sql" ] && echo 1)"
 check "Brak katalogów tymczasowych po żadnym przebiegu" "$(n=0; for d in both-fail db-fail tar-fail db-empty tar-garbage ok; do n=$((n+$(leftovers $d))); done; [ $n = 0 ] && echo 1)"
 
 echo "WYNIK $pass/$((pass+failn))"

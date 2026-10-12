@@ -11,13 +11,13 @@ import { appOrigin, validationError } from "@/lib/http";
 import { audit } from "@/lib/audit";
 
 const schema = z.object({
-  email: z.string().email().toLowerCase(),
+  email: z.string().max(254).email().toLowerCase(),
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
   functionTitle: z.string().max(120).nullable().optional(),
   femaleForms: z.boolean().optional(),
   role: z.nativeEnum(Role).default(Role.PARTICIPANT),
-  groupId: z.string().nullable().optional(),
+  groupId: z.string().max(64).nullable().optional(),
   password: z.string().min(8).max(200).optional(),
   autoGenerate: z.boolean().optional().default(false),
   active: z.boolean().optional().default(true),

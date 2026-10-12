@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
+import { safeErrorText } from "@/lib/logSafe";
 
 /**
  * Retencja dzienników (utwardzenie - prywatność). Okresy ustawia operator w Ustawieniach;
@@ -43,7 +44,7 @@ export function scheduleRetention() {
   const g = globalThis as unknown as { __iob_retention?: boolean };
   if (g.__iob_retention) return;
   g.__iob_retention = true;
-  const run = () => applyRetention().catch((e) => console.error("[retention]", e));
+  const run = () => applyRetention().catch((e) => console.error(`[retention] ${safeErrorText(e)}`));
   setTimeout(run, 5 * 60_000).unref?.();
   setInterval(run, 24 * 60 * 60_000).unref?.();
 }

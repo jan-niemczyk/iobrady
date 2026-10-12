@@ -36,7 +36,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 
 const schema = z.object({
   action: z.enum(["grant", "revoke"]),
-  userId: z.string().min(1),
+  userId: z.string().max(64).min(1),
 });
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {

@@ -31,9 +31,11 @@ oraz automatyczną akceptację utraty danych przy migracji.
   jawnym, także wbrew zasadzie „pierwszy głos ostateczny”. Ochroną jest wyłącznie zaufanie do operatora.
 - SA-03: PIN głosowania (4 cyfry) da się odgadnąć bez limitu prób; PIN jest też w danych ekranu
   prezentacji dla każdego, kto ma link ekranu z tokenem.
-- Nowa funkcja zerowania głosu tajnego: na czas trwania głosowania serwer przechowuje zaszyfrowane
-  powiązanie osoby z treścią jej głosu (usuwane przy zakończeniu). Osoba z dostępem do bazy i klucza
-  serwera mogłaby w tym oknie odczytać treść głosu.
+- Głosowanie tajne: treść głosu nie jest nigdzie zapisywana razem z osobą (od 12.10.2026, H-02) -
+  baza ma tylko anonimowe liczniki i znacznik „oddał głos”. Ceną jest brak zerowania pojedynczego
+  głosu tajnego (przy pomyłce: anulowanie i powtórzenie głosowania). Administrator serwera nadal
+  może w czasie głosowania obserwować ruch i pamięć procesu - to granica każdego systemu bez
+  kryptografii po stronie wyborcy.
 
 | ID | Tytuł | Ważność (audyt) | Status |
 |---|---|---|---|
@@ -128,7 +130,7 @@ Legenda: **T** - tak; **N** - nie (odmowa); **W** - własne dane; **(!)** - zaak
 | `pin-auth` (bez limitu (!)) | N | - | T (bez skutku) | T | T | T |
 | Głos za siebie | N | - | N | T | T | T |
 | Głos / zerowanie w imieniu - jawne | N | - | N | N | N | T, bez audytu (!) |
-| Zerowanie głosu tajnego (pomyłka) | N | - | N | N | N | T, z audytem, bez treści |
+| Zerowanie głosu tajnego (pomyłka) | N | - | N | N | N | N (treść nie jest zapisywana - 409) |
 | Otwarcie głosowania (blokada posiedzenia, tylko posiedzenie OPEN/IN_PROGRESS/PAUSED) | N | - | N | N | N | T |
 | Zamknięcie głosowania | N | - | N | N | T | T |
 | Nowy link ekranu | N | - | N | N | N | T |
@@ -164,21 +166,28 @@ CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N (5.9), ocena domenowa: wysoka.
 „nie głosowali”, kto oddał), S3c (wynik od razu po zamknięciu), S3d (tryb kotarkowy),
 `booth-mode.spec.ts` (test regresji zaktualizowany do nowej reguły: wcześniej utrwalał podatne zachowanie).
 
-### 4.2 Zerowanie głosu tajnego (nowa funkcja na żądanie właściciela)
+### 4.2 Głos tajny bez zapisu treści (decyzja właściciela z 12.10.2026, H-02)
 
-- Operator w trwającym tajnym głosowaniu: panel „Zeruj głos uczestnika (pomyłka)” z listą osób,
-  które oddały kartę (`MeetingPanelClient.tsx`, `SecretResetPanel`).
-- Mechanizm (`src/lib/secretReset.ts`): przy oddaniu głosu tajnego treść karty jest zapisywana przy
-  markerze **zaszyfrowana** (`SecretBallotMarker.resetPayload`, AES-256-GCM, kontekst powiązany
-  z głosowaniem i osobą). Zerowanie pod blokadą wiersza głosowania odszyfrowuje treść, cofa anonimowe
-  liczniki i usuwa marker - uczestnik może zagłosować ponownie. Serwer nie zwraca treści głosu;
-  dziennik `VOTE_BALLOT_RESET` zawiera tylko kto, czyj głos i w którym głosowaniu.
-- Zamknięcie, przerwanie i anulowanie głosowania usuwają zaszyfrowane treści w tej samej transakcji
-  (`purgeSecretResetPayloads`); po zakończeniu powiązanie osoby z treścią nie istnieje (S13b).
-- **Ryzyko szczątkowe (świadome):** w czasie trwania głosowania osoba mająca jednocześnie dostęp do bazy
-  i klucza serwera (`APP_ENCRYPTION_KEY` / `NEXTAUTH_SECRET`) mogłaby odczytać treść głosu. Zgodnie
-  z decyzją właściciela operator jest osobą zaufaną.
-- **Testy:** S13 (tylko operator, bez treści, ponowny głos, audyt bez treści), S13b.
+- Wcześniej (od 4.10.2026) przy oddaniu głosu tajnego treść karty była zapisywana zaszyfrowana przy
+  znaczniku osoby (`SecretBallotMarker.resetPayload`), żeby operator mógł wyzerować pomyłkowy głos.
+  Niezależny audyt (H-02) wskazał, że kopia zapasowa, WAL lub migawka wykonana w czasie głosowania
+  zachowuje to powiązanie, a posiadacz klucza serwera może je odszyfrować także później.
+- **Obecnie treść głosu tajnego nie jest zapisywana nigdzie razem z osobą.** Głos zwiększa anonimowe
+  liczniki, a znacznik zawiera tylko „ta osoba oddała kartę” (potrzebne do frekwencji i blokady
+  drugiego głosu). Kolumna `resetPayload` zostaje w schemacie (zgodność, bez utraty danych), zawsze
+  jest pusta; `scripts/post-migrate.ts` przy każdym starcie czyści wartości pozostałe z poprzedniej wersji.
+- Zerowanie pojedynczego głosu tajnego jest niemożliwe: radny 403, operator 409 z wyjaśnieniem.
+  Panel operatora zamiast przycisku zerowania pokazuje informację: przy pomyłce anulować głosowanie
+  i przeprowadzić je ponownie.
+- **Kopie sprzed zmiany:** kopia wykonana w czasie trwania tajnego głosowania przed wdrożeniem tej
+  wersji może zawierać zaszyfrowane treści. Zalecenie: po wdrożeniu usunąć takie kopie po upływie
+  okresu przechowywania (albo od razu, jeśli nie są potrzebne).
+- **Zaufani administratorzy:** osoba z dostępem do serwera (root, Docker) może w czasie głosowania
+  podglądać ruch i pamięć procesu. Klucze (`NEXTAUTH_SECRET`, `APP_ENCRYPTION_KEY`, klucz kopii)
+  i kopie zapasowe powinny być dostępne tylko administratorowi wskazanemu przez organizatora;
+  okres przechowywania kopii ustala organizator (domyślnie skrypt niczego nie usuwa).
+- **Testy:** S13 (w trakcie głosowania brak zapisanej treści; radny 403, operator 409, liczba
+  oddanych bez zmian), S13b, `tests/e2e/hardening.spec.ts` (H-02).
 
 ### 4.3 SA-02. Głos i zerowanie w imieniu (jawne) - ZAAKCEPTOWANE RYZYKO
 
@@ -336,7 +345,7 @@ kolumnę z danymi - start zatrzymany, dane zachowane.
 | Rekomendacja | Stan | Szczegóły |
 |---|---|---|
 | CSP i nagłówki | **WYKONANE** | `next.config.ts`: CSP (bez `unsafe-eval` w produkcji, `frame-ancestors 'self'`, `object-src 'none'`), `nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `COOP`, bez `X-Powered-By`; Caddy: HSTS z `includeSubDomains`. Sprawdzone w przeglądarce: panel operatora, Ustawienia, PDF (lista obecności, protokół), DOCX, CSV, ekran i nakładka z tokenem, panel radnego - 0 naruszeń CSP. `script-src` zawiera `'unsafe-inline'` (patrz niżej). |
-| CSP z nonce (bez `'unsafe-inline'`) | **NIEWYKONANE** | Wymagałoby renderowania wszystkich stron dynamicznie z nonce z middleware; ryzyko regresji ekranów prezentacji i kart głosowania. Pozostałe dyrektywy ograniczają skutki. |
+| CSP z nonce (bez `'unsafe-inline'`) | **WYKONANE (12.10.2026, H-07)** | Middleware nadaje każdej stronie jednorazowy nonce (`src/lib/csp.ts`), `script-src 'self' 'nonce-...'`; wszystkie strony renderowane dynamicznie. API i pliki statyczne mają CSP bez skryptów inline. Sprawdzone w przeglądarce: 14 widoków (panel, ustawienia, ekran, nakładka, przewodniczący, radny) - 0 naruszeń; test `hardening.spec.ts`. `style-src` nadal z `'unsafe-inline'` (style inline Reacta). |
 | Sprawdzanie `Origin` | **WYKONANE** | Middleware odrzuca POST/PUT/PATCH/DELETE na `/api/*` z obcej domeny (S21). |
 | GET bez zapisów | **WYKONANE** dla `formal-motions` | |
 | CSV - neutralizacja formuł | **WYKONANE** | `src/lib/csv.ts` (S22). |
@@ -370,7 +379,7 @@ kolumnę z danymi - start zatrzymany, dane zachowane.
 | Otwieranie głosowań, cykl życia | S14, S15b, S17 | naprawione |
 | Wiele posiedzeń jednej osoby | S15, S16 | reguła |
 | Tajność (API, ekran, nakładka, raporty, CSV, SSE) | S3, S3b, S3c, S3d + kod | naprawione |
-| Zerowanie głosu tajnego | S13, S13b | nowa funkcja |
+| Głos tajny bez zapisu treści (H-02) | S13, S13b, hardening.spec | naprawa |
 | Głos w imieniu (jawne), PIN | S5, S1, S2 | zaakceptowane ryzyko |
 | Prezentacja / nakładka / cache | S1b, S4, S4b, S4c, S26 + przeglądarka | naprawione |
 | Upload, kreator | test od zera, S25 | naprawione |
@@ -448,7 +457,7 @@ utworzonej od zera i seedzie syntetycznym: 43/43 OK (przed dodaniem S26).
 | C3 | kontrola | głos po zamknięciu | 400 |
 | S3 | naprawa | tajne w trakcie: ekran, radny, operator, CSV, report-data | 0/0/0, 0, 0, 409, 409 |
 | S3b | naprawa | liczba oddanych, „nie głosowali”, kto oddał | 1, 1, -1 osoba, tak; radny bez listy |
-| S13 | nowa funkcja | zerowanie tajnego | radny 403, operator 200, oddanych 0, ponowny głos 200, audyt bez treści |
+| S13 | naprawa (H-02) | głos tajny bez zapisu treści, zerowanie niemożliwe | w trakcie 0 zapisanych treści; radny 403, operator 409; oddanych nadal 1 |
 | C4 | kontrola | wyścig cast vs close | suma liczników = markery |
 | S13b | nowa funkcja | po zamknięciu brak treści, zerowanie niemożliwe | 0 treści, 400 |
 | S3c | naprawa | wynik od razu po zamknięciu | ekran 1/1, raport radnego dostępny |
@@ -535,4 +544,25 @@ czyli wykrywają opisane zachowanie.
 
 Nie wykonano w tej serii: testów na produkcji i przez HTTPS, pełnego odtworzenia kopii do pustej bazy
 (test kopii sprawdza odszyfrowanie i rozpakowanie), aktualnego przeglądu podatności zależności.
-Rekomendacje H-01..H-08 audytu pozostają do zaplanowania.
+Rekomendacje H-01..H-08 - patrz rozdział 10.
+
+## 10. Rekomendacje H-01..H-08 niezależnego audytu - stan (12.10.2026)
+
+Weryfikacja: `tests/e2e/hardening.spec.ts` (6 scenariuszy), sondy S8d i S13,
+`tests/security/backup-test.sh` (17 kontroli, także podpis HMAC i odtwarzanie), próba odtworzenia
+prawdziwej kopii do pustej bazy (`scripts/restore-drill.sh`), przegląd 14 widoków w przeglądarce
+pod kątem CSP. Na świeżej bazie jak w CI: sondy 45/45, e2e 25/25 (booth-mode, audit-fixes, hardening).
+
+| Rekomendacja | Stan | Co zrobiono / dlaczego nie |
+|---|---|---|
+| H-01 granica transakcji i stanów | WYKONANE | Głos: członkostwo, prawo głosu, wykluczenie i obecność sprawdzane ponownie pod blokadą wiersza głosowania (odebranie prawa po otwarciu = 403). Edycja, otwarcie i usunięcie głosowania pod tą samą blokadą z ponownym sprawdzeniem stanu (409). Usunięcie i cofnięcie posiedzenia pod blokadą wiersza posiedzenia; trwające posiedzenie nie może zostać usunięte. |
+| H-02 granica tajności | WYKONANE (wariant właściciela: nic nie zapisujemy) | Rozdział 4.2: treść głosu tajnego nie jest zapisywana, zerowanie tajnego głosu usunięte, stare treści czyszczone przy starcie. |
+| H-03 walidacja | WYKONANE | Limity długości i liczby elementów we wszystkich schematach zod tras API (identyfikatory 64 znaki, listy do 5000, import kont do 5000 wierszy, tekst importu do 200 000 znaków, hasło do 200, e-mail 254). Limit treści żądania przed odczytem: middleware (Content-Length: 1 MB, załączniki 21 MB, obrazy 3/9 MB) i Caddy (`request_body` 25 MB, także bez Content-Length). |
+| H-04 pliki, eksporty, cache | WYKONANE | Typ załącznika rozpoznawany po zawartości (PDF, PNG, JPEG, WEBP, DOCX, XLSX); niezgodność z deklarowanym typem = 400, zapisywany jest typ rozpoznany. Odpowiedzi `/api/*` z `Cache-Control: private, no-store` (wyjątki: wgrane obrazy, strumień). CSV: neutralizacja także po białych znakach, `|`, znaków nowej linii i pełnoszerokich `＝＋－＠`. Eksporty CSV z twardym limitem wierszy. Skanowanie antywirusowe: nie (brak usługi; dokumenty wgrywa tylko operator, pobieranie wymuszone jako załącznik). |
+| H-05 dziennik i logi | WYKONANE | Wpisy dziennika otwarcia, zamknięcia, anulowania i przerwania głosowania w tej samej transakcji co zmiana (`audit(..., tx)`); przy zamknięciu także migawka obecności kworum i schowanie PIN-u. Logi serwera przez `safeErrorText()` - bez argumentów zapytań Prisma, adresy e-mail maskowane, długość ograniczona. Dziennik nie jest odporny kryptograficznie na administratora bazy (bez zmian). |
+| H-06 dostępność | WYKONANE częściowo | Próby logowania w trakcie blokady nie są zapisywane - nie da się przedłużać blokady cudzego konta (S8d); blokada wygasa po 15 min. Caddy: limit czasu nagłówków 15 s, bezczynności 2 min. Limity i szyna zdarzeń pozostają w procesie - przy wielu replikach potrzebny wspólny mechanizm (aplikacja działa w jednej instancji). Testy obciążeniowe: niewykonane. |
+| H-07 konfiguracja i łańcuch dostaw | WYKONANE częściowo | CSP z nonce (rozdział 5). Czcionki panelu z własnego serwera (`@fontsource`, bez Google przy logowaniu i pracy w panelu); ekran sali i nakładka nadal z Google Fonts, bo operator wybiera tam jedną z kilkunastu czcionek (lista wymagałaby dołączenia wszystkich do obrazu). Akcje CI przypięte do commitów (SHA). `npm audit fix` (source-map-js); pozostają `postcss` w Next 15 i `deepmerge-ts` w Prisma 6 - narzędzia budowania, poprawki tylko w wersjach głównych. **Nie wdrożono:** osobnej roli PostgreSQL dla migracji i dla działania (wymaga przebudowy startu kontenera i zmiany uprawnień na produkcji - do osobnego, zaplanowanego okna), ograniczenia ruchu wychodzącego (aplikacja potrzebuje SMTP o adresie z ustawień - reguła zapory na serwerze), wersjonowanych migracji Prisma (zmiana procesu wdrożenia; obecny `db push` bez akceptacji utraty danych + kopia przed aktualizacją). |
+| H-08 sekrety i historia | WYKONANE | `scripts/secret-scan.sh` w CI (klucze prywatne, tokeny GitHub/AWS/Slack/OpenAI/Google, wypełnione zmienne z sekretami, adresy baz z hasłem, śledzone `.env` i kopie); tryb `--historia` przegląda wszystkie commity - trafienia w starych gałęziach zdalnych to wyłącznie wartości „ZMIEN...” (odfiltrowane). |
+| Kopie: uwierzytelnienie | WYKONANE | Podpis HMAC-SHA256 obu plików kopii (`.mac`, klucz wyprowadzony z klucza kopii). `restore.sh` sprawdza podpis przed odczytem treści; podmieniona kopia z poprawioną sumą SHA-256 jest odrzucana. Kopie bez podpisu (starsze) tylko z `ALLOW_UNSIGNED_BACKUP=1`. |
+| Kopie: próba odtworzenia | WYKONANE | `scripts/restore-drill.sh` odtwarza najnowszą kopię do jednorazowego kontenera PostgreSQL bez sieci i liczy rekordy (konta, posiedzenia, głosowania, dziennik). Sprawdzone tutaj na prawdziwym zrzucie do pustej bazy (wariant bez Dockera); wariant z kontenerem nie był uruchomiony (brak Dockera w środowisku testów). |
+

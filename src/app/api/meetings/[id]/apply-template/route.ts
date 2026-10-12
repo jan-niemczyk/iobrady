@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-const schema = z.object({ templateId: z.string() });
+const schema = z.object({ templateId: z.string().max(64) });
 
 /**
  * Dodaje uczestników z szablonu składu do posiedzenia.

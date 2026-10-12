@@ -9,9 +9,9 @@ import { canManageMeeting } from "@/lib/canManage";
 
 const schema = z.object({
   /** opcjonalne - operator może zapisać innego uczestnika; bez tego = zapisuje siebie */
-  userId: z.string().optional(),
+  userId: z.string().max(64).optional(),
   /** opcjonalne - operator może zapisać gościa z katalogu (bez konta) */
-  guestId: z.string().optional(),
+  guestId: z.string().max(64).optional(),
   /** indywidualny limit - jeśli pominięty, użyje defaultTimeLimitSec listy */
   timeLimitSec: z.number().int().min(0).max(4 * 3600).nullable().optional(),
   /** typ zgłoszenia: REGULAR (default) / FORMAL_MOTION / AD_VOCEM */

@@ -14,7 +14,7 @@ import { z } from "zod";
  * Operacja dozwolona tylko gdy głosowanie ma status DRAFT lub READY.
  */
 const schema = z.object({
-  participantId: z.string(),
+  participantId: z.string().max(64),
   excluded: z.boolean(),
   reason: z.string().max(500).optional(),
 });

@@ -181,18 +181,15 @@ async function main() {
       dv?.resultCastCount === 1 && ctrO?.castCount === 1 && gone === 1 && (ctrO?.votedUserIds ?? []).includes(pA.userId) && ctrP?.votedUserIds === undefined,
       `oddanych: ekran ${dv?.resultCastCount}, operator ${ctrO?.castCount}; lista "nie głosowali" -${gone}; operator widzi kto oddał: ${(ctrO?.votedUserIds ?? []).includes(pA.userId)}; radny nie dostaje listy: ${ctrP?.votedUserIds === undefined}`);
 
-    // Zerowanie głosu tajnego (nowa funkcja) - bez ujawnienia treści
-    const auditBefore = await prisma.auditLog.count({ where: { action: "VOTE_BALLOT_RESET" } });
+    // H-02: treść głosu tajnego nie jest zapisywana nigdzie - także w trakcie głosowania;
+    // zerowanie pojedynczego głosu tajnego jest niemożliwe (pomyłka = anulowanie i powtórzenie).
+    const storedDuringOpen = await prisma.secretBallotMarker.count({ where: { voteId: v, resetPayload: { not: null } } });
     const byPt = await B.req("POST", `/api/votes/${v}/cast`, { reset: true, onBehalfUserId: pA.userId });
     const rs = await op.req("POST", `/api/votes/${v}/cast`, { reset: true, onBehalfUserId: pA.userId });
-    const rsBody = await rs.text();
     const after = await json(await op.req("GET", `/api/votes/${v}/counter`));
-    const recast = await A.req("POST", `/api/votes/${v}/cast`, { choice: "YES" });
-    const auditAfter = await prisma.auditLog.findFirst({ where: { action: "VOTE_BALLOT_RESET" }, orderBy: { createdAt: "desc" } });
-    check("S13", "NAPRAWA", "Zerowanie głosu tajnego: tylko operator, bez treści, możliwy ponowny głos",
-      byPt.status === 403 && rs.status === 200 && after?.castCount === 0 && recast.status === 200 && !/YES|NO|ABSTAIN|ZA|PRZECIW/.test(rsBody)
-        && (await prisma.auditLog.count({ where: { action: "VOTE_BALLOT_RESET" } })) === auditBefore + 1 && !/YES|NO|ABSTAIN/.test(JSON.stringify(auditAfter?.metadata ?? {})),
-      `radny ${byPt.status}; operator ${rs.status}; oddanych po zerowaniu ${after?.castCount}; ponowny głos ${recast.status}; audyt bez treści`);
+    check("S13", "NAPRAWA", "Głos tajny: treść niezapisywana, zerowanie niemożliwe (H-02)",
+      storedDuringOpen === 0 && byPt.status === 403 && rs.status === 409 && after?.castCount === 1,
+      `zapisane treści w trakcie: ${storedDuringOpen}; radny ${byPt.status}; operator ${rs.status}; oddanych nadal ${after?.castCount}`);
     await op.req("PATCH", `/api/meeting-participants/${mpB.id}`, { isChairperson: false });
     await B.req("POST", `/api/votes/${v}/cast`, { choice: "NO" });
 
@@ -206,7 +203,7 @@ async function main() {
       `statusy ${rsx.map((r) => r.status).join("/")}; suma=${sum}, markery=${fin._count.secretMarkers}`);
     const payloads = await prisma.secretBallotMarker.count({ where: { voteId: v, resetPayload: { not: null } } });
     const resetAfterClose = await op.req("POST", `/api/votes/${v}/cast`, { reset: true, onBehalfUserId: pB.userId });
-    check("S13b", "NAPRAWA", "Po zamknięciu: brak zaszyfrowanych treści głosów, zerowanie niemożliwe", payloads === 0 && resetAfterClose.status >= 400, `payloady: ${payloads}; zerowanie po zamknięciu: ${resetAfterClose.status}`);
+    check("S13b", "NAPRAWA", "Po zamknięciu: brak treści głosów, zerowanie niemożliwe", payloads === 0 && resetAfterClose.status >= 400, `payloady: ${payloads}; zerowanie po zamknięciu: ${resetAfterClose.status}`);
     const d2 = await json(await display());
     const lc = [d2?.pinnedVote, d2?.lastClosedVote].find((x) => x?.id === v);
     const rep2 = await json(await C.req("GET", `/api/votes/${v}/participant-report`));
@@ -378,6 +375,11 @@ async function main() {
     const fromOtherIp = await new Client("10.7.7.7").login(victim.email, PT_PASS);
     const locked = await prisma.auditLog.count({ where: { action: "LOGIN_LOCKED" } });
     const failed = await prisma.loginAttempt.count({ where: { email: victim.email, success: false } });
+    // H-06: dalsze próby w trakcie blokady nie są zapisywane, więc nie przedłużają blokady.
+    for (let k = 0; k < 5; k++) await new Client("10.6.6.6").login(victim.email, `zle-blok-${k}`);
+    const failedAfter = await prisma.loginAttempt.count({ where: { email: victim.email, success: false } });
+    check("S8d", "NAPRAWA", "Próby w trakcie blokady nie przedłużają blokady (H-06)", failedAfter === failed,
+      `nieudane przed: ${failed}, po 5 próbach w blokadzie: ${failedAfter}`);
     check("S8b", "NAPRAWA", "Seria błędów z jednego IP blokuje tę parę konto+IP, nie właściciela z innego IP",
       !correctFromAttacker && blockedCode === "rate_limited" && fromOtherIp && locked > 0 && failed >= 8,
       `poprawne hasło z IP atakującego: ${correctFromAttacker} (kod ${blockedCode}); właściciel z innego IP: ${fromOtherIp}; wpisy LOGIN_LOCKED: ${locked}; zapisane nieudane próby: ${failed}`);

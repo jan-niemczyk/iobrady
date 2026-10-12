@@ -8,9 +8,9 @@ import { z } from "zod";
 const schema = z.object({
   status: z.enum(["PRESENT", "ABSENT"]),
   /** filtry - przynajmniej jeden */
-  groupId: z.string().nullable().optional(),  // null = "Niezrzeszeni"
+  groupId: z.string().max(64).nullable().optional(),  // null = "Niezrzeszeni"
   allEligible: z.boolean().optional(),
-  participantIds: z.array(z.string()).optional(),
+  participantIds: z.array(z.string().max(64)).max(5000).optional(),
 });
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {

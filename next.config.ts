@@ -1,29 +1,9 @@
 import type { NextConfig } from "next";
+import { staticCsp } from "./src/lib/csp";
 
-const isProd = process.env.NODE_ENV === "production";
-
-// Polityka CSP (utwardzenie). 'unsafe-inline' dla skryptów jest wymagane przez skrypty
-// inicjalizujące Next.js (App Router) bez nonce; brak 'unsafe-eval' w produkcji.
-// Czcionki prezentacji/nakładki z Google Fonts; obrazy z własnej domeny, data: i blob:
-// (podgląd logo, QR, generowane PDF). Ramki tylko z tej samej domeny (nakładka OBS osadza ekran).
-const csp = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' data: https://fonts.gstatic.com",
-  "img-src 'self' data: blob:",
-  "media-src 'self' data: blob:",
-  "connect-src 'self'",
-  "worker-src 'self' blob:",
-  "frame-src 'self' blob:",
-  "frame-ancestors 'self'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-].join("; ");
-
+// CSP: strony HTML dostają politykę z jednorazowym nonce w middleware (H-08); tutaj tylko
+// odpowiedzi bez HTML aplikacji (API, pliki statyczne) - bez skryptów inline.
 const securityHeaders = [
-  { key: "Content-Security-Policy", value: csp },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -42,11 +22,21 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      ...["/api/:path*", "/_next/:path*", "/fonts/:path*", "/icon.svg"].map((source) => ({
+        source,
+        headers: [{ key: "Content-Security-Policy", value: staticCsp }],
+      })),
+      // H-04: odpowiedzi API (dane osobowe, hasła startowe, wyniki) bez zapisu w pamięci podręcznej
+      // przeglądarki i pośredników. Wyjątki niżej: strumień zdarzeń i wgrane obrazy.
+      { source: "/api/:path*", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
       // UW-01: wgrane obrazy (logo, plansza) - ostra polityka z sandboxem. Musi być PO regule ogólnej:
       // nagłówki z next.config nadpisują te ustawione w trasie, więc bez tego SVG dostawałby CSP strony.
       ...["/api/uploads/:file*", "/uploads/:file*"].map((source) => ({
         source,
-        headers: [{ key: "Content-Security-Policy", value: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox" }],
+        headers: [
+          { key: "Content-Security-Policy", value: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox" },
+          { key: "Cache-Control", value: "public, max-age=3600" },
+        ],
       })),
       // SSE wymaga, żeby Next nie buforował odpowiedzi
       {

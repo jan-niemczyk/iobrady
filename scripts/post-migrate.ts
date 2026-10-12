@@ -49,11 +49,11 @@ async function main() {
       AND (metadata::jsonb -> 'changes' ->> 'smtpPassword') <> '[usunięto]'`;
   if (scrubbed) console.log(`[migrate] Usunięto hasło SMTP z wpisów dziennika: ${scrubbed}`);
 
-  // Zaszyfrowane treści głosów tajnych mogą istnieć wyłącznie w otwartych głosowaniach.
+  // H-02: treści głosów tajnych nie przechowujemy wcale - czyszczenie pozostałości po wersji
+  // z zerowaniem tajnego głosu (także w głosowaniach otwartych w chwili aktualizacji).
   const purged = await prisma.$executeRaw`
-    UPDATE "SecretBallotMarker" m SET "resetPayload" = NULL
-    FROM "Vote" v WHERE v.id = m."voteId" AND v.status <> 'OPEN' AND m."resetPayload" IS NOT NULL`;
-  if (purged) console.log(`[migrate] Wyczyszczono dane zerowania zakończonych głosowań: ${purged}`);
+    UPDATE "SecretBallotMarker" SET "resetPayload" = NULL WHERE "resetPayload" IS NOT NULL`;
+  if (purged) console.log(`[migrate] Usunięto zapisane treści głosów tajnych: ${purged}`);
 
   // Goście nie głosują i nie wliczają się do kworum - także ci, którym wcześniej zaznaczono prawo głosu.
   // Dotyczy wyłącznie posiedzeń jeszcze niezakończonych (historia zakończonych posiedzeń bez zmian).

@@ -7,7 +7,7 @@ import { isAutoNumbered, renumberIfAuto } from "@/lib/agendaNumbering";
 
 const schema = z.object({
   direction: z.enum(["up", "down"]).optional(),
-  afterId: z.string().optional(), // przenieś TEN punkt tuż za wskazanym punktem (null-owy sens: na początek)
+  afterId: z.string().max(64).optional(), // przenieś TEN punkt tuż za wskazanym punktem (null-owy sens: na początek)
   toStart: z.boolean().optional(),
 });
 

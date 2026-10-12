@@ -17,6 +17,8 @@
     "test:security": "node tests/security/audit-probes.mjs"
   },
   "dependencies": {
+    "@fontsource/inter": "5.3.0",
+    "@fontsource/jetbrains-mono": "5.3.0",
     "@prisma/client": "^6.0.0",
     "bcryptjs": "^2.4.3",
     "bootstrap": "^5.3.8",

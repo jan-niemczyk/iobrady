@@ -7,7 +7,7 @@ import { z } from "zod";
 import { validationError } from "@/lib/http";
 
 const addSchema = z.object({
-  userIds: z.array(z.string()).min(1),
+  userIds: z.array(z.string().max(64)).min(1).max(5000),
   hasVotingRight: z.boolean().optional().default(true),
   isInvitedGuest: z.boolean().optional().default(false),
 });

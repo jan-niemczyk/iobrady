@@ -8,6 +8,7 @@ import { randomPassword } from "@/lib/randomPassword";
 import { sendMail } from "@/lib/mail";
 import { welcomeEmail } from "@/lib/mailTemplates";
 import { appOrigin, validationError } from "@/lib/http";
+import { safeErrorText } from "@/lib/logSafe";
 
 /**
  * POST /api/users/import
@@ -21,17 +22,17 @@ import { appOrigin, validationError } from "@/lib/http";
  */
 
 const rowSchema = z.object({
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  email: z.string().email(),
+  firstName: z.string().max(100).min(1),
+  lastName: z.string().max(100).min(1),
+  email: z.string().max(254).email(),
   // Rola konta: OPERATOR / PARTICIPANT. Przewodniczący to funkcja w posiedzeniu (BR-5) - nie rola konta.
-  role: z.string().optional(),
-  groupName: z.string().optional(),
-  groupShort: z.string().optional(),
+  role: z.string().max(40).optional(),
+  groupName: z.string().max(200).optional(),
+  groupShort: z.string().max(50).optional(),
 });
 
 const schema = z.object({
-  rows: z.array(rowSchema).min(1),
+  rows: z.array(rowSchema).min(1).max(5000),
   sendEmails: z.boolean().optional().default(false),
 });
 
@@ -114,7 +115,7 @@ export async function POST(req: Request) {
         await sendMail({ to: row.email, subject, html, kind: "welcome", sentByUserId: session.user.id }).catch(() => {});
       }
     } catch (e) {
-      console.error("[users/import]", e);
+      console.error(`[users/import] ${safeErrorText(e)}`);
       results.push({
         email: row.email,
         name: `${row.firstName} ${row.lastName}`,

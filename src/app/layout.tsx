@@ -1,6 +1,18 @@
 import type { Metadata } from "next";
+// H-08: czcionki panelu z własnego serwera (bez połączeń do Google przy każdym wejściu).
+// Pliki wagowe zawierają unicode-range, więc przeglądarka pobiera tylko potrzebne zakresy znaków.
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/jetbrains-mono/500.css";
 import "./globals.css";
 import Providers from "./providers";
+
+// H-08: wszystkie strony renderowane dynamicznie - tylko wtedy Next.js dopisuje do skryptów
+// nonce z CSP ustawionej w middleware (strona statyczna nie miałaby nonce i skrypty by nie ruszyły).
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "iOBRADY - system obsługi posiedzeń",
@@ -13,14 +25,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pl">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-        />
-      </head>
       <body><Providers>{children}</Providers></body>
     </html>
   );

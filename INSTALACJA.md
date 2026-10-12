@@ -189,7 +189,7 @@ lub pulpitu - kreatora nie da się uruchomić drugi raz.
    ./scripts/backup.sh
    ```
 
-   **Wynik:** `Kopia: /root/iobrady-backups/iobrady-db-DATA.sql.gz.enc, ... (+ .sha256)`.
+   **Wynik:** `Kopia: /root/iobrady-backups/iobrady-db-DATA.sql.gz.enc, ... (+ .sha256, .mac)`.
 
 3. Kopia automatyczna każdej nocy o 2:15 (dopisanie do harmonogramu cron):
 
@@ -351,8 +351,25 @@ Zasady bezpieczeństwa danych:
 ## Kopia zapasowa i odtworzenie
 
 Kopia na żądanie: `./scripts/backup.sh` (zawartość: baza oraz pliki - logo, plansza, załączniki;
-szyfrowanie AES-256 kluczem `~/iobrady-backup.key`, sumy SHA-256 obok). Inny katalog docelowy:
-`./scripts/backup.sh /ścieżka/katalogu`.
+szyfrowanie AES-256 kluczem `~/iobrady-backup.key`, sumy SHA-256 i podpis HMAC obok). Inny katalog
+docelowy: `./scripts/backup.sh /ścieżka/katalogu`.
+
+### Próba odtworzenia (zalecana raz w miesiącu)
+
+Sprawdza, że najnowszą kopię da się naprawdę odtworzyć - bez dotykania działającej instalacji:
+odtwarza bazę do jednorazowego kontenera PostgreSQL bez sieci (usuwanego po próbie) i liczy rekordy.
+
+```bash
+./scripts/restore-drill.sh                 # najnowsza kopia z ~/iobrady-backups
+./scripts/restore-drill.sh ~/iobrady-backups STAMP
+```
+
+**Wynik:** liczby kont, posiedzeń, głosowań i wpisów dziennika oraz `PRÓBA ODTWORZENIA: OK (STAMP)`.
+Automatycznie, pierwszego dnia miesiąca o 3:30:
+
+```bash
+(crontab -l 2>/dev/null; echo "30 3 1 * * cd $(pwd) && ./scripts/restore-drill.sh >> \$HOME/iobrady-backup.log 2>&1") | crontab -
+```
 
 ### Odtworzenie kopii **[USUWA DANE]**
 
@@ -372,8 +389,10 @@ docker compose up -d db
 docker compose up -d
 ```
 
-Skrypt najpierw sprawdza sumy kontrolne i odszyfrowuje archiwa - zły klucz lub uszkodzony plik
-zatrzymuje odtwarzanie, zanim cokolwiek trafi do bazy. Pliki (logo, załączniki) są dopisywane
+Skrypt najpierw sprawdza podpis HMAC i sumy kontrolne, potem odszyfrowuje archiwa - podmieniona
+kopia, zły klucz lub uszkodzony plik zatrzymuje odtwarzanie, zanim cokolwiek trafi do bazy. Kopie
+wykonane starszą wersją skryptu (bez pliku `.mac`) odtwarza się z `ALLOW_UNSIGNED_BACKUP=1` przed
+poleceniem. Pliki (logo, załączniki) są dopisywane
 do wolumenów aplikacji.
 
 **Wynik:** `Odtworzono kopię STAMP.`; po `docker compose up -d` aplikacja działa ze stanem z kopii.

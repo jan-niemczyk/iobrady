@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 const schema = z.object({
-  participantId: z.string(),
+  participantId: z.string().max(64),
   status: z.enum(["PRESENT", "ABSENT"]),
 });
 

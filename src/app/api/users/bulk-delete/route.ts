@@ -7,7 +7,7 @@ import { revokeUserSessions } from "@/lib/sessions";
 import { validationError } from "@/lib/http";
 
 const schema = z.object({
-  userIds: z.array(z.string()).min(1),
+  userIds: z.array(z.string().max(64)).min(1).max(5000),
 });
 
 /**

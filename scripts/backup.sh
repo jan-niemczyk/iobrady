@@ -4,7 +4,9 @@
 # Klucz: plik z hasłem szyfrującym (BACKUP_KEY_FILE, domyślnie ~/iobrady-backup.key,
 # uprawnienia 600). Utworzenie:  openssl rand -base64 48 > ~/iobrady-backup.key && chmod 600 ~/iobrady-backup.key
 # KOPIĘ KLUCZA trzymaj POZA serwerem (sejf / menedżer haseł) - bez niej kopii nie da się odtworzyć.
-# Pliki kopii: AES-256-CBC + PBKDF2 (openssl enc), suma SHA-256 obok.
+# Pliki kopii: AES-256-CBC + PBKDF2 (openssl enc), suma SHA-256 obok oraz podpis HMAC-SHA256
+# (plik .mac, klucz wyprowadzony z klucza kopii) - restore.sh odrzuci kopię podmienioną lub
+# zmienioną przez kogoś bez klucza (sama suma SHA-256 chroni tylko przed przypadkowym uszkodzeniem).
 #
 # Użycie na serwerze (katalog z docker-compose.yml):   ./scripts/backup.sh [katalog_docelowy]
 # Zmienne do testów lokalnych: DB_DUMP_CMD, FILES_TAR_CMD (polecenia zapisujące na stdout).
@@ -26,6 +28,10 @@ DB_DUMP_CMD="${DB_DUMP_CMD:-docker compose exec -T db pg_dump -U $DB_USER --no-o
 FILES_TAR_CMD="${FILES_TAR_CMD:-docker compose exec -T app tar -C /app -cf - public/uploads storage/attachments}"
 enc() { openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass "file:$KEY"; }
 dec() { openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass "file:$KEY"; }
+# Klucz HMAC wyprowadzony z klucza kopii (osobny cel niż szyfrowanie). Ta sama funkcja w restore.sh.
+mac_key() { { printf 'iobrady-backup-mac-v1:'; cat "$KEY"; } | openssl dgst -sha256 -r | cut -d' ' -f1; }
+mac_of() { openssl dgst -sha256 -mac HMAC -macopt "hexkey:$MK" -r "$1" | cut -d' ' -f1; }
+MK=$(mac_key)
 
 # Każdy etap ma własny kod wyjścia: /bin/sh (POSIX) nie ma pipefail, a kod potoku to kod ostatniego
 # polecenia - błąd pg_dump/tar byłby przesłonięty sukcesem szyfrowania. Statusy etapów trafiają do
@@ -63,5 +69,9 @@ fi
 mv "$T/db.enc" "$OUT/iobrady-db-$STAMP.sql.gz.enc"
 mv "$T/files.enc" "$OUT/iobrady-files-$STAMP.tar.gz.enc"
 (cd "$OUT" && sha256sum "iobrady-db-$STAMP.sql.gz.enc" "iobrady-files-$STAMP.tar.gz.enc" > "iobrady-$STAMP.sha256")
-chmod 600 "$OUT"/iobrady-*-"$STAMP".* "$OUT/iobrady-$STAMP.sha256"
-echo "Kopia: $OUT/iobrady-db-$STAMP.sql.gz.enc, $OUT/iobrady-files-$STAMP.tar.gz.enc (+ .sha256)"
+{ for f in "iobrady-db-$STAMP.sql.gz.enc" "iobrady-files-$STAMP.tar.gz.enc"; do
+    echo "$(mac_of "$OUT/$f")  $f"
+  done; } > "$T/mac" || fail "podpis HMAC nieudany"
+mv "$T/mac" "$OUT/iobrady-$STAMP.mac"
+chmod 600 "$OUT"/iobrady-*-"$STAMP".* "$OUT/iobrady-$STAMP.sha256" "$OUT/iobrady-$STAMP.mac"
+echo "Kopia: $OUT/iobrady-db-$STAMP.sql.gz.enc, $OUT/iobrady-files-$STAMP.tar.gz.enc (+ .sha256, .mac)"

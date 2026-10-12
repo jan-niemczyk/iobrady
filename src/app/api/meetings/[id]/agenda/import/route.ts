@@ -18,7 +18,7 @@ import { validationError } from "@/lib/http";
  */
 
 const schema = z.object({
-  text: z.string().min(1),
+  text: z.string().max(200000).min(1),
   mode: z.enum(["append", "replace"]).optional().default("append"),
 });
 

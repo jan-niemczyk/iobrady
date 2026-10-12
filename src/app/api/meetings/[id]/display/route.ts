@@ -22,9 +22,9 @@ const schema = z.object({
   displayMode: z.enum([
     "AUTO", "DEFAULT", "PINNED_AGENDA", "PINNED_VOTE", "MESSAGE", "BREAK", "BLANK", "SPEAKER_LIST", "FORMAL_MOTIONS", "ATTENDANCE", "AGENDA_LIST",
   ]).optional(),
-  displayPinnedVoteId: z.string().nullable().optional(),
-  displayPinnedAgendaItemId: z.string().nullable().optional(),
-  displayCustomMessage: z.string().nullable().optional(),
+  displayPinnedVoteId: z.string().max(64).nullable().optional(),
+  displayPinnedAgendaItemId: z.string().max(64).nullable().optional(),
+  displayCustomMessage: z.string().max(5000).nullable().optional(),
   // Przerwa z licznikiem: ISO datetime wznowienia lub null
   breakUntil: z.string().datetime().nullable().optional(),
   displayMessageOnOverlay: z.boolean().optional(),
@@ -36,11 +36,11 @@ const schema = z.object({
   displayCandidatePage: z.number().int().min(0).optional(),
   displayCandidateSort: z.enum(["VOTES", "ALPHA"]).optional(),
   /** Tryb „pokaż PIN": id głosowania (lub null, by wyłączyć) */
-  displayPinVoteId: z.string().nullable().optional(),
+  displayPinVoteId: z.string().max(64).nullable().optional(),
   /** Plansza reprezentacyjna - wyłącznie tryb wyświetlania (nie dotyka głosowań ani obrad) */
   displayBoardVisible: z.boolean().optional(),
   /** Zdejmij konkretne głosowanie z widoku automatycznego */
-  dismissLastVoteId: z.string().nullable().optional(),
+  dismissLastVoteId: z.string().max(64).nullable().optional(),
 });
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {

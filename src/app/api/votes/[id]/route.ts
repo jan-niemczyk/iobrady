@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { publishToMeeting } from "@/lib/events";
 import { NextResponse } from "next/server";
+import { HttpError, lockVoteRow } from "@/lib/booth";
 
 import { z } from "zod";
 import { validationError } from "@/lib/http";
@@ -16,17 +17,17 @@ const patchSchema = z.object({
   // Pełna edycja PRZED otwarciem:
   type: z.enum(["STANDARD", "LIST", "QUORUM", "PACKAGE"]).optional(),
   visibility: z.enum(["OPEN", "SECRET"]).optional(),
-  majorityKind: z.string().optional(),
-  majorityBase: z.string().optional(),
+  majorityKind: z.string().max(40).optional(),
+  majorityBase: z.string().max(40).optional(),
   minSelections: z.number().int().optional(),
   maxSelections: z.number().int().optional(),
   requireAllPositions: z.boolean().optional(),
   firstVoteFinal: z.boolean().nullable().optional(),
   pinRequired: z.boolean().optional(),
-  pinCode: z.string().nullable().optional(),
+  pinCode: z.string().max(10).nullable().optional(),
   // Tryb kotarkowy - wyłącznie przed otwarciem (nie można go zmienić w trakcie głosowania).
   boothMode: z.boolean().optional(),
-  options: z.array(z.object({ label: z.string().min(1), description: z.string().nullable().optional(), positionNumber: z.string().nullable().optional() })).optional(),
+  options: z.array(z.object({ label: z.string().min(1).max(2000), description: z.string().max(1000).nullable().optional(), positionNumber: z.string().max(20).nullable().optional() })).max(1000).optional(),
 });
 
 /**
@@ -94,7 +95,17 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
   if (Object.keys(data).length === 0 && d.options === undefined) return NextResponse.json({ ok: true });
 
+  try {
   await prisma.$transaction(async (tx) => {
+    // H-01: zmiana konfiguracji i otwarcie głosowania pod tą samą blokadą wiersza - edycja
+    // struktury nie wejdzie po otwarciu (status sprawdzany ponownie w transakcji).
+    await lockVoteRow(tx, id);
+    const cur = await tx.vote.findUnique({ where: { id }, select: { status: true } });
+    if (!cur) throw new HttpError(404, "Not found");
+    if (wantsStructural && cur.status !== "READY")
+      throw new HttpError(409, "Głosowanie zostało już otwarte - pełna edycja nie jest możliwa.");
+    if (d.agendaItemId !== undefined && cur.status === "OPEN")
+      throw new HttpError(409, "Punktu nie można zmienić w trakcie głosowania.");
     if (Object.keys(data).length > 0) await tx.vote.update({ where: { id }, data });
     // Wymiana opcji (lista/pakiet) - usuń stare, utwórz nowe.
     if (d.options !== undefined && vote.status === "READY") {
@@ -106,6 +117,10 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       }
     }
   });
+  } catch (e) {
+    if (e instanceof HttpError) return new NextResponse(e.message, { status: e.status });
+    throw e;
+  }
 
   await audit({
     action: "VOTE_UPDATED",
@@ -131,7 +146,19 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string 
   if (vote.status === "OPEN")
     return new NextResponse("Nie można usunąć trwającego głosowania - najpierw je zamknij lub przerwij.", { status: 400 });
 
-  await prisma.vote.delete({ where: { id } });
+  // H-01: usunięcie pod blokadą - nie usuwamy głosowania otwartego równolegle.
+  try {
+    await prisma.$transaction(async (tx) => {
+      await lockVoteRow(tx, id);
+      const cur = await tx.vote.findUnique({ where: { id }, select: { status: true } });
+      if (!cur) throw new HttpError(404, "Not found");
+      if (cur.status === "OPEN") throw new HttpError(409, "Głosowanie zostało właśnie otwarte - najpierw je zamknij lub przerwij.");
+      await tx.vote.delete({ where: { id } });
+    });
+  } catch (e) {
+    if (e instanceof HttpError) return new NextResponse(e.message, { status: e.status });
+    throw e;
+  }
 
   await audit({
     action: "VOTE_DELETED",

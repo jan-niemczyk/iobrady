@@ -13,8 +13,8 @@ const patchSchema = z.object({
   canUseMiniDisplay: z.boolean().optional(),
   excludedFromMeeting: z.boolean().optional(),
   // null = priorytet globalny; wartość = tylko w tym punkcie porządku
-  priorityAgendaItemId: z.string().nullable().optional(),
-  priorityAgendaItemIds: z.array(z.string()).optional(),
+  priorityAgendaItemId: z.string().max(64).nullable().optional(),
+  priorityAgendaItemIds: z.array(z.string().max(64)).max(5000).optional(),
 });
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ mpId: string }> }) {

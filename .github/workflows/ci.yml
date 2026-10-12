@@ -33,8 +33,10 @@ jobs:
       SEC_OP_PASS: ci-operator-pass
       SEC_PT_PASS: ci-participant-pass
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (H-07: przypięte do commitu)
+      - name: Skan sekretów w repozytorium (H-07)
+        run: sh scripts/secret-scan.sh
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -65,5 +67,7 @@ jobs:
         run: E2E_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/booth-mode.spec.ts --reporter=line
       - name: Regresje niezależnego audytu (IA/BF/UW)
         run: E2E_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/audit-fixes.spec.ts --reporter=line
+      - name: Utwardzenia H-01..H-08 (CSP z nonce, limity, głos tajny bez zapisu)
+        run: E2E_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/hardening.spec.ts --reporter=line
       - if: failure()
         run: tail -200 next.log

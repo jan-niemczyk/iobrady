@@ -11,7 +11,7 @@ const schema = z.object({
   scope: z.enum(["PER_AGENDA_ITEM", "WHOLE_MEETING"]).optional(),
   budgetSec: z.number().int().min(0).nullable().optional(),
   // Limity per klub: [{ clubShort, budgetSec }]
-  clubBudgets: z.array(z.object({ clubShort: z.string(), budgetSec: z.number().int().min(0).nullable() })).optional(),
+  clubBudgets: z.array(z.object({ clubShort: z.string().max(64), budgetSec: z.number().int().min(0).nullable() })).max(500).optional(),
   // Reset naliczonych czasów (np. przy zmianie punktu w trybie PER_AGENDA_ITEM).
   reset: z.boolean().optional(),
 });

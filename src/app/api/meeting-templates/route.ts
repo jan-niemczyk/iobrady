@@ -8,7 +8,7 @@ const createSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(1000).nullable().optional(),
   // opcjonalnie od razu członkowie
-  memberUserIds: z.array(z.string()).optional(),
+  memberUserIds: z.array(z.string().max(64)).max(5000).optional(),
 });
 
 // GET /api/meeting-templates - lista szablonów z liczbą członków

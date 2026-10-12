@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 const schema = z.object({
-  userId: z.string().optional(), // operator może zgłosić w imieniu
+  userId: z.string().max(64).optional(), // operator może zgłosić w imieniu
 });
 
 /**

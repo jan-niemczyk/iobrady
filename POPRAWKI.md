@@ -1515,3 +1515,36 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
 - Schemat: nowa wartość enuma `AuditAction` (dodanie, bez utraty danych).
 - [x] Kopia/odtwarzanie bez pliku `.env` (zmienne ze środowiska): `envval` nie przerywa już skryptu przy `set -e`
       (wykryte przez test kopii w CI, gdzie `.env` nie istnieje).
+
+## ABG. Głos tajny bez zapisu treści i utwardzenia H-01..H-08
+
+- [x] **Głosowanie tajne - nic nie zapisujemy** (decyzja właściciela, wariant 3):
+  - treść głosu tajnego nie jest już zapisywana przy osobie, nawet zaszyfrowana; zostają anonimowe liczniki
+    i znacznik „oddał kartę”;
+  - zerowanie pojedynczego głosu tajnego usunięte (operator 409 z wyjaśnieniem, radny 403); w panelu zamiast
+    przycisku informacja: przy pomyłce anulować głosowanie i przeprowadzić je ponownie;
+  - stare zaszyfrowane treści czyszczone przy każdym starcie (`post-migrate.ts`); kolumna zostaje (bez zmian schematu).
+- [x] H-01: uprawnienia głosującego sprawdzane ponownie pod blokadą głosowania; edycja, otwarcie i usunięcie
+      głosowania oraz usunięcie i cofnięcie posiedzenia pod blokadą z ponownym sprawdzeniem stanu.
+- [x] H-03: limity długości i liczby elementów w schematach API, limit treści żądań (aplikacja i Caddy).
+- [x] H-04: typ załącznika rozpoznawany po zawartości; `/api/*` bez zapisu w pamięci podręcznej; CSV mocniej
+      neutralizuje formuły; eksporty CSV z limitem wierszy.
+- [x] H-05: dziennik zmian stanu głosowania w tej samej transakcji; logi serwera bez danych zapytań i adresów e-mail.
+- [x] H-06: próby logowania w trakcie blokady jej nie przedłużają; Caddy z limitami czasu połączeń.
+- [x] H-07:
+  - CSP z jednorazowym nonce - skrypty bez `'unsafe-inline'`;
+  - czcionki panelu z własnego serwera (ekran sali i nakładka nadal z Google Fonts - wybór operatora);
+  - akcje CI przypięte do commitów; `npm audit fix`.
+- [x] H-08: skaner sekretów `scripts/secret-scan.sh` w CI (tryb `--historia` dla całej historii git).
+- [x] Kopie:
+  - podpis HMAC (`.mac`) sprawdzany przy odtwarzaniu;
+  - `scripts/restore-drill.sh` - próba odtworzenia do jednorazowego kontenera (INSTALACJA.md).
+- [x] Testy: `tests/e2e/hardening.spec.ts` (w CI), sonda S8d, test kopii rozszerzony do 17 kontroli.
+- Sprawdzone na świeżej bazie jak w CI:
+  - sondy 45/45, e2e 25/25 (booth-mode, audit-fixes, hardening), test kopii 17/17 (dash i bash);
+  - próba odtworzenia prawdziwej kopii do pustej bazy;
+  - 14 widoków w przeglądarce bez naruszeń CSP; `tsc`, build, składnia Caddyfile.
+- Niewdrożone (opis w SECURITY_AUDIT.md, rozdz. 10): osobna rola bazy dla migracji, ograniczenie ruchu
+  wychodzącego, wersjonowane migracje, testy obciążeniowe.
+- Schemat bazy bez zmian. Po wdrożeniu: kopie wykonane w trakcie tajnego głosowania przed tą wersją mogą
+  zawierać zaszyfrowane treści - usunąć je, gdy przestaną być potrzebne.

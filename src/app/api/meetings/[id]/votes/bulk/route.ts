@@ -10,12 +10,12 @@ import { validationError } from "@/lib/http";
 // Import głosowań z tekstu: jedna linia = jedno głosowanie (tytuł),
 // wspólne ustawienia dla wszystkich (typ, jawność, większość, punkt, PIN).
 const schema = z.object({
-  text: z.string().min(1),
+  text: z.string().max(200000).min(1),
   type: z.nativeEnum(VoteType).default(VoteType.STANDARD),
   visibility: z.nativeEnum(VoteVisibility).default(VoteVisibility.OPEN),
   majorityKind: z.nativeEnum(MajorityKind).default(MajorityKind.SIMPLE),
   majorityBase: z.nativeEnum(MajorityBase).default(MajorityBase.OF_VOTERS),
-  agendaItemId: z.string().nullable().optional(),
+  agendaItemId: z.string().max(64).nullable().optional(),
   adHoc: z.boolean().optional().default(false),
 });
 

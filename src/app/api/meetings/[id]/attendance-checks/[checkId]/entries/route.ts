@@ -5,7 +5,7 @@ import { z } from "zod";
 import { NextResponse } from "next/server";
 
 const schema = z.object({
-  entries: z.array(z.object({ userId: z.string(), present: z.boolean() })).min(1),
+  entries: z.array(z.object({ userId: z.string().max(64), present: z.boolean() })).min(1).max(5000),
   // Gdy true, po zapisie nadpisujemy też bieżący stan obecności (Attendance) tą migawką.
   applyToCurrent: z.boolean().optional(),
 });

@@ -11,9 +11,10 @@ export function toCsv(rows: (string | number | null | undefined | boolean)[][]):
   const escape = (v: string | number | null | undefined | boolean): string => {
     if (v === null || v === undefined) return "";
     let s = typeof v === "boolean" ? (v ? "tak" : "nie") : String(v);
-    // Neutralizacja formuł (CSV injection): tekst zaczynający się od = + - @ tab CR
-    // jest poprzedzany apostrofem, by arkusz nie wykonał go jako formuły. Liczby bez zmian.
-    if (typeof v === "string" && /^[=+\-@\t\r]/.test(s) && !/^-?\d+([.,]\d+)?$/.test(s)) s = `'${s}`;
+    // Neutralizacja formuł (CSV injection): tekst zaczynający się (także po białych znakach)
+    // od = + - @ | tab CR LF albo ich pełnoszerokich odpowiedników jest poprzedzany apostrofem,
+    // by arkusz nie wykonał go jako formuły (H-05). Liczby bez zmian.
+    if (typeof v === "string" && /^[\s\u00A0]*[=+\-@|\t\r\n\uFF1D\uFF0B\uFF0D\uFF20]/.test(s) && !/^-?\d+([.,]\d+)?$/.test(s)) s = `'${s}`;
     return `"${s.replace(/"/g, '""')}"`;
   };
   const body = rows.map((r) => r.map(escape).join(";")).join("\r\n");

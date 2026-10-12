@@ -6,8 +6,8 @@ import { z } from "zod";
 import { validationError } from "@/lib/http";
 
 const schema = z.object({
-  userIds: z.array(z.string()).min(1),
-  groupId: z.string().nullable(), // null = usuń przynależność (niezrzeszeni)
+  userIds: z.array(z.string().max(64)).min(1).max(5000),
+  groupId: z.string().max(64).nullable(), // null = usuń przynależność (niezrzeszeni)
 });
 
 /**

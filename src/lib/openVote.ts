@@ -4,7 +4,7 @@ import { audit } from "@/lib/audit";
 import { comparePl } from "@/lib/sortPl";
 import { VoteStatus } from "@prisma/client";
 import { lockMeetingRow, VOTING_MEETING_STATUSES } from "@/lib/meetingLock";
-import { HttpError } from "@/lib/booth";
+import { HttpError, lockVoteRow } from "@/lib/booth";
 
 export type OpenVoteResult = { ok: true; number: number | null } | { ok: false; status: number; message: string };
 
@@ -52,6 +52,7 @@ export async function openVoteNow(id: string, userId: string): Promise<OpenVoteR
       throw new HttpError(400, "Głosowanie można otworzyć tylko w otwartym lub trwającym posiedzeniu.");
     const other = await tx.vote.findFirst({ where: { meetingId: vote.meetingId, status: VoteStatus.OPEN, NOT: { id: vote.id } }, select: { id: true } });
     if (other) throw new HttpError(400, "Inne głosowanie jest aktywne - zamknij je najpierw");
+    await lockVoteRow(tx, id); // H-01: kolejność z edycją i usunięciem głosowania
     const cur = await tx.vote.findUnique({ where: { id }, select: { status: true } });
     if (!cur || (cur.status !== VoteStatus.READY && cur.status !== VoteStatus.DRAFT))
       throw new HttpError(400, `Nie można otworzyć - głosowanie w statusie ${cur?.status ?? "?"}`);
@@ -97,19 +98,19 @@ export async function openVoteNow(id: string, userId: string): Promise<OpenVoteR
         boothUserId: null, boothGrantedAt: null,
       },
     });
+    // H-05: wpis dziennika atomowo z otwarciem.
+    await audit({
+      action: "VOTE_OPENED",
+      description: `Otwarto głosowanie: ${vote.title}`,
+      meetingId: vote.meetingId,
+      userId,
+      metadata: { voteId: vote.id, eligible: eligible.length, present: present.length },
+    }, tx);
   });
   } catch (e) {
     if (e instanceof HttpError) return { ok: false, status: e.status, message: e.message };
     throw e;
   }
-
-  await audit({
-    action: "VOTE_OPENED",
-    description: `Otwarto głosowanie: ${vote.title}`,
-    meetingId: vote.meetingId,
-    userId,
-    metadata: { voteId: vote.id, eligible: eligible.length, present: present.length },
-  });
 
   publishToMeeting(vote.meetingId, { type: "vote.opened", voteId: vote.id });
   return { ok: true, number };

@@ -22,13 +22,13 @@ const schema = z.object({
   visibility: z.nativeEnum(VoteVisibility),
   majorityKind: z.nativeEnum(MajorityKind),
   majorityBase: z.nativeEnum(MajorityBase),
-  agendaItemId: z.string().nullable().optional(),
+  agendaItemId: z.string().max(64).nullable().optional(),
   /** czy głosowanie jest ad hoc - bez wiązania z punktem porządku */
   adHoc: z.boolean().optional().default(false),
   contextLabel: z.string().max(500).optional().nullable(),
   minSelections: z.number().int().min(0).optional().nullable(),
   maxSelections: z.number().int().min(0).optional().nullable(),
-  options: z.array(optionSchema).optional().default([]),
+  options: z.array(optionSchema).max(1000).optional().default([]),
   openImmediately: z.boolean().optional().default(false),
   // PIN zabezpieczający
   pinRequired: z.boolean().optional().default(false),

@@ -8,7 +8,7 @@ import { z } from "zod";
 const schema = z.object({
   content: z.string().min(1).max(2000),
   visibleToAll: z.boolean().optional().default(true),
-  visibleGroupIds: z.array(z.string()).optional().default([]),
+  visibleGroupIds: z.array(z.string().max(64)).max(5000).optional().default([]),
 });
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {

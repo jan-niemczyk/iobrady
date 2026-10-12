@@ -1,6 +1,22 @@
 # Caddy automatycznie pobiera i odnawia certyfikat Let's Encrypt dla tej domeny.
 # Ustaw zmienną środowiskową DOMAIN (patrz docker-compose.yml/.env) na swoją domenę.
+{
+	# H-06: wolne lub zawieszone połączenia nie blokują serwera (nagłówki w 15 s).
+	servers {
+		timeouts {
+			read_header 15s
+			idle 2m
+		}
+	}
+}
+
 {$DOMAIN:localhost} {
+	# H-03/H-06: twardy limit treści żądania także bez nagłówka Content-Length
+	# (największy dopuszczalny plik to załącznik 20 MB; aplikacja ma niższe limity per trasa).
+	request_body {
+		max_size 25MB
+	}
+
 	# Reverse proxy do aplikacji Next.js w kontenerze "app" (port 3000 w sieci dockera)
 	# X-Forwarded-For ustawiany przez Caddy na adres klienta (nagłówek od klienta jest zastępowany) -
 	# aplikacja (TRUST_PROXY=true) liczy na tej podstawie limity logowania i prezentacji.

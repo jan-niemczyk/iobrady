@@ -7,7 +7,7 @@ import { validationError } from "@/lib/http";
 import { checkSetupToken } from "@/lib/setupToken";
 
 const schema = z.object({
-  email: z.string().email().toLowerCase(),
+  email: z.string().max(254).email().toLowerCase(),
   password: z.string().min(8).max(200),
   firstName: z.string().min(1).max(100).default("Operator"),
   lastName: z.string().min(1).max(100).default("Systemu"),

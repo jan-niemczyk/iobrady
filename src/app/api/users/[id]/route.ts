@@ -9,13 +9,13 @@ import { revokeUserSessions } from "@/lib/sessions";
 import { validationError } from "@/lib/http";
 
 const patchSchema = z.object({
-  email: z.string().email().toLowerCase().optional(),
+  email: z.string().max(254).email().toLowerCase().optional(),
   firstName: z.string().min(1).max(100).optional(),
   lastName: z.string().min(1).max(100).optional(),
   functionTitle: z.string().max(120).nullable().optional(),
   femaleForms: z.boolean().optional(),
   role: z.nativeEnum(Role).optional(),
-  groupId: z.string().nullable().optional(),
+  groupId: z.string().max(64).nullable().optional(),
   active: z.boolean().optional(),
   password: z.string().min(8).max(200).optional(),
 });

@@ -10,7 +10,8 @@ import { audit } from "@/lib/audit";
  *  - IP:        150 błędów   -> blokada IP (zgadywanie wielu kont z jednego adresu).
  *
  * Blokada dotyczy dowolnego ciągu e-mail (także nieistniejącego konta), więc nie zdradza,
- * czy konto istnieje. Wygasa sama po upływie okna od najstarszej liczonej próby.
+ * czy konto istnieje. Wygasa sama po upływie okna od najstarszej liczonej próby. Próby
+ * odrzucone w trakcie blokady nie są zapisywane (H-06), więc nie przedłużają blokady.
  */
 export const WINDOW_MS = 15 * 60_000;
 export const LIMITS = { emailIp: 8, email: 30, ip: 150 } as const;

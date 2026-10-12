@@ -28,17 +28,19 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
       data: { status: VoteStatus.CANCELLED, closedAt: new Date(), number: null, boothUserId: null, boothGrantedAt: null },
     });
     if (upd.count > 0) await purgeSecretResetPayloads(tx, id);
+    // H-05: wpis dziennika atomowo ze zmianą stanu.
+    if (upd.count > 0) {
+      await audit({
+        action: "VOTE_CANCELLED",
+        description: `Anulowano głosowanie${vote.number != null ? ` nr ${vote.number}` : ""}: ${vote.title}`,
+        meetingId: vote.meetingId,
+        userId: session.user.id,
+        metadata: { voteId: vote.id },
+      }, tx);
+    }
     return upd.count > 0;
   });
   if (!ok) return new NextResponse("Głosowanie już zakończone", { status: 400 });
-
-  await audit({
-    action: "VOTE_CANCELLED",
-    description: `Anulowano głosowanie${vote.number != null ? ` nr ${vote.number}` : ""}: ${vote.title}`,
-    meetingId: vote.meetingId,
-    userId: session.user.id,
-    metadata: { voteId: vote.id },
-  });
 
   await prisma.meeting.updateMany({ where: { id: vote.meetingId, displayPinVoteId: vote.id }, data: { displayPinVoteId: null } });
   publishToMeeting(vote.meetingId, { type: "vote.cancelled", voteId: vote.id });

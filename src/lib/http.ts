@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { safeErrorText } from "@/lib/logSafe";
 
 /**
  * Odpowiedzi błędów bez szczegółów technicznych (SA-10): klient dostaje krótki komunikat
@@ -10,7 +11,7 @@ export function badRequest(message = "Nieprawidłowe dane żądania.", detail?: 
 }
 
 export function serverError(where: string, e: unknown, message = "Błąd serwera. Spróbuj ponownie.") {
-  console.error(`[500] ${where}:`, e);
+  console.error(`[500] ${where}: ${safeErrorText(e)}`);
   return new NextResponse(message, { status: 500 });
 }
 

@@ -1,5 +1,6 @@
 #!/bin/sh
-# Odtworzenie kopii z scripts/backup.sh. Sprawdza sumy SHA-256, odszyfrowuje i wgrywa.
+# Odtworzenie kopii z scripts/backup.sh. Sprawdza podpis HMAC i sumy SHA-256, odszyfrowuje i wgrywa.
+# Kopia bez podpisu (.mac - sprzed tej wersji) wymaga jawnej zgody: ALLOW_UNSIGNED_BACKUP=1.
 #
 # Użycie:  ./scripts/restore.sh <katalog_kopii> <STAMP>        (np. 2026-10-04-120000)
 # Baza jest wgrywana do PUSTEJ bazy (najpierw: docker compose up -d db; dropdb/createdb lub nowy wolumen).
@@ -19,7 +20,25 @@ DB_NAME="${POSTGRES_DB:-$(envval POSTGRES_DB)}"; DB_NAME="${DB_NAME:-iobrady}"
 DB_RESTORE_CMD="${DB_RESTORE_CMD:-docker compose exec -T db psql -v ON_ERROR_STOP=1 -q -U $DB_USER $DB_NAME}"
 FILES_UNTAR_CMD="${FILES_UNTAR_CMD:-docker compose run --rm --no-deps -T app tar -C /app -xf -}"
 dec() { openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass "file:$KEY"; }
+mac_key() { { printf 'iobrady-backup-mac-v1:'; cat "$KEY"; } | openssl dgst -sha256 -r | cut -d' ' -f1; }
+mac_of() { openssl dgst -sha256 -mac HMAC -macopt "hexkey:$MK" -r "$1" | cut -d' ' -f1; }
+[ -r "$KEY" ] || { echo "Brak pliku klucza kopii: $KEY" >&2; exit 1; }
+MK=$(mac_key)
 
+# Autentyczność: podpis HMAC obu plików (klucz z klucza kopii) - przed jakimkolwiek odczytem treści.
+if [ -f "$DIR/iobrady-$STAMP.mac" ]; then
+  for f in "iobrady-db-$STAMP.sql.gz.enc" "iobrady-files-$STAMP.tar.gz.enc"; do
+    want=$(sed -n "s/^\([0-9a-f]\{64\}\)  $f\$/\1/p" "$DIR/iobrady-$STAMP.mac")
+    [ -n "$want" ] && [ "$want" = "$(mac_of "$DIR/$f")" ] \
+      || { echo "Podpis HMAC niezgodny: $f - kopia zmieniona albo inny klucz. Odtwarzanie przerwane." >&2; exit 1; }
+  done
+  echo "Podpis HMAC: zgodny."
+elif [ "${ALLOW_UNSIGNED_BACKUP:-0}" = 1 ]; then
+  echo "UWAGA: kopia bez podpisu HMAC (starsza wersja skryptu) - odtwarzanie na wyraźne żądanie." >&2
+else
+  echo "Brak podpisu iobrady-$STAMP.mac. Kopia sprzed wersji z podpisem? Uruchom z ALLOW_UNSIGNED_BACKUP=1." >&2
+  exit 1
+fi
 (cd "$DIR" && sha256sum -c "iobrady-$STAMP.sha256")
 # Najpierw odszyfrowanie i sprawdzenie archiwów do plików tymczasowych - zły klucz lub uszkodzony
 # plik zatrzymuje odtwarzanie, zanim cokolwiek trafi do bazy.

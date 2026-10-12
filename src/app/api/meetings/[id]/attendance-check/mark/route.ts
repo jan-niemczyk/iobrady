@@ -6,7 +6,7 @@ import { z } from "zod";
 import { audit } from "@/lib/audit";
 
 const schema = z.object({
-  userId: z.string(),
+  userId: z.string().max(64),
   present: z.boolean(),
 });
 

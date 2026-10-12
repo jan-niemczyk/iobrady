@@ -5,6 +5,7 @@ import { meetingAdHocEmail } from "@/lib/mailTemplates";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { appOrigin, validationError } from "@/lib/http";
+import { safeErrorText } from "@/lib/logSafe";
 
 const schema = z.object({
   userIds: z.array(z.string().max(64)).max(2000).optional().default([]),
@@ -49,7 +50,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     });
   } catch (e) {
     // Szczegóły błędu SMTP tylko w logu i EmailLog (diagnostyka: Ustawienia -> test e-mail).
-    console.error("[mail]", e);
+    console.error(`[mail] ${safeErrorText(e)}`);
     return new NextResponse(e instanceof MailNotConfiguredError ? e.message : "Nie udało się wysłać wiadomości. Sprawdź konfigurację SMTP (Ustawienia - test e-mail).", { status: 400 });
   }
 

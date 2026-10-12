@@ -5,15 +5,19 @@ import { formatDateTime } from "@/lib/labels";
 import { ROLE_LABEL } from "@/lib/labels";
 import { NextResponse } from "next/server";
 
+const MAX_ROWS = 50_000;
+
 export async function GET() {
   const session = await auth();
   if (!session || session.user.role !== "OPERATOR")
     return new NextResponse("Unauthorized", { status: 401 });
 
-  const events = await prisma.loginEvent.findMany({
-    include: { user: true },
-    orderBy: { at: "asc" },
-  });
+  // H-03: najnowsze MAX_ROWS wpisów (starsze usuwa i tak retencja), w kolejności chronologicznej.
+  const events = (await prisma.loginEvent.findMany({
+    include: { user: { select: { firstName: true, lastName: true, email: true } } },
+    orderBy: { at: "desc" },
+    take: MAX_ROWS,
+  })).reverse();
 
   const rows: (string | number | null | undefined | boolean)[][] = [
     ["Data", "Imię i nazwisko", "E-mail", "Rola"],

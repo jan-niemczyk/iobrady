@@ -765,7 +765,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
               Cofnij do przygotowania
             </button>
           )}
-          {state.status !== "OPEN" && state.status !== "IN_PROGRESS" && (
+          {state.status !== "OPEN" && state.status !== "IN_PROGRESS" && state.status !== "PAUSED" && (
             <button
               className="btn btn-outline-danger"
               disabled={pending}
@@ -1678,14 +1678,11 @@ function ActiveVotePanel({
           />
         )}
 
-        {/* Zerowanie głosu tajnego (zgłoszona pomyłka) - bez ujawniania treści głosu */}
+        {/* Głos tajny nie jest nigdzie zapisywany - nie da się go wyzerować; pomyłka = anulowanie i powtórzenie. */}
         {vote.visibility === "SECRET" && vote.type !== "QUORUM" && (
-          <SecretResetPanel
-            participants={participants}
-            votedUserIds={counter?.votedUserIds ?? []}
-            onReset={onResetByOperator}
-            pending={pending}
-          />
+          <p className="small text-body-secondary mb-0">
+            Treść głosów tajnych nie jest zapisywana, więc pojedynczego głosu nie można wyzerować. Przy pomyłce anuluj głosowanie i przeprowadź je ponownie.
+          </p>
         )}
 
         <div className="d-flex gap-2 flex-wrap pt-1">
@@ -1794,74 +1791,6 @@ function OperatorOnBehalfPanel({
     </div>
   );
 }
-
-// Zerowanie głosu tajnego: lista osób, które oddały kartę (treść głosu nie jest znana ani pokazywana).
-function SecretResetPanel({
-  participants, votedUserIds, onReset, pending,
-}: {
-  participants: { userId: string; name: string }[];
-  votedUserIds: string[];
-  onReset: (userId: string) => void;
-  pending: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const voted = new Set(votedUserIds);
-  const list = participants
-    .filter((p) => voted.has(p.userId))
-    .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
-  return (
-    <div className="border rounded-2">
-      <button
-        type="button"
-        className="btn w-100 border-0 rounded-2 d-flex justify-content-between"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-      >
-        <span className="d-inline-flex align-items-center gap-2"><IconUsers size={15} /> Zeruj głos uczestnika (pomyłka)</span>
-        <span className="text-body-secondary">{open ? <IconChevronDown size={14} style={{ transform: "rotate(180deg)" }} /> : <IconChevronDown size={14} />}</span>
-      </button>
-      {open && (
-        <div className="border-top p-2 bg-body-tertiary">
-          <input
-            className="form-control form-control-sm mb-2"
-            placeholder="Wyszukaj uczestnika…"
-            aria-label="Wyszukaj uczestnika"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <div className="list-group overflow-y-auto" style={{ maxHeight: 340 }}>
-            {list.length === 0 && (
-              <div className="list-group-item small text-body-secondary">Nikt jeszcze nie oddał głosu.</div>
-            )}
-            {list.map((p) => (
-              <div key={p.userId} className="list-group-item d-flex align-items-center gap-2">
-                <div className="min-w-0 flex-grow-1">
-                  <div className="text-truncate" title={p.name}>{p.name}</div>
-                  <div className="small text-body-secondary">głos oddany</div>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-danger"
-                  disabled={pending}
-                  onClick={async () => {
-                    if (await ask({
-                      title: "Wyzerować głos tajny?",
-                      message: `Głos osoby ${p.name} zostanie usunięty z wyniku bez ujawniania jego treści. Uczestnik będzie mógł zagłosować ponownie.`,
-                      confirmLabel: "Wyzeruj głos", danger: true,
-                    })) onReset(p.userId);
-                  }}
-                >Zeruj</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Wybór kandydatów listy przy głosowaniu w imieniu.
 function OnBehalfListPicker({ vote, pending, onSubmit }: { vote: VoteState; pending: boolean; onSubmit: (ids: string[]) => void }) {
   const [sel, setSel] = useState<string[]>([]);
   const toggle = (id: string) => setSel((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]);

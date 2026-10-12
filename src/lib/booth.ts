@@ -12,9 +12,8 @@ import { comparePl } from "@/lib/sortPl";
  * drugie widzi już stan po pierwszym (głos przyjęty albo dostęp cofnięty).
  *
  * Tajność: stan kabiny (kto ma kartę, kto oddał głos) nie jest nigdy ujawniany razem z treścią
- * głosu - treść trafia do anonimowych liczników, jak w zwykłym głosowaniu tajnym. Na czas
- * trwania głosowania marker przechowuje treść ZASZYFROWANĄ wyłącznie na potrzeby zerowania
- * pomyłki przez operatora (lib/secretReset); zakończenie głosowania ją usuwa.
+ * głosu - treść trafia do anonimowych liczników, jak w zwykłym głosowaniu tajnym. Marker
+ * zapisuje tylko fakt oddania karty; treść głosu nie jest przechowywana nigdzie (lib/secretReset).
  */
 
 export type Tx = Prisma.TransactionClient;

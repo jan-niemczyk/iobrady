@@ -7,7 +7,7 @@ import { audit } from "@/lib/audit";
 import { refreshUserSessionsCache, revokeUserSessions } from "@/lib/sessions";
 
 const schema = z.object({
-  currentPassword: z.string().min(1),
+  currentPassword: z.string().max(200).min(1),
   newPassword: z.string().min(8).max(200),
 });
 

@@ -6,9 +6,19 @@ import { autoCloseIfAllVoted } from "@/lib/closeVote";
 import { z } from "zod";
 import { Prisma, VoteChoice, VoteStatus, VoteType } from "@prisma/client";
 import { lockVoteRow } from "@/lib/booth";
-import { encryptSecret } from "@/lib/secretBox";
-import { ballotContext, resetSecretBallot, type SecretBallotContent } from "@/lib/secretReset";
-import { audit } from "@/lib/audit";
+import { safeErrorText } from "@/lib/logSafe";
+
+// H-01: uprawnienia głosującego sprawdzane ponownie pod blokadą wiersza głosowania - odebranie prawa
+// głosu, wykluczenie albo zmiana obecności równolegle z oddaniem głosu rozstrzyga się w jednej kolejności.
+async function recheckVoter(tx: Prisma.TransactionClient, meetingId: string, userId: string, voteId: string, type: VoteType) {
+  const mp = await tx.meetingParticipant.findUnique({
+    where: { meetingId_userId: { meetingId, userId } },
+    select: { hasVotingRight: true, excludedFromMeeting: true, excludedFromVoteIds: true, attendance: { select: { status: true } } },
+  });
+  if (!mp || mp.excludedFromMeeting || !mp.hasVotingRight || mp.excludedFromVoteIds.includes(voteId))
+    throw new Error("NO_RIGHT");
+  if (type !== VoteType.QUORUM && mp.attendance?.status !== "PRESENT") throw new Error("NOT_PRESENT");
+}
 
 const schema = z.object({
   // dla STANDARD:
@@ -21,7 +31,7 @@ const schema = z.object({
   invalid: z.boolean().optional(),
   // OPERATOR może oddać głos w imieniu uczestnika (tylko głosowania JAWNE).
   onBehalfUserId: z.string().max(64).optional(),
-  // OPERATOR może wyzerować (usunąć) głos uczestnika - jawne oraz tajne (zgłoszona pomyłka).
+  // OPERATOR może wyzerować (usunąć) głos uczestnika - tylko jawne (tajne: treść nie jest zapisywana, 409).
   reset: z.boolean().optional(),
 });
 
@@ -56,22 +66,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     targetUserId = parsed.data.onBehalfUserId;
   }
 
-  // Zerowanie głosu TAJNEGO przez operatora (zgłoszona pomyłka): cofnięcie anonimowych liczników
-  // na podstawie zaszyfrowanej treści przy markerze, pod blokadą wiersza głosowania.
+  // Głos TAJNY nie może być wyzerowany: jego treść nie jest nigdzie zapisywana (brak powiązania
+  // osoba -> treść), więc nie wiadomo, co odjąć od liczników. Pomyłka = anulowanie i powtórzenie.
   if (parsed.data.reset && vote.visibility === "SECRET" && vote.type !== VoteType.QUORUM) {
     if (session.user.role !== "OPERATOR") return new NextResponse("Tylko operator", { status: 403 });
-    if (!parsed.data.onBehalfUserId) return new NextResponse("Wskaż uczestnika", { status: 400 });
-    const r = await resetSecretBallot(voteId, parsed.data.onBehalfUserId);
-    if (!r.ok) return new NextResponse(r.message, { status: r.status });
-    const who = await prisma.user.findUnique({ where: { id: parsed.data.onBehalfUserId }, select: { firstName: true, lastName: true } });
-    await audit({
-      action: "VOTE_BALLOT_RESET",
-      description: `Wyzerowano głos tajny uczestnika ${who ? `${who.firstName} ${who.lastName}` : ""} w głosowaniu${vote.number != null ? ` nr ${vote.number}` : ""}: ${vote.title}`,
-      meetingId: vote.meetingId, userId: session.user.id,
-      metadata: { voteId, participantUserId: parsed.data.onBehalfUserId },
-    });
-    publishToMeeting(vote.meetingId, { type: "vote.opened", voteId });
-    return NextResponse.json({ ok: true, reset: true });
+    return new NextResponse("Głosu tajnego nie można wyzerować - jego treść nie jest zapisywana. Przy pomyłce anuluj głosowanie i przeprowadź je ponownie.", { status: 409 });
   }
 
   // C4: operator zeruje głos uczestnika (usuwa ballot i selekcje) - jawne.
@@ -194,21 +193,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         await lockVoteRow(tx, voteId);
         const cur = await tx.vote.findUnique({ where: { id: voteId }, select: { status: true, boothMode: true, boothUserId: true } });
         if (!cur || cur.status !== VoteStatus.OPEN) throw new Error("NOT_OPEN");
+        await recheckVoter(tx, vote.meetingId, targetUserId, voteId, vote.type);
         const existingMarker = await tx.secretBallotMarker.findUnique({
           where: { voteId_userId: { voteId, userId: targetUserId } },
         });
         if (existingMarker) throw new Error("ALREADY_VOTED");
         // Tryb kotarkowy: głos przyjmujemy wyłącznie od osoby, której operator właśnie udostępnił kartę.
         if (cur.boothMode && cur.boothUserId !== targetUserId) throw new Error("NO_BOOTH_ACCESS");
-        // Treść głosu zaszyfrowana przy markerze - tylko na czas trwania głosowania (zerowanie przez
-        // operatora po zgłoszeniu pomyłki). Zamknięcie/przerwanie/anulowanie czyści to pole.
-        const resetPayload = encryptSecret(JSON.stringify({
-          invalid: !!parsed.data.invalid,
-          choice: parsed.data.choice ?? null,
-          selected: vote.type === VoteType.LIST ? (parsed.data.selectedOptionIds ?? []) : [],
-          pkg: vote.type === VoteType.PACKAGE ? (parsed.data.packageChoices ?? []) : [],
-        } satisfies SecretBallotContent), ballotContext(voteId, targetUserId));
-        await tx.secretBallotMarker.create({ data: { voteId, userId: targetUserId, resetPayload } });
+        // Tylko znacznik „oddał kartę” - treść głosu nie jest zapisywana nigdzie (H-02).
+        await tx.secretBallotMarker.create({ data: { voteId, userId: targetUserId } });
 
         if (vote.type === VoteType.PACKAGE) {
           // Tajny pakiet: anonimowe liczniki per pozycja (bez wiązania kto→co).
@@ -267,11 +260,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         return new NextResponse("Głosowanie zostało zamknięte - głos nie został przyjęty.", { status: 409 });
       if (msg === "NO_CHOICE")
         return new NextResponse("Brak wyboru", { status: 400 });
+      if (msg === "NO_RIGHT")
+        return new NextResponse("Uczestnik nie ma prawa głosu w tym głosowaniu.", { status: 403 });
+      if (msg === "NOT_PRESENT")
+        return new NextResponse("Uczestnik musi być obecny, aby głosować", { status: 403 });
       return new NextResponse("Błąd zapisu głosu", { status: 500 });
     }
     publishToMeeting(vote.meetingId, { type: "vote.opened", voteId });
     // BF-03: automatyczne zamknięcie obejmuje także głosowania tajne (ten sam warunek co w jawnych).
-    await autoCloseIfAllVoted(voteId).catch((e) => console.error("[głosowanie] automatyczne zamknięcie nieudane", e));
+    await autoCloseIfAllVoted(voteId).catch((e) => console.error(`[głosowanie] automatyczne zamknięcie nieudane: ${safeErrorText(e)}`));
     return NextResponse.json({ ok: true, secret: true });
   }
 
@@ -283,6 +280,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     await lockVoteRow(tx, voteId);
     const cur = await tx.vote.findUnique({ where: { id: voteId }, select: { status: true } });
     if (!cur || cur.status !== VoteStatus.OPEN) throw new Error("NOT_OPEN");
+    await recheckVoter(tx, vote.meetingId, targetUserId, voteId, vote.type);
     // Dla QUORUM: oznacz uczestnika jako obecnego (główny sens głosowania kworum).
     if (vote.type === VoteType.QUORUM) {
       await tx.attendance.upsert({
@@ -352,6 +350,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       return new NextResponse("Głosowanie zostało zamknięte - głos nie został przyjęty.", { status: 409 });
     if (e instanceof Error && e.message === "FINAL")
       return new NextResponse("Głos został już oddany i nie można go zmienić", { status: 409 });
+    if (e instanceof Error && e.message === "NO_RIGHT")
+      return new NextResponse("Uczestnik nie ma prawa głosu w tym głosowaniu.", { status: 403 });
+    if (e instanceof Error && e.message === "NOT_PRESENT")
+      return new NextResponse("Uczestnik musi być obecny, aby głosować", { status: 403 });
     throw e;
   }
 
@@ -361,6 +363,6 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   publishToMeeting(vote.meetingId, { type: "vote.opened", voteId }); // wystarczy by liczniki się odświeżyły
   // Przełącznik posiedzenia: zamknięcie, gdy zagłosowali wszyscy obecni uprawnieni.
   // Głos jest już zapisany - błąd automatycznego zamknięcia nie może wyglądać jak odrzucenie głosu.
-  await autoCloseIfAllVoted(voteId).catch((e) => console.error("[głosowanie] automatyczne zamknięcie nieudane", e));
+  await autoCloseIfAllVoted(voteId).catch((e) => console.error(`[głosowanie] automatyczne zamknięcie nieudane: ${safeErrorText(e)}`));
   return NextResponse.json({ ok: true });
 }

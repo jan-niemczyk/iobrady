@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 const schema = z.object({
-  entryId: z.string(),
+  entryId: z.string().max(64),
   direction: z.enum(["up", "down", "top"]),
 });
 

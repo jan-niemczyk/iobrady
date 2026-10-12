@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import nodemailer from "nodemailer";
 import { decryptSecret } from "@/lib/secretBox";
+import { safeErrorText } from "@/lib/logSafe";
 
 /** Kontekst szyfrowania hasła SMTP w bazie (lib/secretBox). */
 export const SMTP_PASSWORD_CONTEXT = "settings.smtpPassword";
@@ -49,7 +50,7 @@ export async function sendMail(params: {
     });
     await logEmail({ ...params, recipients, success: true });
   } catch (e) {
-    await logEmail({ ...params, recipients, success: false, error: e instanceof Error ? e.message : String(e) });
+    await logEmail({ ...params, recipients, success: false, error: safeErrorText(e) }); // H-05: bez adresów i treści
     throw e;
   }
 }

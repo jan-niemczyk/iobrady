@@ -3,9 +3,12 @@ import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { publishToMeeting } from "@/lib/events";
 import { NextResponse } from "next/server";
+import { HttpError } from "@/lib/booth";
+import { lockMeetingRow } from "@/lib/meetingLock";
 import { autoCloseIfAllVoted } from "@/lib/closeVote";
 import { z } from "zod";
 import { validationError } from "@/lib/http";
+import { safeErrorText } from "@/lib/logSafe";
 
 const schema = z.object({
   name: z.string().min(1).max(500).optional(),
@@ -73,7 +76,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   // Włączenie automatycznego zamykania w trakcie głosowania: jeśli wszyscy już zagłosowali - zamknij teraz.
   if (parsed.data.autoCloseVotes === true) {
     const open = await prisma.vote.findFirst({ where: { meetingId: id, status: "OPEN" }, select: { id: true } });
-    if (open) await autoCloseIfAllVoted(open.id).catch((e) => console.error("[głosowanie] automatyczne zamknięcie nieudane", e));
+    if (open) await autoCloseIfAllVoted(open.id).catch((e) => console.error(`[głosowanie] automatyczne zamknięcie nieudane: ${safeErrorText(e)}`));
   }
   return NextResponse.json({ ok: true });
 }
@@ -87,10 +90,26 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string 
   const m = await prisma.meeting.findUnique({ where: { id } });
   if (!m) return new NextResponse("Not found", { status: 404 });
 
-  if (m.status === "OPEN" || m.status === "IN_PROGRESS")
+  if (m.status === "OPEN" || m.status === "IN_PROGRESS" || m.status === "PAUSED")
     return new NextResponse("Nie można usunąć trwającego posiedzenia - najpierw je zamknij.", { status: 400 });
 
-  await prisma.meeting.delete({ where: { id } });
+  // H-01: pod blokadą wiersza posiedzenia (ta sama co przy otwieraniu głosowań i zmianach stanu)
+  // ponownie sprawdzamy stan i brak otwartego głosowania.
+  try {
+    await prisma.$transaction(async (tx) => {
+      await lockMeetingRow(tx, id);
+      const cur = await tx.meeting.findUnique({ where: { id }, select: { status: true } });
+      if (!cur) throw new HttpError(404, "Not found");
+      if (cur.status === "OPEN" || cur.status === "IN_PROGRESS" || cur.status === "PAUSED")
+        throw new HttpError(409, "Posiedzenie zostało właśnie otwarte - nie można go usunąć.");
+      if (await tx.vote.count({ where: { meetingId: id, status: "OPEN" } }))
+        throw new HttpError(409, "Trwa głosowanie - nie można usunąć posiedzenia.");
+      await tx.meeting.delete({ where: { id } });
+    });
+  } catch (e) {
+    if (e instanceof HttpError) return new NextResponse(e.message, { status: e.status });
+    throw e;
+  }
 
   await audit({
     action: "MEETING_DELETED",

@@ -50,8 +50,9 @@ class RateLimited extends CredentialsSignin {
 }
 
 const credentialsSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().max(254).email(),
+  // H-03: bcrypt i tak bierze pierwsze 72 bajty - dłuższe hasło nie ma sensu, a obciąża serwer.
+  password: z.string().min(1).max(200),
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -73,10 +74,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const ip = clientIp(request.headers);
 
         // Limit nieudanych prób (konto+IP / konto / IP) - przed sprawdzaniem hasła.
-        if (await isLoginBlocked(email, ip)) {
-          await recordLoginAttempt(email, ip, false);
-          throw new RateLimited();
-        }
+        // H-06: próba w trakcie blokady NIE jest zapisywana, więc nie przedłuża blokady -
+        // napastnik nie może utrzymywać cudzego konta zablokowanego bez końca.
+        if (await isLoginBlocked(email, ip)) throw new RateLimited();
 
         const user = await prisma.user.findUnique({ where: { email } });
         const ok = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);

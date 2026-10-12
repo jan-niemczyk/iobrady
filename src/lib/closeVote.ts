@@ -176,24 +176,21 @@ export async function closeVoteNow(id: string, actorUserId: string | null): Prom
       await tx.voteOption.update({ where: { id: s.id }, data: { resultYes: s.yes, resultNo: s.no, resultAbstain: s.abstain, resultPassed: s.passed } });
     }
 
-    // Tajne markery zostają (frekwencja: kto oddał kartę), ale tracą zaszyfrowaną treść głosu
-    // używaną do zerowania - po zamknięciu powiązanie osoba -> treść głosu nie istnieje.
+    // Tajne markery zostają (frekwencja: kto oddał kartę). Treść głosu nie jest zapisywana;
+    // czyszczenie dotyczy wyłącznie pozostałości z wcześniejszej wersji (lib/secretReset).
     if (isSecret) await purgeSecretResetPayloads(tx, vote.id);
   }
-  return { vote, castCount, resultYes, resultNo, resultAbstain, resultPassed };
-  }, { timeout: 20_000 });
-  const { vote, castCount, resultYes, resultNo, resultAbstain, resultPassed } = outcome;
-
+  // H-01/H-05: migawka obecności kworum, dziennik i chowanie PIN-u - atomowo z zamknięciem.
   // A10: głosowanie kworum tworzy migawkę obecności (kto oddał głos = obecny).
   if (vote.type === VoteType.QUORUM) {
-    const parts = await prisma.meetingParticipant.findMany({
+    const parts = await tx.meetingParticipant.findMany({
       where: { meetingId: vote.meetingId, hasVotingRight: true, excludedFromMeeting: false },
       include: { user: { include: { group: true } } },
     });
     const votedUsers = new Set(vote.ballots.map((b) => b.userId).filter(Boolean) as string[]);
     const presentCount = parts.filter((mp) => votedUsers.has(mp.userId)).length;
     const now = new Date();
-    await prisma.attendanceCheck.create({
+    await tx.attendanceCheck.create({
       data: {
         meetingId: vote.meetingId,
         kind: "QUORUM_VOTE",
@@ -219,7 +216,7 @@ export async function closeVoteNow(id: string, actorUserId: string | null): Prom
     // Kto oddał głos = obecny, pozostali uprawnieni = nieobecni.
     for (const mp of parts) {
       const present = votedUsers.has(mp.userId);
-      await prisma.attendance.upsert({
+      await tx.attendance.upsert({
         where: { participantId: mp.id },
         create: { participantId: mp.id, status: present ? "PRESENT" : "ABSENT", source: "OPERATOR", confirmedByUserId: actorUserId },
         update: { status: present ? "PRESENT" : "ABSENT", confirmedAt: now, source: "OPERATOR", confirmedByUserId: actorUserId },
@@ -239,13 +236,17 @@ export async function closeVoteNow(id: string, actorUserId: string | null): Prom
       passed: resultPassed,
       anonymized: vote.visibility === VoteVisibility.SECRET,
     },
-  });
+  }, tx);
 
   // PIN sam się chowa z chwilą zakończenia głosowania.
-  await prisma.meeting.updateMany({
+  await tx.meeting.updateMany({
     where: { id: vote.meetingId, displayPinVoteId: vote.id },
     data: { displayPinVoteId: null },
   });
+  return { vote, castCount, resultYes, resultNo, resultAbstain, resultPassed };
+  }, { timeout: 20_000 });
+  const { vote, castCount, resultYes, resultNo, resultAbstain, resultPassed } = outcome;
+
 
   // Zamknięcie głosowania = publikacja wyników: automatycznie pokazujemy je na prezentacji
   // (operator nic nie klika). Ukrycie następuje przez "Zamknij" w oknie wyników (odpięcie).
