@@ -13,7 +13,7 @@ KEY="${BACKUP_KEY_FILE:-$HOME/iobrady-backup.key}"
 KEY=$(cd "$(dirname "$KEY")" && pwd)/$(basename "$KEY")
 cd "$(dirname "$0")/.."
 # Nazwa użytkownika i bazy z .env (te same co w docker-compose.yml).
-envval() { [ -f .env ] && sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*//p" .env | tail -n 1 | sed -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'$/\1/"; }
+envval() { [ -f .env ] || return 0; sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*//p" .env | tail -n 1 | sed -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'$/\1/"; }
 DB_USER="${POSTGRES_USER:-$(envval POSTGRES_USER)}"; DB_USER="${DB_USER:-iobrady}"
 DB_NAME="${POSTGRES_DB:-$(envval POSTGRES_DB)}"; DB_NAME="${DB_NAME:-iobrady}"
 DB_RESTORE_CMD="${DB_RESTORE_CMD:-docker compose exec -T db psql -v ON_ERROR_STOP=1 -q -U $DB_USER $DB_NAME}"

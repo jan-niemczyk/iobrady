@@ -17,7 +17,9 @@ OUT=$(cd "$OUT" && pwd); KEY=$(cd "$(dirname "$KEY")" && pwd)/$(basename "$KEY")
 STAMP=$(date +%F-%H%M%S)
 cd "$(dirname "$0")/.."
 # Nazwa użytkownika i bazy z .env (te same co w docker-compose.yml).
-envval() { [ -f .env ] && sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*//p" .env | tail -n 1 | sed -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'$/\1/"; }
+# Brak .env nie jest błędem (zmienne mogą przyjść ze środowiska) - funkcja zawsze kończy się kodem 0,
+# inaczej przy set -e przypisanie z $(envval ...) przerwałoby skrypt.
+envval() { [ -f .env ] || return 0; sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*//p" .env | tail -n 1 | sed -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'$/\1/"; }
 DB_USER="${POSTGRES_USER:-$(envval POSTGRES_USER)}"; DB_USER="${DB_USER:-iobrady}"
 DB_NAME="${POSTGRES_DB:-$(envval POSTGRES_DB)}"; DB_NAME="${DB_NAME:-iobrady}"
 DB_DUMP_CMD="${DB_DUMP_CMD:-docker compose exec -T db pg_dump -U $DB_USER --no-owner $DB_NAME}"

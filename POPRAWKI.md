@@ -1513,3 +1513,5 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
     (dwukrotnie, równolegle), test kopii 11/11 w dash i bash, `tsc`, build;
   - te same testy na kodzie sprzed poprawek: 11/12 e2e i 7/11 testu kopii nie przechodzi, czyli wykrywają błędy.
 - Schemat: nowa wartość enuma `AuditAction` (dodanie, bez utraty danych).
+- [x] Kopia/odtwarzanie bez pliku `.env` (zmienne ze środowiska): `envval` nie przerywa już skryptu przy `set -e`
+      (wykryte przez test kopii w CI, gdzie `.env` nie istnieje).
