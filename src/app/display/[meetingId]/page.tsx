@@ -14,7 +14,7 @@ export default async function DisplayPage({
 }) {
   const { meetingId } = await params;
   const { bare, t } = await searchParams;
-  // SA-07: token ekranu (link lub ciasteczko ustawione przez middleware) albo sesja operatora/uczestnika.
+  // SA-07: token ekranu (link lub ciasteczko ustawione przez proxy) albo sesja operatora/uczestnika.
   const token = t ?? (await cookies()).get(displayCookieName(meetingId))?.value ?? null;
   if (!(await canViewDisplay(meetingId, token))) notFound();
   return <ScreenGuard><DisplayClient meetingId={meetingId} bare={bare === "1"} /></ScreenGuard>;

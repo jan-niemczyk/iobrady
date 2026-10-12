@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { displayCookieName } from "@/lib/displayAccess";
 import { pageCsp } from "@/lib/csp";
 
-// Middleware działa w runtime Node.js (config.runtime poniżej): `auth()` weryfikuje sesję
+// Proxy (dawniej middleware, Next.js 16) działa zawsze w runtime Node.js: `auth()` weryfikuje sesję
 // z rejestrem w bazie (lib/sessions) - unieważniona, wygasła lub bezczynna sesja = niezalogowany.
 // Bramka kreatora /setup żyje w layoutach (src/lib/setup.ts).
 
@@ -151,6 +151,5 @@ function route(req: AuthedRequest, next: () => NextResponse): NextResponse | Res
 }
 
 export const config = {
-  runtime: "nodejs",
   matcher: ["/((?!_next/static|_next/image|favicon.ico|fonts).*)"],
 };

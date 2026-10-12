@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 import { staticCsp } from "./src/lib/csp";
 
-// CSP: strony HTML dostają politykę z jednorazowym nonce w middleware (H-08); tutaj tylko
+// CSP: strony HTML dostają politykę z jednorazowym nonce w proxy (src/proxy.ts, H-08); tutaj tylko
 // odpowiedzi bez HTML aplikacji (API, pliki statyczne) - bez skryptów inline.
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },

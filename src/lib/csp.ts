@@ -1,4 +1,4 @@
-// Polityka CSP (utwardzenie, H-08). Wspólna dla middleware (strony, z nonce) i next.config (API).
+// Polityka CSP (utwardzenie, H-08). Wspólna dla proxy (src/proxy.ts - strony, z nonce) i next.config (API).
 // Style: 'unsafe-inline' jest potrzebne dla stylów inline Reacta (atrybut style) - nie skryptów.
 // Czcionki prezentacji/nakładki z Google Fonts (wybór operatora); panel używa czcionek własnych.
 // Obrazy z własnej domeny, data: i blob: (podgląd logo, QR, generowane PDF). Ramki tylko z tej

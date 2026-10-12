@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 /**
  * Rejestr sesji (SA-04).
  *
- * Token JWT niesie identyfikator sesji (`sid`). Przy każdym żądaniu (middleware w runtime Node.js
+ * Token JWT niesie identyfikator sesji (`sid`). Przy każdym żądaniu (proxy - dawniej middleware - w runtime Node.js
  * oraz `auth()` w trasach) sesja jest weryfikowana z bazą: czy nie została unieważniona, czy nie
  * wygasła, czy konto jest aktywne i nie minął limit bezczynności. Dzięki temu dezaktywacja konta,
  * zmiana roli, reset hasła i wylogowanie działają natychmiast (z dokładnością do krótkiego cache).
@@ -26,7 +26,7 @@ export type SessionCheck = {
 };
 
 type Cached = { at: number; value: SessionCheck | null };
-// Cache we wspólnym globalThis: middleware i trasy API są osobnymi pakietami (osobne instancje
+// Cache we wspólnym globalThis: proxy i trasy API są osobnymi pakietami (osobne instancje
 // modułu) w tym samym procesie - unieważnienie sesji musi być widoczne dla obu od razu.
 const g = globalThis as unknown as { __iob_sess?: Map<string, Cached>; __iob_idle?: { at: number; minutes: number } | null };
 if (!g.__iob_sess) g.__iob_sess = new Map();

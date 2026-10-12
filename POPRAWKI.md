@@ -1548,3 +1548,14 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
   wychodzącego, wersjonowane migracje, testy obciążeniowe.
 - Schemat bazy bez zmian. Po wdrożeniu: kopie wykonane w trakcie tajnego głosowania przed tą wersją mogą
   zawierać zaszyfrowane treści - usunąć je, gdy przestaną być potrzebne.
+
+## ABH. Next.js 16 i zależności bez podatności
+
+- [x] Next.js 15.5 -> **16.4** (budowanie Turbopackiem): plik `src/middleware.ts` przemianowany na `src/proxy.ts`
+      (nowa nazwa w Next 16, zawsze runtime Node.js - usunięte `config.runtime`); usunięty skrypt `lint`
+      (`next lint` nie istnieje w Next 16, projekt nie miał konfiguracji ESLint); `tsconfig.json` uzupełniony przez Next.
+- [x] `deepmerge-ts` wymuszone w wersji 8 (`overrides`) - Prisma zostaje na 6: najnowsza stabilna Prisma 7.10
+      nadal ma podatne `deepmerge-ts` 7, a Prisma 8 jest dopiero w wersji RC (nie nadaje się na produkcję).
+- Wynik: `npm audit` - **0 podatności** (wcześniej 6: 5 wysokich, 1 średnia - narzędzia budowania).
+- Sprawdzone na świeżej bazie jak w CI: sondy 45/45, e2e 25/25 (`next start`), e2e 13/13 na serwerze standalone
+  (`node server.js`, jak w kontenerze), 14 widoków bez naruszeń CSP i błędów, migracja `db push` z nowym `deepmerge-ts`.

@@ -1,4 +1,4 @@
-// middleware przekierowuje stąd na /dashboard lub /session.
+// proxy (src/proxy.ts) przekierowuje stąd na /dashboard lub /session.
 // Strona zwraca pusty komponent dla bezpieczeństwa.
 export default function HomePage() {
   return null;

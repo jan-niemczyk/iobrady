@@ -11,7 +11,7 @@ import "./globals.css";
 import Providers from "./providers";
 
 // H-08: wszystkie strony renderowane dynamicznie - tylko wtedy Next.js dopisuje do skryptów
-// nonce z CSP ustawionej w middleware (strona statyczna nie miałaby nonce i skrypty by nie ruszyły).
+// nonce z CSP ustawionej w proxy (src/proxy.ts) (strona statyczna nie miałaby nonce i skrypty by nie ruszyły).
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {

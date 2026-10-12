@@ -82,7 +82,7 @@ ekranu sali ustawia się w panelu operatora (Ustawienia).
 
 ## Budowa
 
-- Next.js 15 (App Router), React 19, TypeScript
+- Next.js 16 (App Router, Turbopack), React 19, TypeScript
 - PostgreSQL 16, Prisma
 - NextAuth (sesje w bazie, role operator / uczestnik)
 - Server-Sent Events - aktualizacje na żywo
