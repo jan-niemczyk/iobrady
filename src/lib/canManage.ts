@@ -5,7 +5,7 @@ type SessionLike = { user: { id: string; role: string } } | null | undefined;
 /**
  * Czy użytkownik może PROWADZIĆ dane posiedzenie:
  * - operator (zawsze), albo
- * - uczestnik oznaczony jako przewodniczący TEGO posiedzenia (isChairperson).
+ * - uczestnik oznaczony jako przewodniczący TEGO posiedzenia (isChairperson), niewykluczony.
  * Przewodniczący prowadzi obrady w zakresie: zamykanie głosowań, lista mówców i wnioski
  * formalne, zegar dyskusji, sprawdzenie obecności/kworum.
  */
@@ -14,9 +14,10 @@ export async function canManageMeeting(session: SessionLike, meetingId: string):
   if (session.user.role === "OPERATOR") return true;
   const mp = await prisma.meetingParticipant.findUnique({
     where: { meetingId_userId: { meetingId, userId: session.user.id } },
-    select: { isChairperson: true },
+    select: { isChairperson: true, excludedFromMeeting: true },
   });
-  return !!mp?.isChairperson;
+  // UW-02: wykluczenie z posiedzenia odbiera także funkcje prowadzenia (do cofnięcia wykluczenia).
+  return !!mp?.isChairperson && !mp.excludedFromMeeting;
 }
 
 /** Wariant, gdy znamy tylko id wpisu na liście mówców - ustala meetingId z relacji. */

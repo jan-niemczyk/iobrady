@@ -14,13 +14,13 @@ const schema = z.object({
   // dla STANDARD:
   choice: z.nativeEnum(VoteChoice).optional(),
   // dla LIST:
-  selectedOptionIds: z.array(z.string()).optional(),
+  selectedOptionIds: z.array(z.string().max(64)).max(200).optional(),
   // dla PACKAGE: głos na każdą pozycję { optionId, choice }
-  packageChoices: z.array(z.object({ optionId: z.string(), choice: z.nativeEnum(VoteChoice) })).optional(),
+  packageChoices: z.array(z.object({ optionId: z.string().max(64), choice: z.nativeEnum(VoteChoice) })).max(200).optional(),
   // tajne: głos nieważny (przycisk OBECNY) - liczy się do frekwencji, ale jako nieważny
   invalid: z.boolean().optional(),
   // OPERATOR może oddać głos w imieniu uczestnika (tylko głosowania JAWNE).
-  onBehalfUserId: z.string().optional(),
+  onBehalfUserId: z.string().max(64).optional(),
   // OPERATOR może wyzerować (usunąć) głos uczestnika - jawne oraz tajne (zgłoszona pomyłka).
   reset: z.boolean().optional(),
 });
@@ -78,12 +78,23 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (parsed.data.reset) {
     if (session.user.role !== "OPERATOR") return new NextResponse("Tylko operator", { status: 403 });
     if (vote.visibility !== "OPEN") return new NextResponse("Zerowanie możliwe tylko dla głosowań jawnych", { status: 400 });
-    const existing = await prisma.ballot.findUnique({ where: { voteId_userId: { voteId, userId: targetUserId } } });
-    if (existing) {
-      await prisma.$transaction([
-        prisma.ballotSelection.deleteMany({ where: { ballotId: existing.id } }),
-        prisma.ballot.delete({ where: { id: existing.id } }),
-      ]);
+    // Pod tą samą blokadą co zamknięcie (IA-07): zerowanie albo w całości przed policzeniem wyniku,
+    // albo odrzucone, gdy głosowanie zostało już zamknięte - zapis głosów zgodny z migawką wyniku.
+    try {
+      await prisma.$transaction(async (tx) => {
+        await lockVoteRow(tx, voteId);
+        const cur = await tx.vote.findUnique({ where: { id: voteId }, select: { status: true } });
+        if (!cur || cur.status !== VoteStatus.OPEN) throw new Error("NOT_OPEN");
+        const existing = await tx.ballot.findUnique({ where: { voteId_userId: { voteId, userId: targetUserId } } });
+        if (existing) {
+          await tx.ballotSelection.deleteMany({ where: { ballotId: existing.id } });
+          await tx.ballot.delete({ where: { id: existing.id } });
+        }
+      });
+    } catch (e) {
+      if (e instanceof Error && e.message === "NOT_OPEN")
+        return new NextResponse("Głosowanie zostało zamknięte - głosu nie wyzerowano.", { status: 409 });
+      throw e;
     }
     publishToMeeting(vote.meetingId, { type: "vote.opened", voteId }); // odświeżenie liczników po wyzerowaniu głosu
     return NextResponse.json({ ok: true, reset: true });
@@ -117,8 +128,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     const selected = parsed.data.selectedOptionIds ?? [];
     const validIds = new Set(vote.options.map((o) => o.id));
     for (const s of selected) {
-      if (!validIds.has(s)) return new NextResponse(`Nieznana opcja ${s}`, { status: 400 });
+      if (!validIds.has(s)) return new NextResponse("Nieznana opcja na liście.", { status: 400 });
     }
+    // IA-01: każda kandydatura najwyżej raz (powtórzenie nie może spełnić minimum ani podbić licznika).
+    if (new Set(selected).size !== selected.length)
+      return new NextResponse("Każdą kandydaturę można wskazać tylko raz.", { status: 400 });
     const min = vote.minSelections ?? 0;
     const max = vote.maxSelections ?? vote.options.length;
     // Głos nieważny (przycisk "Obecny" w tajnym) pomija wymóg minimum.
@@ -131,11 +145,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     const choices = parsed.data.packageChoices ?? [];
     const validIds = new Set(vote.options.map((o) => o.id));
     for (const ch of choices) {
-      if (!validIds.has(ch.optionId)) return new NextResponse(`Nieznana pozycja ${ch.optionId}`, { status: 400 });
+      if (!validIds.has(ch.optionId)) return new NextResponse("Nieznana pozycja pakietu.", { status: 400 });
     }
-    // Wymóg oddania na wszystkie pozycje (chyba że tajny głos nieważny).
+    // IA-01: na każdą pozycję najwyżej jeden głos (tajne liczniki rosną o 1 na element).
+    const uniquePositions = new Set(choices.map((c) => c.optionId));
+    if (uniquePositions.size !== choices.length)
+      return new NextResponse("Na każdą pozycję pakietu można oddać tylko jeden głos.", { status: 400 });
+    // Wymóg oddania na wszystkie pozycje (chyba że tajny głos nieważny) - porównanie zbiorów.
     const isInvalidVote = vote.visibility === "SECRET" && parsed.data.invalid;
-    if (!isInvalidVote && vote.requireAllPositions && choices.length < vote.options.length)
+    if (!isInvalidVote && vote.requireAllPositions && uniquePositions.size !== vote.options.length)
       return new NextResponse("Oddaj głos na wszystkie pozycje pakietu.", { status: 400 });
   } else if (vote.type === VoteType.QUORUM) {
     // dla kworum zawsze zapisujemy YES (obecny)
@@ -148,13 +166,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   // "Pierwszy głos ostateczny" - gdy włączone (osobno jawne/tajne), po oddaniu głosu
   // nie można go zmienić. Operator głosujący w imieniu NIE podlega blokadzie (może korygować).
+  let finalLock = false;
   if (session.user.role !== "OPERATOR" || !parsed.data.onBehalfUserId) {
     const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
     const isSecret = vote.visibility === "SECRET";
     // Ustawienie per głosowanie (firstVoteFinal) ma pierwszeństwo nad globalnym.
     const globalLock = isSecret ? settings?.firstVoteFinalSecret : settings?.firstVoteFinalOpen;
-    const finalLock = vote.firstVoteFinal != null ? vote.firstVoteFinal : globalLock;
-    if (finalLock && vote.type !== VoteType.QUORUM) {
+    finalLock = !!(vote.firstVoteFinal != null ? vote.firstVoteFinal : globalLock) && vote.type !== VoteType.QUORUM;
+    // Szybka odpowiedź; rozstrzygające sprawdzenie jest niżej, pod blokadą wiersza głosowania (IA-02).
+    if (finalLock) {
       const alreadyVoted = isSecret
         ? await prisma.secretBallotMarker.findUnique({ where: { voteId_userId: { voteId, userId: targetUserId } } })
         : await prisma.ballot.findUnique({ where: { voteId_userId: { voteId, userId: targetUserId } } });
@@ -250,6 +270,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       return new NextResponse("Błąd zapisu głosu", { status: 500 });
     }
     publishToMeeting(vote.meetingId, { type: "vote.opened", voteId });
+    // BF-03: automatyczne zamknięcie obejmuje także głosowania tajne (ten sam warunek co w jawnych).
+    await autoCloseIfAllVoted(voteId).catch((e) => console.error("[głosowanie] automatyczne zamknięcie nieudane", e));
     return NextResponse.json({ ok: true, secret: true });
   }
 
@@ -278,6 +300,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     const existing = await tx.ballot.findUnique({
       where: { voteId_userId: { voteId, userId: targetUserId } },
     });
+    // IA-02: „pierwszy głos ostateczny” rozstrzygany pod blokadą - równoległe żądanie nie zmieni głosu.
+    if (existing && finalLock) throw new Error("FINAL");
 
     // Snapshot personaliów (imię, nazwisko, klub) w chwili oddania głosu - punkt 21.
     const voter = await tx.user.findUnique({
@@ -326,6 +350,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   } catch (e) {
     if (e instanceof Error && e.message === "NOT_OPEN")
       return new NextResponse("Głosowanie zostało zamknięte - głos nie został przyjęty.", { status: 409 });
+    if (e instanceof Error && e.message === "FINAL")
+      return new NextResponse("Głos został już oddany i nie można go zmienić", { status: 409 });
     throw e;
   }
 

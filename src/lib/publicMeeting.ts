@@ -113,7 +113,8 @@ function loadVotes(meetingId: string, voteId?: string) {
 function decisionOf(v: VoteRow): PublicVoteSummary["decision"] {
   if (v.status !== "CLOSED") return null;
   if (v.type === "QUORUM") {
-    const met = v.resultQuorumMet ?? v.resultPassed;
+    // Rozstrzygnięcie głosowania kworum zapisane przy zamknięciu (resultPassed = wynik liczenia).
+    const met = v.resultPassed ?? v.resultQuorumMet;
     return met == null ? null : { label: met ? "Kworum jest" : "Brak kworum", positive: met };
   }
   if (v.type === "LIST" || v.type === "PACKAGE") return null; // rozstrzygnięcia przy pozycjach / kandydaturach

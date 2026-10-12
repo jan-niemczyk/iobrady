@@ -128,17 +128,23 @@ export async function closeVoteNow(id: string, actorUserId: string | null): Prom
     const q = evaluateQuorum(vote.meeting, vote.resultEligibleCount ?? 0, presentNow);
     resultPassed = q.met;
   }
+  // BF-01: jedno źródło rozstrzygnięcia kworum. Głosowanie KWORUM - wynik liczenia powyżej;
+  // pozostałe - kworum według obecności z migawki otwarcia (ta sama funkcja i reguła posiedzenia).
+  const quorumMet = vote.type === VoteType.QUORUM
+    ? resultPassed === true
+    : evaluateQuorum(vote.meeting, vote.resultEligibleCount ?? 0, vote.resultPresentCount ?? 0).met;
 
   // liczba GŁOSUJĄCYCH (do wyniku): tajne standardowe → tylko ważne głosy (bez nieważnych);
   // tajna lista → liczba markerów (oddane karty); jawne/lista → liczba ballotów; kworum → ballots.
   const secretValidCount = resultYes + resultNo + resultAbstain;
+  // BF-02: tajny pakiet (jak tajna lista) liczy oddane karty z markerów - nie ma jawnych ballotów.
   const castCount = isSecret && vote.type === VoteType.STANDARD
     ? secretValidCount
-    : isSecret && vote.type === VoteType.LIST
+    : isSecret && (vote.type === VoteType.LIST || vote.type === VoteType.PACKAGE)
     ? vote._count.secretMarkers
     : vote.ballots.length;
   // Frekwencja tajnego (kto oddał kartę) = liczba markerów.
-  const secretTurnout = isSecret && (vote.type === VoteType.STANDARD || vote.type === VoteType.LIST)
+  const secretTurnout = isSecret && vote.type !== VoteType.QUORUM
     ? vote._count.secretMarkers
     : null;
 
@@ -159,7 +165,7 @@ export async function closeVoteNow(id: string, actorUserId: string | null): Prom
         resultAbstain: vote.type === VoteType.LIST || vote.type === VoteType.QUORUM ? null : resultAbstain,
         resultInvalid: vote.type === VoteType.STANDARD ? resultInvalid : null,
         resultPassed,
-        resultQuorumMet: (vote.resultPresentCount ?? 0) > 0,
+        resultQuorumMet: quorumMet,
       },
     });
 

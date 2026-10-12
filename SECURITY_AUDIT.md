@@ -504,3 +504,35 @@ utworzonej od zera i seedzie syntetycznym: 43/43 OK (przed dodaniem S26).
 - Weryfikacja na serwerze produkcyjnym (TLS, nagłówki Caddy) - poza zakresem i bez zgody na wdrożenie.
 - Przypięcie obrazów po digest - brak dostępu do rejestru obrazów (fonty są już w repozytorium).
 - Testy obciążeniowe (limit SSE, rozproszone zgadywanie haseł).
+
+## 9. Niezależny audyt z 11-12.10.2026 (ustalenia IA/BF/UW) - stan napraw
+
+Audyt objął commit `eb2be5a` (przegląd kodu i izolowane testy bez bazy i przeglądarki). Jego raport
+i skrypty nie są częścią repozytorium. Poniżej stan każdego ustalenia po poprawkach. Weryfikacja:
+`tests/e2e/audit-fixes.spec.ts` (prawdziwy serwer HTTP i PostgreSQL, także żądania równoległe) oraz
+`tests/security/backup-test.sh`. Oba zestawy uruchomiono także na kodzie sprzed poprawek - tam nie
+przechodzą (11 z 12 testów e2e od razu, IA-07 po zwiększeniu liczby prób wyścigu; test kopii 4/11),
+czyli wykrywają opisane zachowanie.
+
+| Ustalenie | Stan | Poprawka |
+|-----------|------|----------|
+| IA-01 powielone opcje w tajnym głosie | NAPRAWIONE | `cast`: każda pozycja pakietu i kandydatura najwyżej raz (400), kompletność pakietu jako równość zbiorów, limity długości tablic; odrzucony głos nie tworzy markera |
+| IA-02 wyścig „pierwszy głos ostateczny” | NAPRAWIONE | sprawdzenie istniejącego głosu pod blokadą wiersza głosowania w tej samej transakcji co zapis (osiem równoległych żądań: jedno 200, reszta 409) |
+| IA-03 obecność w trybie MANUAL | NAPRAWIONE | samodzielne potwierdzenie tylko w trybie `SELF_CONFIRMATION`, przy otwartej liście, bez wykluczenia |
+| IA-04 widoczność komunikatów i listy ukrytej | NAPRAWIONE | komunikaty filtrowane na serwerze (wszyscy albo grupa odbiorcy); ekran sali nie dostaje komunikatów (nie były używane); lista i kolejka wniosków ukryte - tylko własne wpisy |
+| IA-05 własny limit wystąpienia | NAPRAWIONE | `timeLimitSec` tylko od prowadzącego (operator/przewodniczący), zakres 0-4 h; u uczestnika limit listy |
+| IA-06 usuwanie zakończonego wystąpienia | NAPRAWIONE | uczestnik wycofuje/usuwa wyłącznie własne OCZEKUJĄCE zgłoszenie (warunkowa zmiana); prowadzący może, z wpisem `SPEAKER_ENTRY_REMOVED` w dzienniku |
+| IA-07 zerowanie jawnego głosu a zamknięcie | NAPRAWIONE | zerowanie w transakcji z tą samą blokadą co zamknięcie; po zamknięciu 409 |
+| IA-08 kopia zgłasza sukces mimo błędu | NAPRAWIONE | kod wyjścia każdego etapu (źródło, kompresja, szyfrowanie), kontrola odczytu kopii, publikacja kompletu dopiero po sukcesie; aktualizacja przerywa się na błędzie kopii |
+| IA-09 notatka przy obcym punkcie | NAPRAWIONE | odczyt i zapis notatki tylko dla uczestnika posiedzenia punktu (operator - każdego) |
+| IA-10 SSE po usunięciu z posiedzenia | NAPRAWIONE | członkostwo sprawdzane przy heartbeacie i przed dostarczeniem zdarzenia (wynik ważny 5 s), brak członkostwa zamyka strumień |
+| UW-01 SVG z prefiksem przestrzeni nazw | NAPRAWIONE | filtr: elementy z prefiksem, przestrzenie XHTML/XML Events, rozwinięte encje znakowe; `/uploads/*` przekierowane do `/api/uploads/*`. **Dodatkowo wykryte:** globalny CSP z `next.config.ts` nadpisywał `sandbox` ustawiany w trasie - obie ścieżki mają teraz własną regułę CSP z `sandbox`; test w przeglądarce potwierdza brak wykonania skryptu z pliku wgranego wcześniej |
+| UW-02 wykluczony przewodniczący | NAPRAWIONE (decyzja właściciela: wykluczenie odbiera prowadzenie) | `canManageMeeting` wymaga braku wykluczenia; panel radnego nie pokazuje funkcji prowadzenia |
+| BF-01 sprzeczne flagi kworum | NAPRAWIONE | jedno rozstrzygnięcie: głosowanie kworum - wynik liczenia w obu polach; pozostałe - kworum z migawki obecności tą samą funkcją; widok publiczny bierze wynik liczenia |
+| BF-02 tajny pakiet: zero kart | NAPRAWIONE | liczba kart tajnego pakietu z markerów (jak tajna lista) |
+| BF-03 tajne bez auto-zamknięcia | NAPRAWIONE (decyzja właściciela: także tajne) | wspólne wywołanie po zapisie głosu jawnego i tajnego |
+| RZ-01, RZ-02 | ZAAKCEPTOWANE (bez zmian) | jak SA-02 i SA-03 |
+
+Nie wykonano w tej serii: testów na produkcji i przez HTTPS, pełnego odtworzenia kopii do pustej bazy
+(test kopii sprawdza odszyfrowanie i rozpakowanie), aktualnego przeglądu podatności zależności.
+Rekomendacje H-01..H-08 audytu pozostają do zaplanowania.

@@ -28,9 +28,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const isSelf = mp.userId === session.user.id;
   if (!isOperator && !isSelf) return new NextResponse("Forbidden", { status: 403 });
 
-  // Uczestnik sam może oznaczyć tylko obecność, i tylko gdy attendanceOpen
-  if (!isOperator && (status !== "PRESENT" || !mp.meeting.attendanceOpen)) {
-    return new NextResponse("Lista obecności nie jest otwarta", { status: 400 });
+  // Uczestnik sam może oznaczyć tylko własną obecność: w trybie samodzielnego potwierdzania (IA-03),
+  // przy otwartej liście i gdy nie jest wykluczony. W trybie MANUAL obecność ustala wyłącznie operator.
+  if (!isOperator) {
+    if (mp.meeting.attendanceMode !== "SELF_CONFIRMATION")
+      return new NextResponse("Obecność w tym posiedzeniu potwierdza operator.", { status: 403 });
+    if (status !== "PRESENT" || !mp.meeting.attendanceOpen)
+      return new NextResponse("Lista obecności nie jest otwarta", { status: 400 });
+    if (mp.excludedFromMeeting)
+      return new NextResponse("Uczestnik został wykluczony z posiedzenia", { status: 403 });
   }
 
   await prisma.attendance.upsert({

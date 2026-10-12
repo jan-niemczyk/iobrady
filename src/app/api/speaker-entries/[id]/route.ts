@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { publishToMeeting } from "@/lib/events";
 import { setEntryLimitEnabled } from "@/lib/speechLimit";
 import { NextResponse } from "next/server";
+import { audit } from "@/lib/audit";
 
 async function loadEntry(id: string) {
   return prisma.speakerListEntry.findUnique({
@@ -101,8 +102,22 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string 
   // jeśli już przemawia - nie usuwamy, tylko zamykamy
   if (entry.status === "SPEAKING")
     return new NextResponse("Wpis jest aktywny - zakończ wystąpienie zamiast usuwać", { status: 400 });
+  // IA-06: uczestnik usuwa wyłącznie własne OCZEKUJĄCE zgłoszenie - historia wystąpień zostaje.
+  if (!canManage && entry.status !== "WAITING")
+    return new NextResponse("Można usunąć tylko oczekujące zgłoszenie.", { status: 409 });
 
-  await prisma.speakerListEntry.delete({ where: { id } });
+  const r = await prisma.speakerListEntry.deleteMany({
+    where: { id, status: canManage ? { not: "SPEAKING" } : "WAITING" },
+  });
+  if (r.count === 0) return new NextResponse("Zgłoszenie zmieniło stan - odśwież listę.", { status: 409 });
+  if (entry.status === "FINISHED") {
+    await audit({
+      action: "SPEAKER_ENTRY_REMOVED",
+      description: `Usunięto zakończone wystąpienie: ${entry.speakerName ?? entry.userId ?? ""}`,
+      meetingId: entry.list.meetingId, userId: session.user.id,
+      metadata: { entryId: id, previousStatus: entry.status },
+    });
+  }
   publishToMeeting(entry.list.meetingId, { type: "speakerlist.updated" });
   return NextResponse.json({ ok: true });
 }

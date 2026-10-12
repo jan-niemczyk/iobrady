@@ -18,7 +18,7 @@ export default async function ChairpersonIndex() {
     // Uczestnik: posiedzenie, w którym jest przewodniczącym i które jest aktywne.
     const mp = await prisma.meetingParticipant.findFirst({
       where: {
-        userId: session.user.id, isChairperson: true,
+        userId: session.user.id, isChairperson: true, excludedFromMeeting: false,
         meeting: { status: { in: ["OPEN", "IN_PROGRESS", "PAUSED"] } },
       },
       orderBy: { meeting: { scheduledAt: "desc" } }, select: { meetingId: true },

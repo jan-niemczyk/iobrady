@@ -35,7 +35,6 @@ export async function GET(req: Request) {
             },
           },
           votes: { where: { status: "OPEN" }, take: 1, include: { options: { orderBy: { order: "asc" } }, agendaItem: true } },
-          messages: { where: { hiddenAt: null }, orderBy: { publishedAt: "desc" }, take: 5 },
         },
       },
       attendance: true,
@@ -96,6 +95,16 @@ export async function GET(req: Request) {
       }
     }
   }
+
+  // Komunikaty operatora: tylko skierowane do wszystkich albo do grupy (klubu) tej osoby (IA-04).
+  const myGroupId = active.user?.groupId ?? null;
+  const messages = await prisma.message.findMany({
+    where: {
+      meetingId: active.meetingId, hiddenAt: null,
+      OR: [{ visibleToAll: true }, ...(myGroupId ? [{ visibleGroupIds: { has: myGroupId } }] : [])],
+    },
+    orderBy: { publishedAt: "desc" }, take: 5,
+  });
 
   // Załączniki bieżącego punktu - te same zasady co pobieranie (/api/attachments/[id]/download):
   // radny będący uczestnikiem posiedzenia widzi pliki oznaczone jako widoczne dla uczestników.
@@ -168,7 +177,7 @@ export async function GET(req: Request) {
     meetingName: meetingNameWithDate(active.meeting.name, active.meeting.scheduledAt),
     meetingNumber: active.meeting.number,
     hasVotingRight: active.hasVotingRight,
-    isChairperson: active.isChairperson,    hasPriorityRight: active.hasPriorityRight,
+    isChairperson: active.isChairperson && !active.excludedFromMeeting, hasPriorityRight: active.hasPriorityRight,
     canUseMiniDisplay: active.canUseMiniDisplay,
     myFirstName: active.user?.firstName ?? "",
     myLastName: active.user?.lastName ?? "",
@@ -190,7 +199,10 @@ export async function GET(req: Request) {
           mySignedUp: active.meeting.currentAgendaItem.speakerList.entries.some(
             (e) => e.userId === session.user.id && (e.status === "WAITING" || e.status === "SPEAKING"),
           ),
-          entries: active.meeting.currentAgendaItem.speakerList.entries.map((e) => ({
+          // Lista ukryta dla uczestników (visibleToParticipants=false): tylko własne wpisy (IA-04).
+          entries: active.meeting.currentAgendaItem.speakerList.entries
+            .filter((e) => active.meeting.currentAgendaItem!.speakerList!.visibleToParticipants || e.userId === session.user.id)
+            .map((e) => ({
             id: e.id,
             userName: e.speakerName ?? (e.user ? `${e.user.firstName} ${e.user.lastName}` : "-"),
             isMe: e.userId === session.user.id,
@@ -254,7 +266,7 @@ export async function GET(req: Request) {
           })),
         }
       : null,
-    messages: active.meeting.messages.map((m) => ({
+    messages: messages.map((m) => ({
       id: m.id, content: m.content, publishedAt: m.publishedAt.toISOString(),
     })),
   });

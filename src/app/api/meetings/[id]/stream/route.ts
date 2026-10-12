@@ -57,12 +57,28 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       // heartbeat co 25s przeciw odcięciu przez proxy; przy okazji sprawdzenie, czy sesja nadal
       // jest ważna (wylogowanie, dezaktywacja) - wtedy zamykamy strumień. Heartbeat NIE jest
       // aktywnością użytkownika (nie przedłuża limitu bezczynności).
+      // IA-10: uczestnik usunięty z posiedzenia traci strumień - członkostwo sprawdzane przy
+      // heartbeacie i przed dostarczeniem zdarzenia (wynik ważny 5 s, żeby nie obciążać bazy).
+      let memberCheckedAt = Date.now();
+      let memberOk = true;
+      const stillAllowed = async (): Promise<boolean> => {
+        if (session.user.role !== "PARTICIPANT") return true;
+        if (Date.now() - memberCheckedAt < 5_000) return memberOk;
+        const mp = await prisma.meetingParticipant.findUnique({
+          where: { meetingId_userId: { meetingId: id, userId: session.user.id } }, select: { id: true },
+        });
+        memberCheckedAt = Date.now(); memberOk = !!mp;
+        return memberOk;
+      };
       const interval = setInterval(() => {
         safeEnqueue(encoder.encode(`: ping\n\n`));
-        checkSession(session.sid).then((ok) => { if (!ok) cleanup(); }).catch(() => {});
+        Promise.all([checkSession(session.sid), stillAllowed()])
+          .then(([ok, member]) => { if (!ok || !member) cleanup(); }).catch(() => {});
       }, 25_000);
 
-      const unsubscribe = subscribeMeeting(id, send);
+      const unsubscribe = subscribeMeeting(id, (data: object) => {
+        stillAllowed().then((ok) => (ok ? send(data) : cleanup())).catch(() => {});
+      });
 
       cleanup = () => {
         release();

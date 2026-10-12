@@ -51,7 +51,6 @@ async function buildDisplayPayload(meetingId: string) {
     where: { id: meetingId },
     include: {
       currentAgendaItem: true,
-      messages: { where: { hiddenAt: null }, orderBy: { publishedAt: "desc" }, take: 3 },
       votes: {
         orderBy: { openedAt: "desc" },
         take: 10,
@@ -412,7 +411,6 @@ async function buildDisplayPayload(meetingId: string) {
             })),
         }
       : null,
-    messages: m.messages.map((msg) => ({ id: msg.id, content: msg.content })),
     formalMotionsList: (() => {
       const q = m.speakerLists.find((sl) => sl.kind === "FORMAL_MOTIONS");
       if (!q) return null;

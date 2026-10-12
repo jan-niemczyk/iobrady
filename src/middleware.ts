@@ -17,6 +17,14 @@ export default auth((req) => {
   const role = req.auth?.user?.role;
   const path = nextUrl.pathname;
 
+  // UW-01: wgrane obrazy (logo, plansza) leżą w public/uploads, ale nie są serwowane statycznie -
+  // każde odwołanie idzie przez /api/uploads (nosniff + CSP sandbox), także dawne adresy /uploads/...
+  if (path.startsWith("/uploads/")) {
+    const name = path.slice("/uploads/".length);
+    if (!/^[A-Za-z0-9._-]{1,200}$/.test(name)) return new NextResponse("Not found", { status: 404 });
+    return NextResponse.rewrite(new URL(`/api/uploads/${name}`, nextUrl));
+  }
+
   // CSRF (utwardzenie): żądania zmieniające stan z innej domeny są odrzucane. Przeglądarki
   // wysyłają Origin przy POST/PATCH/DELETE; klienci spoza przeglądarki go nie mają.
   if (path.startsWith("/api/") && MUTATING.has(req.method)) {

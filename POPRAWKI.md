@@ -1481,3 +1481,35 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
       w Bootstrapie 5 (najechanie `#FFCA2C`), także w trybie czarnym. Kontrast 12:1.
 - Bootstrap 6: na npm jest tylko `6.0.0-alpha.1` (8.10.2026), stabilna pozostaje 5.3.8 - migracja odłożona do wydania stabilnego.
 - [x] Przycisk „Zwiń” nad kartą głosowania wraca do dawnej, małej wielkości (strzałka zamiast znaku „▾”).
+
+## ABF. Poprawki po niezależnym audycie bezpieczeństwa (IA-01..IA-10, BF-01..BF-03, UW-01, UW-02)
+
+- [x] Głosowanie:
+  - powtórzone pozycje/kandydatury w jednym głosie odrzucane (IA-01);
+  - „pierwszy głos ostateczny” rozstrzygany pod blokadą (IA-02);
+  - zerowanie jawnego głosu pod tą samą blokadą co zamknięcie (IA-07).
+- [x] Zamykanie:
+  - jedno rozstrzygnięcie kworum (BF-01);
+  - liczba kart tajnego pakietu z markerów (BF-02);
+  - auto-zamknięcie także po głosie tajnym (BF-03).
+- [x] Kopia zapasowa: błąd dowolnego etapu kończy skrypt błędem i zatrzymuje aktualizację, a kopia jest
+      publikowana dopiero po kontroli odczytu (IA-08). Test: `tests/security/backup-test.sh`, w CI.
+- [x] Uprawnienia:
+  - samodzielna obecność tylko w trybie samodzielnym (IA-03);
+  - komunikaty grupowe i listy ukryte filtrowane na serwerze (IA-04);
+  - limit wystąpienia tylko od prowadzącego (IA-05);
+  - historia wystąpień chroniona, korekta prowadzącego w dzienniku (IA-06, nowa akcja `SPEAKER_ENTRY_REMOVED`);
+  - notatki tylko w swoim posiedzeniu (IA-09);
+  - SSE zamykane po usunięciu z posiedzenia (IA-10);
+  - wykluczony przewodniczący traci prowadzenie (UW-02).
+- [x] SVG (UW-01):
+  - ostrzejszy filtr;
+  - `/uploads/*` przez trasę API;
+  - **naprawiony nadpisywany CSP** - `sandbox` dla obrazów nie działał, bo globalne nagłówki z `next.config.ts`
+    zastępowały nagłówek trasy.
+- [x] Testy: `tests/e2e/audit-fixes.spec.ts` (12 scenariuszy, prawdziwy PostgreSQL i HTTP, także równoległość), w CI.
+- Sprawdzone:
+  - na świeżej bazie jak w CI: sondy bezpieczeństwa 44/44, `audit-fixes` 12/12 i `booth-mode` 7/7
+    (dwukrotnie, równolegle), test kopii 11/11 w dash i bash, `tsc`, build;
+  - te same testy na kodzie sprzed poprawek: 11/12 e2e i 7/11 testu kopii nie przechodzi, czyli wykrywają błędy.
+- Schemat: nowa wartość enuma `AuditAction` (dodanie, bez utraty danych).

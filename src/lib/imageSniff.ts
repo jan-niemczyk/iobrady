@@ -12,8 +12,13 @@ export function sniffImage(buf: Buffer, allowSvg: boolean): ImageKind | null {
   if (allowSvg) {
     const head = buf.toString("utf8", 0, Math.min(buf.length, 4096)).replace(/^﻿/, "").trimStart();
     if (/^(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*(<!DOCTYPE svg[^>]*>\s*)?<svg[\s>]/i.test(head)) {
-      const all = buf.toString("utf8");
-      if (/<script|<foreignObject|\son[a-z]+\s*=|javascript:|<iframe|<embed|<object|<!ENTITY|@import/i.test(all)) return null;
+      // Encje znakowe rozwinięte przed kontrolą (np. &#106;avascript:), żeby nie omijały filtra.
+      const all = buf.toString("utf8")
+        .replace(/&#x([0-9a-f]{1,6});?/gi, (_, h) => String.fromCodePoint(Math.min(parseInt(h, 16), 0x10ffff)))
+        .replace(/&#([0-9]{1,7});?/g, (_, d) => String.fromCodePoint(Math.min(parseInt(d, 10), 0x10ffff)));
+      // UW-01: także elementy z prefiksem przestrzeni nazw (<s:script>, <h:iframe>) oraz przestrzenie
+      // XHTML / XML Events, przez które da się osadzić aktywną treść w SVG.
+      if (/<([a-z0-9_.-]+:)?(script|foreignObject|iframe|embed|object|handler|listener)\b|\son[a-z]+\s*=|javascript:|vbscript:|<!ENTITY|@import|www\.w3\.org\/1999\/xhtml|www\.w3\.org\/2001\/xml-events/i.test(all)) return null;
       // Odwołania (href / xlink:href / url()) tylko wewnętrzne (#id) lub osadzone obrazy data:image.
       const refs = [...all.matchAll(/(?:xlink:)?href\s*=\s*["']([^"']*)["']|url\(\s*["']?([^"')]*)/gi)].map((m) => (m[1] ?? m[2] ?? "").trim());
       if (refs.some((r) => r && !r.startsWith("#") && !/^data:image\/(png|jpeg|webp|gif);/i.test(r))) return null;

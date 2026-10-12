@@ -23,9 +23,43 @@ DB_NAME="${POSTGRES_DB:-$(envval POSTGRES_DB)}"; DB_NAME="${DB_NAME:-iobrady}"
 DB_DUMP_CMD="${DB_DUMP_CMD:-docker compose exec -T db pg_dump -U $DB_USER --no-owner $DB_NAME}"
 FILES_TAR_CMD="${FILES_TAR_CMD:-docker compose exec -T app tar -C /app -cf - public/uploads storage/attachments}"
 enc() { openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass "file:$KEY"; }
+dec() { openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass "file:$KEY"; }
 
-sh -c "$DB_DUMP_CMD" | gzip -9 | enc > "$OUT/iobrady-db-$STAMP.sql.gz.enc"
-sh -c "$FILES_TAR_CMD" | gzip -9 | enc > "$OUT/iobrady-files-$STAMP.tar.gz.enc"
+# Każdy etap ma własny kod wyjścia: /bin/sh (POSIX) nie ma pipefail, a kod potoku to kod ostatniego
+# polecenia - błąd pg_dump/tar byłby przesłonięty sukcesem szyfrowania. Statusy etapów trafiają do
+# plików, kopia powstaje w katalogu tymczasowym i jest publikowana dopiero po sprawdzeniu.
+T=$(mktemp -d "$OUT/.niedokonczona-$STAMP.XXXXXX")
+trap 'rm -rf "$T"' EXIT INT TERM
+fail() { echo "BŁĄD KOPII: $*" >&2; exit 1; }
+
+# $1 - polecenie źródłowe, $2 - plik wynikowy; tworzy zaszyfrowany plik albo kończy skrypt błędem.
+backup_part() {
+  # „a && echo 0 || echo $?” - kod etapu zapisany także przy set -e (polecenie w liście || nie przerywa).
+  { sh -c "$1" && echo 0 > "$T/st.src" || echo $? > "$T/st.src"; } \
+    | { gzip -9 && echo 0 > "$T/st.gz" || echo $? > "$T/st.gz"; } \
+    | enc > "$2" && st_enc=0 || st_enc=$?
+  st_src=$(cat "$T/st.src" 2>/dev/null || echo 99); st_gz=$(cat "$T/st.gz" 2>/dev/null || echo 99)
+  [ "$st_src" = 0 ] || fail "źródło zakończyło się kodem $st_src: $1"
+  [ "$st_gz" = 0 ] || fail "kompresja zakończyła się kodem $st_gz"
+  [ "$st_enc" = 0 ] || fail "szyfrowanie zakończyło się kodem $st_enc"
+  rm -f "$T/st.src" "$T/st.gz"
+}
+
+backup_part "$DB_DUMP_CMD" "$T/db.enc"
+backup_part "$FILES_TAR_CMD" "$T/files.enc"
+
+# Kontrola odczytu: odszyfrowanie i rozpakowanie bez zapisu treści na dysk.
+db_bytes=$(dec < "$T/db.enc" | gzip -dc | wc -c | tr -d ' ')
+[ "${db_bytes:-0}" -gt 0 ] || fail "zrzut bazy jest pusty albo nie daje się odczytać"
+if [ "$DB_DUMP_CMD" = "docker compose exec -T db pg_dump -U $DB_USER --no-owner $DB_NAME" ]; then
+  dec < "$T/db.enc" | gzip -dc | head -c 4096 | grep -q "PostgreSQL database dump" \
+    || fail "zrzut bazy nie wygląda na wynik pg_dump"
+fi
+{ dec < "$T/files.enc" | gzip -dc | tar -tf - > /dev/null; } 2>/dev/null || fail "archiwum plików nie daje się odczytać"
+
+# Publikacja kompletu dopiero po sukcesie wszystkich etapów.
+mv "$T/db.enc" "$OUT/iobrady-db-$STAMP.sql.gz.enc"
+mv "$T/files.enc" "$OUT/iobrady-files-$STAMP.tar.gz.enc"
 (cd "$OUT" && sha256sum "iobrady-db-$STAMP.sql.gz.enc" "iobrady-files-$STAMP.tar.gz.enc" > "iobrady-$STAMP.sha256")
 chmod 600 "$OUT"/iobrady-*-"$STAMP".* "$OUT/iobrady-$STAMP.sha256"
 echo "Kopia: $OUT/iobrady-db-$STAMP.sql.gz.enc, $OUT/iobrady-files-$STAMP.tar.gz.enc (+ .sha256)"

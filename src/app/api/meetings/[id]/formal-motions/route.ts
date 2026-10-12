@@ -45,7 +45,11 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     : await prisma.speakerList.findFirst({ where: { meetingId: id, kind: "FORMAL_MOTIONS" } });
   if (!queue) return NextResponse.json({ listId: null, limitEnabled: meeting.formalMotionLimitEnabled, entries: [] });
   const entries = await prisma.speakerListEntry.findMany({
-    where: { speakerListId: queue.id, status: { in: ["WAITING", "SPEAKING"] } },
+    where: {
+      speakerListId: queue.id, status: { in: ["WAITING", "SPEAKING"] },
+      // Kolejka ukryta dla uczestników: uczestnik widzi tylko własne wnioski (IA-04).
+      ...(!manager && !queue.visibleToParticipants ? { userId: session.user.id } : {}),
+    },
     orderBy: { order: "asc" },
   });
 

@@ -195,6 +195,7 @@ enum AuditAction {
   SESSION_REVOKED      // unieważnienie sesji (wylogowanie, zamknięcie posiedzenia, zmiana uprawnień)
   LOGIN_LOCKED         // czasowa blokada logowania po serii błędnych prób
   RETENTION_APPLIED    // usunięcie wpisów dziennika po okresie przechowywania
+  SPEAKER_ENTRY_REMOVED  // prowadzący usunął/wycofał zakończone wystąpienie (zmiana historii obrad)
 }
 
 // ─────────────────────────────────────────────────────────────────

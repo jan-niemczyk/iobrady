@@ -5,6 +5,7 @@ import { defaultLimitFor, listLimitEnabled, newEntryLimitFields } from "@/lib/sp
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { serverError } from "@/lib/http";
+import { canManageMeeting } from "@/lib/canManage";
 
 const schema = z.object({
   /** opcjonalne - operator może zapisać innego uczestnika; bez tego = zapisuje siebie */
@@ -12,7 +13,7 @@ const schema = z.object({
   /** opcjonalne - operator może zapisać gościa z katalogu (bez konta) */
   guestId: z.string().optional(),
   /** indywidualny limit - jeśli pominięty, użyje defaultTimeLimitSec listy */
-  timeLimitSec: z.number().int().min(0).nullable().optional(),
+  timeLimitSec: z.number().int().min(0).max(4 * 3600).nullable().optional(),
   /** typ zgłoszenia: REGULAR (default) / FORMAL_MOTION / AD_VOCEM */
   entryType: z.enum(["REGULAR", "FORMAL_MOTION", "AD_VOCEM"]).optional().default("REGULAR"),
   /** zgłoszenie z priorytetem - dozwolone tylko dla osób z prawem (hasPriorityRight) */
@@ -38,6 +39,10 @@ async function handlePost(req: Request, ctx: { params: Promise<{ id: string }> }
 
   const list = await prisma.speakerList.findUnique({ where: { id: listId } });
   if (!list) return new NextResponse("Not found", { status: 404 });
+  // IA-05: limit czasu wystąpienia ustala tylko prowadzący; przy samodzielnym zapisie
+  // obowiązuje limit listy wyliczony na serwerze (pole od uczestnika jest pomijane).
+  if (parsed.data.timeLimitSec !== undefined && !(await canManageMeeting(session, list.meetingId)))
+    parsed.data.timeLimitSec = undefined;
 
   // ── GOŚĆ (bez konta) - tylko operator ──────────────────────────────
   if (parsed.data.guestId) {

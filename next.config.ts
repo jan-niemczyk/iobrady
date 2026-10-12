@@ -42,6 +42,12 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      // UW-01: wgrane obrazy (logo, plansza) - ostra polityka z sandboxem. Musi być PO regule ogólnej:
+      // nagłówki z next.config nadpisują te ustawione w trasie, więc bez tego SVG dostawałby CSP strony.
+      ...["/api/uploads/:file*", "/uploads/:file*"].map((source) => ({
+        source,
+        headers: [{ key: "Content-Security-Policy", value: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox" }],
+      })),
       // SSE wymaga, żeby Next nie buforował odpowiedzi
       {
         source: "/api/:path*/stream",

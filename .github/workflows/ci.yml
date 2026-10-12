@@ -48,6 +48,8 @@ jobs:
         run: echo "NEXTAUTH_SECRET=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
       - run: npx prisma generate
       - run: npx tsc --noEmit
+      - name: Kopia zapasowa - błędy źródeł (IA-08)
+        run: sh tests/security/backup-test.sh
       - name: Migracja od zera (bez akceptacji utraty danych)
         run: ./scripts/migrate.sh
       - run: npx tsx tests/security/fixture.ts
@@ -61,5 +63,7 @@ jobs:
         run: CHROME_PATH=$(node -e "console.log(require('@playwright/test').chromium.executablePath())") node tests/security/audit-probes.mjs
       - name: Test trybu kotarkowego
         run: E2E_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/booth-mode.spec.ts --reporter=line
+      - name: Regresje niezależnego audytu (IA/BF/UW)
+        run: E2E_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/audit-fixes.spec.ts --reporter=line
       - if: failure()
         run: tail -200 next.log
