@@ -38,7 +38,7 @@ export function parseBlocks(src: string): Block[] {
     let line = raw;
     let align: Align = "left";
     for (const [p, a] of ALIGN_PREFIX) if (line.startsWith(p)) { align = a; line = line.slice(p.length).trimStart(); }
-    const ul = /^[-•]\s+(.*)$/.exec(line);
+    const ul = /^[-\u2022]\s+(.*)$/.exec(line);
     const ol = /^(\d+)[.)]\s+(.*)$/.exec(line);
     if (ul) { out.push({ type: "ul", align, runs: parseInline(ul[1]) }); olCounter = 0; continue; }
     if (ol) { olCounter++; out.push({ type: "ol", align, runs: parseInline(ol[2]), number: Number(ol[1]) || olCounter }); continue; }

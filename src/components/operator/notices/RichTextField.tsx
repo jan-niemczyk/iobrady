@@ -7,8 +7,10 @@ import { PLACEHOLDERS } from "@/lib/noticeText";
  * Ograniczony edytor formatowania: akapity, pogrubienie, kursywa, listy, wyrównanie i znaczniki
  * danych. Zapis jako zwykły tekst z prostymi znacznikami (lib/noticeText) - bez HTML i bez skryptów.
  */
-export function RichTextField({ id, label, value, onChange, rows = 6, hint }: {
+export function RichTextField({ id, label, value, onChange, rows = 6, hint, placeholders = true, maxLength = 20000 }: {
   id: string; label: string; value: string; onChange: (v: string) => void; rows?: number; hint?: string;
+  /** Lista znaczników danych {{…}} - tylko w dokumentach z danymi posiedzenia (zawiadomienia). */
+  placeholders?: boolean; maxLength?: number;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
@@ -61,12 +63,12 @@ export function RichTextField({ id, label, value, onChange, rows = 6, hint }: {
           <button type="button" className="btn btn-outline-secondary" onClick={() => linePrefix("[do-prawej] ", ALIGN_RE)}>Do prawej</button>
           <button type="button" className="btn btn-outline-secondary" onClick={() => linePrefix("[wyjustuj] ", ALIGN_RE)}>Wyjustuj</button>
         </div>
-        <select className="form-select form-select-sm w-auto" aria-label="Wstaw znacznik danych" value="" onChange={(e) => { if (e.target.value) insert(`{{${e.target.value}}}`); }}>
+        {placeholders && <select className="form-select form-select-sm w-auto" aria-label="Wstaw znacznik danych" value="" onChange={(e) => { if (e.target.value) insert(`{{${e.target.value}}}`); }}>
           <option value="">Wstaw znacznik…</option>
           {PLACEHOLDERS.map((p) => <option key={p.key} value={p.key}>{`{{${p.key}}}`} - {p.label}</option>)}
-        </select>
+        </select>}
       </div>
-      <textarea ref={ref} id={id} className="form-control font-monospace" style={{ fontSize: ".875rem" }} rows={rows} value={value} onChange={(e) => onChange(e.target.value)} maxLength={20000} />
+      <textarea ref={ref} id={id} className="form-control font-monospace" style={{ fontSize: ".875rem" }} rows={rows} value={value} onChange={(e) => onChange(e.target.value)} maxLength={maxLength} />
       <div className="form-text">{hint ?? "Każdy wiersz to akapit. **pogrubienie**, _kursywa_, „- ” lista, „1. ” lista numerowana."}</div>
     </div>
   );

@@ -34,11 +34,11 @@ const nextConfig: NextConfig = {
       { source: "/api/:path*", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
       // Otwieranie PDF/obrazu w przeglądarce (?inline=1): wbudowana przeglądarka PDF wymaga
       // object-src 'self'; skrypty nadal zablokowane.
-      {
-        source: "/api/attachments/:id/download",
+      ...["/api/attachments/:id/download", "/api/info/attachments/:id", "/api/inquiries/attachments/:id", "/api/public/inquiries/attachments/:id"].map((source) => ({
+        source,
         has: [{ type: "query" as const, key: "inline" }],
         headers: [{ key: "Content-Security-Policy", value: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; object-src 'self'; frame-ancestors 'self'" }],
-      },
+      })),
       // UW-01: wgrane obrazy (logo, plansza) - ostra polityka z sandboxem. Musi być PO regule ogólnej:
       // nagłówki z next.config nadpisują te ustawione w trasie, więc bez tego SVG dostawałby CSP strony.
       ...["/api/uploads/:file*", "/uploads/:file*"].map((source) => ({

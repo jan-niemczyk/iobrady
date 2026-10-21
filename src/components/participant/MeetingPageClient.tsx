@@ -5,7 +5,7 @@ import type { ParticipantMeeting } from "@/lib/participantMeeting";
 import { MyAgendaItemNote } from "@/components/participant/MyAgendaItemNote";
 import { VoteResultsView } from "@/components/participant/VoteResultsView";
 import { PublicViewActions } from "@/components/PublicViewActions";
-import { IconDownload, IconExternal, IconFile } from "@/components/ui/Icon";
+import { FileList } from "@/components/participant/FileList";
 
 const TZ = "Europe/Warsaw";
 const fmtDateTime = (iso: string) => new Date(iso).toLocaleString("pl-PL", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: TZ });
@@ -15,47 +15,12 @@ const STATUS: Record<string, string> = {
   CLOSED: "Zakończone", ARCHIVED: "Zarchiwizowane", CANCELLED: "Anulowane",
 };
 
-function fileFormat(name: string, mime: string): string {
-  const m = /\.([a-z0-9]{2,5})$/i.exec(name);
-  if (m) return m[1].toUpperCase();
-  return mime === "application/pdf" ? "PDF" : "plik";
-}
-function fileSize(b: number): string {
-  if (b < 1024 * 1024) return `${Math.max(1, Math.round(b / 1024))} KB`;
-  return `${(b / 1024 / 1024).toFixed(1).replace(".", ",")} MB`;
-}
-/** Czytelna etykieta pliku: nazwa bez rozszerzenia, podkreślenia i myślniki zamienione na spacje. */
-function fileLabel(name: string): string {
-  return name.replace(/\.[a-z0-9]{2,5}$/i, "").replace(/[_]+/g, " ").trim() || name;
-}
-const canOpenInline = (mime: string) => mime === "application/pdf" || mime.startsWith("image/");
-
 type File = ParticipantMeeting["meetingAttachments"][number];
 type Vote = ParticipantMeeting["looseVotes"][number];
 type Item = ParticipantMeeting["items"][number];
 
 function Files({ files, label }: { files: File[]; label: string }) {
-  if (files.length === 0) return null;
-  return (
-    <ul className="pt-files pt-mtg-files" aria-label={label}>
-      {files.map((a) => (
-        <li key={a.id} className="pt-mtg-file">
-          <span className="pt-file-icon" aria-hidden><IconFile size={20} /></span>
-          <span className="pt-file-name">{fileLabel(a.fileName)}<span className="pt-file-meta"> {fileFormat(a.fileName, a.mimeType)}, {fileSize(a.sizeBytes)}</span></span>
-          <span className="pt-btn-group">
-            {canOpenInline(a.mimeType) && (
-              <a className="pt-btn pt-btn-sm" href={`/api/attachments/${a.id}/download?inline=1`} target="_blank" rel="noopener noreferrer">
-                <IconExternal size={15} /> Otwórz<span className="sr-only"> {a.fileName} w nowej karcie</span>
-              </a>
-            )}
-            <a className="pt-btn pt-btn-sm" href={`/api/attachments/${a.id}/download`} download>
-              <IconDownload size={15} /> Pobierz<span className="sr-only"> {a.fileName}</span>
-            </a>
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
+  return <FileList files={files} label={label} href={(id) => `/api/attachments/${id}/download`} />;
 }
 
 function Votes({ votes, onResults }: { votes: Vote[]; onResults: (id: string, el: HTMLElement) => void }) {

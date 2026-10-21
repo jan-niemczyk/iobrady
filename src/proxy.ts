@@ -49,7 +49,7 @@ function route(req: AuthedRequest, next: () => NextResponse): NextResponse | Res
   // tylko na trasach wgrywania, reszta to krótkie dane JSON.
   if (path.startsWith("/api/") && MUTATING.has(req.method)) {
     const len = Number(req.headers.get("content-length") ?? "0");
-    const limit = /^\/api\/meetings\/[^/]+\/attachments$/.test(path) ? 21 * 1024 * 1024
+    const limit = /^\/api\/(meetings|info|inquiries)\/[^/]+\/attachments$/.test(path) ? 21 * 1024 * 1024
       : path === "/api/settings/board-image" ? 9 * 1024 * 1024
       : path === "/api/settings/logo" || path === "/api/setup/logo" ? 3 * 1024 * 1024
       : 1024 * 1024;
@@ -126,7 +126,8 @@ function route(req: AuthedRequest, next: () => NextResponse): NextResponse | Res
   }
 
   // ochrona zakresów po roli
-  const operatorOnly = ["/dashboard", "/meetings", "/participants", "/archive", "/settings", "/votes", "/login-log"];
+  const operatorOnly = ["/dashboard", "/meetings", "/participants", "/archive", "/settings", "/votes", "/login-log",
+    "/groups", "/clubs", "/contacts", "/guests", "/templates", "/notice-templates", "/reports", "/info", "/inquiries"];
   const participantOnly = ["/session"];
 
   if (operatorOnly.some((p) => path.startsWith(p)) && role !== "OPERATOR") {

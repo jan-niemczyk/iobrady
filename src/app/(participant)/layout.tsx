@@ -6,6 +6,8 @@ import { ThemeToggle } from "@/components/participant/ThemeToggle";
 import { prisma } from "@/lib/db";
 import { FeedbackHost } from "@/components/ui/FeedbackHost";
 import { SessionKeeper } from "@/components/SessionKeeper";
+import { NotificationsBell } from "@/components/NotificationsBell";
+import { canSeeInquiries } from "@/lib/inquiryAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +16,7 @@ export default async function ParticipantLayout({ children }: { children: React.
   if (!session || session.user.role !== "PARTICIPANT") redirect("/login");
   const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
   if (!settings?.setupComplete) redirect("/setup");
+  const inquiries = await canSeeInquiries(session.user.id, settings);
 
   return (
     <div className="pt-shell min-h-screen flex flex-col">
@@ -34,6 +37,7 @@ export default async function ParticipantLayout({ children }: { children: React.
             <span className="pt-user hidden md:inline">
               {session.user.firstName} {session.user.lastName}
             </span>
+            <NotificationsBell variant="app" />
             <a href="/account" className="pt-btn pt-btn-sm" title="Konto - zmiana hasła">Konto</a>
             <ThemeToggle />
             <form action={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}>
@@ -41,7 +45,7 @@ export default async function ParticipantLayout({ children }: { children: React.
             </form>
           </div>
         </div>
-        <ParticipantNav />
+        <ParticipantNav inquiries={inquiries} />
       </header>
       <main className="pt-main flex-1">{children}</main>
       <FeedbackHost variant="app" />

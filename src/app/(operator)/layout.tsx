@@ -7,6 +7,7 @@ import { BootstrapJs } from "@/components/BootstrapJs";
 import { NavLinks } from "@/components/operator/NavLinks";
 import { FeedbackHost } from "@/components/ui/FeedbackHost";
 import { SessionKeeper } from "@/components/SessionKeeper";
+import { NotificationsBell } from "@/components/NotificationsBell";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,7 @@ function TopBar({ userName, logoUrl, inquiriesEnabled }: { userName: string; log
         <div className="collapse navbar-collapse" id="opNav">
           <NavLinks inquiriesEnabled={inquiriesEnabled} />
           <div className="d-flex align-items-center gap-3 py-2 py-lg-0">
+            <NotificationsBell variant="bootstrap" />
             <div className="small text-lg-end lh-sm">
               <div className="text-body-secondary">Zalogowano jako</div>
               <div className="fw-medium">{userName}</div>
