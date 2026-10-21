@@ -24,7 +24,7 @@ export default async function OperatorLayout({ children }: { children: React.Rea
       <TopBar
         userName={`${session.user.firstName} ${session.user.lastName}`}
         logoUrl={settings?.presentationLogoUrl ?? null}
-        inquiriesEnabled={settings?.inquiriesEnabled === true}
+        inquiriesEnabled={settings?.inquiriesEnabled === true || (await prisma.inquiryCase.count()) > 0}
       />
       <main className="flex-grow-1">{children}</main>
       <FeedbackHost variant="bootstrap" />
