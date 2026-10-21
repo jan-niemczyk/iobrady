@@ -69,7 +69,17 @@ interface Settings {
   /** Usuń zapisane hasło SMTP. */
   smtpPasswordClear?: boolean;
   smtpFrom: string | null;
+  attendanceLateToleranceMin: number;
+  attendanceEarlyToleranceMin: number;
+  currentTermLabel: string | null;
+  inquiriesEnabled: boolean;
+  inquiriesPublicArchive: boolean;
+  inquiryNumberScope: string;
+  inquiryDueRules: DueRules | null;
 }
+
+type DueRule = { days: number | null; start: "FORWARDED" | "RECEIVED" } | null;
+type DueRules = { INTERPELLATION?: DueRule; QUESTION?: DueRule };
 
 const QUORUM_LABELS: Record<QuorumRule, string> = {
   MORE_THAN_HALF: "Więcej niż połowa składu",
@@ -404,6 +414,23 @@ export function SettingsForm({ initial }: { initial: Settings }) {
             label="Domyślnie publiczne (widok publiczny posiedzenia)" />
         </div>
       </Section>
+
+      <Section title="Raporty obecności" sub="Tolerancja przy wyliczaniu spóźnienia (od otwarcia posiedzenia albo pierwszego ustalenia obecności) i wcześniejszego wyjścia (przed zamknięciem posiedzenia).">
+        <div className="row g-3">
+          <div className="col-6">
+            <label className="form-label" htmlFor="set-late">Spóźnienie - tolerancja (minuty)</label>
+            <input id="set-late" className="form-control" type="number" min={0} max={240} value={s.attendanceLateToleranceMin}
+              onChange={(e) => update("attendanceLateToleranceMin", Math.min(240, Math.max(0, Number(e.target.value) || 0)))} />
+          </div>
+          <div className="col-6">
+            <label className="form-label" htmlFor="set-early">Wcześniejsze wyjście - tolerancja (minuty)</label>
+            <input id="set-early" className="form-control" type="number" min={0} max={240} value={s.attendanceEarlyToleranceMin}
+              onChange={(e) => update("attendanceEarlyToleranceMin", Math.min(240, Math.max(0, Number(e.target.value) || 0)))} />
+          </div>
+        </div>
+      </Section>
+
+      <InquiriesSection s={s} update={update} />
 
       <SmtpSection s={s} update={update} />
 
@@ -754,6 +781,62 @@ function SecuritySection({ s, update }: {
           {busy ? "Usuwanie…" : "Zastosuj retencję teraz"}
         </button>
       </div>
+    </Section>
+  );
+}
+
+const DUE_KINDS: ["INTERPELLATION" | "QUESTION", string][] = [["INTERPELLATION", "Interpelacje"], ["QUESTION", "Zapytania"]];
+
+/**
+ * Moduł interpelacji i zapytań: włączenie, publiczne archiwum, numeracja i terminy odpowiedzi.
+ * Terminy nie mają wartości domyślnej - zależą od właściwych przepisów i aktów jednostki.
+ */
+function InquiriesSection({ s, update }: {
+  s: Settings;
+  update: <K extends keyof Settings>(k: K, v: Settings[K]) => void;
+}) {
+  const rules: DueRules = s.inquiryDueRules ?? {};
+  const setRule = (k: "INTERPELLATION" | "QUESTION", r: DueRule) => update("inquiryDueRules", { ...rules, [k]: r });
+  return (
+    <Section title="Interpelacje i zapytania" sub="Moduł opcjonalny. Wyłączenie blokuje nowe sprawy i czynności (także w API), ale nie usuwa danych - operator zachowuje odczyt i eksport. Prawo składania nadaje się osobom indywidualnie w module.">
+      <div className="d-flex flex-column gap-2 mb-3">
+        <Check id="set-inq-on" checked={s.inquiriesEnabled} onChange={(v) => update("inquiriesEnabled", v)} label="Włącz moduł interpelacji i zapytań" />
+        <Check id="set-inq-pub" checked={s.inquiriesPublicArchive} onChange={(v) => update("inquiriesPublicArchive", v)}
+          label="Publiczny rejestr opublikowanych spraw" hint="Pokazuje wyłącznie sprawy i pisma oznaczone przez operatora do publikacji, w wersji publicznej." />
+      </div>
+      <div className="row g-3">
+        <div className="col-12 col-sm-6">
+          <label className="form-label" htmlFor="set-inq-scope">Numeracja spraw</label>
+          <select id="set-inq-scope" className="form-select" value={s.inquiryNumberScope} onChange={(e) => update("inquiryNumberScope", e.target.value)}>
+            <option value="YEAR">Od 1 w każdym roku (np. 12/2026)</option>
+            <option value="TERM">Od 1 w kadencji (np. 12/IX)</option>
+          </select>
+        </div>
+        <div className="col-12 col-sm-6">
+          <label className="form-label" htmlFor="set-inq-term">Oznaczenie bieżącej kadencji</label>
+          <input id="set-inq-term" className="form-control" maxLength={40} value={s.currentTermLabel ?? ""} placeholder="np. IX" onChange={(e) => update("currentTermLabel", e.target.value || null)} />
+        </div>
+        {DUE_KINDS.map(([k, label]) => {
+          const r = rules[k] ?? null;
+          return (
+            <div key={k} className="col-12 col-sm-6">
+              <fieldset>
+                <legend className="form-label fs-6 mb-1">Termin odpowiedzi - {label.toLowerCase()}</legend>
+                <div className="input-group">
+                  <input className="form-control" type="number" min={1} max={365} aria-label={`${label}: liczba dni`} placeholder="brak reguły" value={r?.days ?? ""}
+                    onChange={(e) => setRule(k, e.target.value === "" ? null : { days: Math.min(365, Math.max(1, Number(e.target.value))), start: r?.start ?? "FORWARDED" })} />
+                  <span className="input-group-text">dni od</span>
+                  <select className="form-select" aria-label={`${label}: zdarzenie początkowe`} disabled={!r} value={r?.start ?? "FORWARDED"} onChange={(e) => r && setRule(k, { ...r, start: e.target.value as "FORWARDED" | "RECEIVED" })}>
+                    <option value="FORWARDED">przekazania adresatowi</option>
+                    <option value="RECEIVED">wpływu / złożenia</option>
+                  </select>
+                </div>
+              </fieldset>
+            </div>
+          );
+        })}
+      </div>
+      <div className="form-text">Bez reguły termin można wpisać ręcznie przy przekazaniu albo pozostawić nieustalony.</div>
     </Section>
   );
 }

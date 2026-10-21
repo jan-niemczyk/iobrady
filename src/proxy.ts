@@ -49,7 +49,7 @@ function route(req: AuthedRequest, next: () => NextResponse): NextResponse | Res
   // tylko na trasach wgrywania, reszta to krótkie dane JSON.
   if (path.startsWith("/api/") && MUTATING.has(req.method)) {
     const len = Number(req.headers.get("content-length") ?? "0");
-    const limit = /^\/api\/(meetings|info|inquiries)\/[^/]+\/attachments$/.test(path) ? 21 * 1024 * 1024
+    const limit = /^\/api\/(meetings\/[^/]+|info\/[^/]+|inquiries\/letters\/[^/]+)\/attachments$/.test(path) ? 21 * 1024 * 1024
       : path === "/api/settings/board-image" ? 9 * 1024 * 1024
       : path === "/api/settings/logo" || path === "/api/setup/logo" ? 3 * 1024 * 1024
       : 1024 * 1024;

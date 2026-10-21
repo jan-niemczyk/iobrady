@@ -9,6 +9,10 @@ import { encryptSecret } from "@/lib/secretBox";
 import { SMTP_PASSWORD_CONTEXT } from "@/lib/mail";
 import { invalidateSettingsCache } from "@/lib/sessions";
 
+const dueRule = z.object({ days: z.number().int().min(1).max(365).nullable(), start: z.enum(["FORWARDED", "RECEIVED"]) }).nullable().optional();
+/** Terminy odpowiedzi według rodzaju sprawy - konfigurowane przez jednostkę; brak reguły = termin ręczny albo nieustalony. */
+const dueRules = z.object({ INTERPELLATION: dueRule, QUESTION: dueRule });
+
 const schema = z.object({
   organizationName: z.string().min(1).max(200).optional(),
   groupsEnabled: z.boolean().optional(),
@@ -60,6 +64,13 @@ const schema = z.object({
   smtpPassword: z.string().max(500).nullable().optional(),
   smtpPasswordClear: z.boolean().optional(),
   smtpFrom: z.string().max(200).nullable().optional(),
+  attendanceLateToleranceMin: z.number().int().min(0).max(240).optional(),
+  attendanceEarlyToleranceMin: z.number().int().min(0).max(240).optional(),
+  currentTermLabel: z.string().trim().max(40).regex(/^[A-Za-z0-9 ._/-]*$/, "Oznaczenie kadencji: litery, cyfry, spacja, . _ / -").nullable().optional(),
+  inquiriesEnabled: z.boolean().optional(),
+  inquiriesPublicArchive: z.boolean().optional(),
+  inquiryNumberScope: z.enum(["YEAR", "TERM"]).optional(),
+  inquiryDueRules: dueRules.nullable().optional(),
 });
 
 export async function PATCH(req: Request) {
@@ -72,6 +83,8 @@ export async function PATCH(req: Request) {
   if (!parsed.success) return validationError(parsed.error);
 
   const { smtpPassword, smtpPasswordClear, ...rest } = parsed.data;
+  if (rest.inquiryNumberScope === "TERM" && !(rest.currentTermLabel ?? (await prisma.settings.findUnique({ where: { id: "singleton" }, select: { currentTermLabel: true } }))?.currentTermLabel))
+    return NextResponse.json({ error: "Numeracja według kadencji wymaga oznaczenia bieżącej kadencji." }, { status: 400 });
   const data: Record<string, unknown> = { ...rest };
   if (smtpPasswordClear) data.smtpPassword = null;
   else if (smtpPassword) data.smtpPassword = encryptSecret(smtpPassword, SMTP_PASSWORD_CONTEXT);
