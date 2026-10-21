@@ -637,6 +637,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
         </div>
         <div className="d-flex flex-wrap align-items-center gap-2">
           <PublicViewActions meetingId={state.id} published={state.settings.publicEnabled} origin={state.publicOrigin ?? null} />
+          <a className="btn" href={`/meetings/${state.id}/notices`}>Utwórz zawiadomienie</a>
 
           {/* Raporty */}
           <div className="dropdown">
