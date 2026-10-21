@@ -42,7 +42,7 @@ export function RichTextField({ id, label, value, onChange, rows = 6, hint, plac
     onChange(value.slice(0, p) + text + value.slice(el.selectionEnd));
     requestAnimationFrame(() => { el.focus(); el.setSelectionRange(p + text.length, p + text.length); });
   }
-  const LIST_RE = /^(\[do-srodka\]|\[do-prawej\]|\[wyjustuj\])?\s*([-•]\s+|\d+[.)]\s+)?/;
+  const LIST_RE = /^(\[do-srodka\]|\[do-prawej\]|\[wyjustuj\])?\s*([-\u2022]\s+|\d+[.)]\s+)?/;
   const ALIGN_RE = /^(\[do-srodka\]|\[do-prawej\]|\[wyjustuj\])\s*/;
 
   return (

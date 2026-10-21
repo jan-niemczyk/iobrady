@@ -13,6 +13,11 @@ Ten dokument opisuje typową ścieżkę pracy operatora podczas posiedzenia orga
 7. [Komunikaty operatora](#7-komunikaty-operatora)
 8. [Zamknięcie posiedzenia i raporty](#8-zamknięcie-posiedzenia-i-raporty)
 9. [Sytuacje awaryjne](#9-sytuacje-awaryjne)
+10. [Grupy organizacyjne i kontakty](#10-grupy-organizacyjne-i-kontakty)
+11. [Raporty obecności](#11-raporty-obecności)
+12. [Zawiadomienia](#12-zawiadomienia)
+13. [Informacje](#13-informacje)
+14. [Interpelacje i zapytania](#14-interpelacje-i-zapytania)
 
 ---
 
@@ -105,7 +110,7 @@ W formularzu:
 **Dla listy kandydatów:**
 - Podaj nazwiska kandydatów (po jednej w polu, **+ Dodaj** rozszerza listę).
 - **Co najmniej / co najwyżej zaznaczeń** - limity wyboru.
-- **Niezaznaczenie kandydata = głos PRZECIW** - taka jest semantyka, zgodna z praktyką Sejmu RP.
+- **Niezaznaczenie kandydata = głos PRZECIW** - osoba, która oddała głos, a nie zaznaczyła kandydata, głosuje przeciw niemu; kto nie oddał głosu, nie głosował.
 
 **Wyłączenia** (np. konflikt interesów):
 - Sekcja **Wyłącz osoby z tego głosowania (N)** - rozwiń i zaznacz osoby.
@@ -186,7 +191,7 @@ Menu **Raporty ▾** w nagłówku panelu posiedzenia:
 | **Zestawienie głosowań** | CSV | Wszystkie głosowania z wynikami i sumami |
 | **Rejestr czynności** | CSV | Wszystkie akcje formalne (otwarcia, zamknięcia, głosowania, wyłączenia) |
 
-Dodatkowo dla pojedynczego głosowania: w liście *Ostatnie głosowania* przycisk **CSV** - imienne głosy w układzie zbliżonym do wydruków Sejmu RP.
+Dodatkowo dla pojedynczego głosowania: w liście *Ostatnie głosowania* przycisk **CSV** - imienne głosy (wiersz na osobę: Lp., nazwisko, imię, klub, głos).
 
 ### 8.3 Archiwum
 
@@ -224,3 +229,69 @@ Wyniki głosowania są niezmienne - nie ma operacji "edycji wyników". Konieczne
 ### 9.6 Hasło użytkownika
 
 Operator: menu **Uczestnicy** → **Edytuj** → pole **Nowe hasło**. Hasło musi mieć co najmniej 8 znaków; po pierwszym logowaniu hasłem nadanym przez operatora użytkownik musi ustawić własne. Zmiana hasła operatora przez innego operatora - to samo działanie.
+
+---
+
+## 10. Grupy organizacyjne i kontakty
+
+Menu **Osoby i grupy**:
+
+- **Grupy organizacyjne** - rada, komisje, zespoły. Każda grupa ma rodzaj, skład, funkcje osób, domyślne
+  prawo głosu i okresy członkostwa (od-do). Osoba może należeć do wielu grup; klub jest osobną przynależnością.
+  Dawne „szablony składu” zostały przeniesione do grup rodzaju „Bez klasyfikacji” - rodzaj można zmienić.
+- **Kluby i koła** - bez zmian, niezależne od grup.
+- **Kontakty** - adresaci bez konta (np. dyrektorzy jednostek) dla zawiadomień.
+
+Przy tworzeniu posiedzenia wybierz grupy - skład zostanie wczytany raz (osoba z kilku grup trafia raz,
+prawo głosu jest sumą domyślnych praw). Na stronie uczestników posiedzenia: **Porównaj ze składem grup**
+i **Dodaj brakujące osoby** (posiedzenia niezakończone). Zakończone posiedzenia nie są przepisywane.
+
+## 11. Raporty obecności
+
+- Posiedzenie → **Raporty ▾** → **Lista obecności - historia, korekty, eksport**: dla każdej osoby czas
+  obecności, spóźnienie, wcześniejsze wyjście, powroty i źródło każdego wpisu. **Korekta** wymaga
+  uzasadnienia i nie usuwa pierwotnego wpisu. Usprawiedliwienie i uwaga - przy osobie.
+- Menu **Raporty → Raporty obecności**: okres, grupy (członkostwo w danym okresie), osoba, rodzaj
+  posiedzenia. Wspólne posiedzenie liczy się raz; „Brak danych” nie jest nieobecnością; goście nie są liczeni.
+- Tolerancja spóźnienia i wcześniejszego wyjścia: **Ustawienia → Raporty obecności**.
+
+## 12. Zawiadomienia
+
+- Posiedzenie → **Utwórz zawiadomienie** → wybierz szablon tekstu (domyślny jest podpowiadany).
+- Zakładki: **Treść dokumentu** (dane jednostki, wstęp z podstawą prawną, treść po porządku, podpis, stopka
+  strony), **Porządek obrad** (kopia porządku: zmiana tytułu, podpunkty, pozycje bez numeru, kolejność,
+  usuwanie - bez wpływu na porządek posiedzenia; **Pobierz porządek ponownie z posiedzenia** pyta o nadpisanie),
+  **Adresaci** (uczestnicy, goście, grupy, kontakty, wpis ręczny z możliwością zapisania w kontaktach).
+- **DOCX ogólny** - jeden dokument bez danych adresata. **DOCX imienne** - osobny plik dla każdego
+  adresata (ZIP); dokument jednej osoby nie zawiera danych pozostałych. Wygenerowanie nie oznacza wysłania.
+- **Posiedzenia → Szablony dokumentów** - nazwane szablony (zakres: jednostka albo grupa), domyślny,
+  powielanie, archiwum. Zmiana szablonu nie zmienia utworzonych wcześniej zawiadomień.
+
+## 13. Informacje
+
+- Menu **Informacje → Nowa informacja**: rodzaj (komunikat albo dokument stały), kategoria, treść,
+  odnośniki, termin wydarzenia, data końca widoczności, przypięcie, oznaczenie „ważne”.
+- **Odbiorcy**: wszyscy radni, grupy (według bieżącego składu) lub wybrane osoby. Osoba w kilku grupach
+  widzi informację raz. Informacje nie trafiają do widoku publicznego.
+- **Opublikuj** - odbiorcy dostają powiadomienie w aplikacji. Przy zmianie opublikowanej treści zaznacz
+  **Istotna zmiana**, aby utworzyć nową wersję (odbiorcy zobaczą ją jako nieprzeczytaną).
+- Zakładka **Odbiorcy i otwarcia** - kto otworzył treść bieżącej wersji (pierwsze i ostatnie otwarcie),
+  eksport XLSX. To ewidencja otwarć w aplikacji, nie dowód zapoznania się ani doręczenia.
+
+## 14. Interpelacje i zapytania
+
+Moduł włącza się w **Ustawienia → Interpelacje i zapytania** (tam też: publiczny rejestr, numeracja
+roczna albo kadencyjna, terminy odpowiedzi według rodzaju - bez reguły termin wpisuje się ręcznie).
+
+- **Prawo składania** (zakładka w module) nadaje się indywidualnie, opcjonalnie w zakresie organu.
+  Odebranie działa od razu; dostęp radnego do dotychczasowych spraw i ich PDF zostaje.
+- **Wprowadź pismo otrzymane poza aplikacją** - z datą wpływu i rzeczywistymi autorami (operator jest
+  zapisany jako osoba wprowadzająca).
+- Karta sprawy: **Zarejestruj** (kolejny numer albo numer z istniejącego rejestru), przekazanie i termin
+  osobno dla każdego adresata, **Dodaj pismo** (odpowiedź - także wyłącznie jako plik, uzupełnienie,
+  ponowienie, korekta), **Zakończ sprawę** (osobna czynność), **PDF**/**DOCX** korespondencji.
+- **Publikacja**: przy piśmie przygotuj wersję publiczną (treść bez danych prywatnych albo plik
+  zanonimizowany) i **Opublikuj pismo**; potem **Opublikuj sprawę**. Rejestr publiczny: `/public/interpelacje`.
+- Rejestr: filtry (rodzaj, numer, autor, adresat, status, daty, treść), skróty **Oczekujące**, **Po terminie**,
+  **Nowe odpowiedzi**; eksport XLSX i PDF z zastosowanymi filtrami.
+

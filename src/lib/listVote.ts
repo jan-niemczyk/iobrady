@@ -1,7 +1,7 @@
 /**
  * Logika głosowania na listę kandydatów (VoteType.LIST).
  *
- * Założenie zgodne z praktyką Sejmu RP (potwierdzone wydrukami):
+ * Zasady liczenia:
  *
  *   - Wyborca otrzymuje listę N kandydatów / opcji.
  *   - Może zaznaczyć od `minSelections` do `maxSelections` opcji.

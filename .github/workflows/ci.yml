@@ -69,5 +69,11 @@ jobs:
         run: E2E_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/audit-fixes.spec.ts --reporter=line
       - name: Utwardzenia H-01..H-08 (CSP z nonce, limity, głos tajny bez zapisu)
         run: E2E_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/hardening.spec.ts --reporter=line
+      - name: Obecność, ręczne zakończenie punktu, sortowanie pakietu, zawiadomienia
+        run: E2E_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/stages.spec.ts --reporter=line
+      - name: Moduł Informacje
+        run: E2E_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/info.spec.ts --reporter=line
+      - name: Interpelacje i zapytania
+        run: E2E_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/inquiries.spec.ts --reporter=line
       - if: failure()
         run: tail -200 next.log

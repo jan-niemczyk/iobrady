@@ -895,9 +895,9 @@ function ListBallot({
   const remaining = max - selectedIds.length;
   const tooFew = selectedIds.length < min;
 
-  // Model "sejmowy": lista z aktywną pozycją, którą przesuwamy strzałkami.
+  // Lista z aktywną pozycją przesuwaną strzałkami (działa przy dowolnej liczbie kandydatów).
   // Domyślnie każda pozycja = "przeciw" (niezaznaczona). Z lub "+" zaznacza aktywną jako ZA,
-  // "-" kasuje. O zatwierdza (biały przycisk jak na wyświetlaczu sejmowym).
+  // "-" kasuje. O zatwierdza (wyróżniony przycisk zatwierdzenia).
   const [activeIdx, setActiveIdx] = useState(0);
   const canAct = !pending && !locked;
   const markActive = () => {

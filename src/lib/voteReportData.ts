@@ -7,7 +7,7 @@ import { comparePl } from "@/lib/sortPl";
 
 export type { ReportData, ReportGroup, ReportPerson, ReportMark } from "@/lib/reportTypes";
 
-// Krótka etykieta większości do wydruku (styl Sejmu).
+// Krótka etykieta większości do wydruku.
 function majShortLabel(kind: string): string {
   switch (kind) {
     case "ABSOLUTE": return "WIĘKSZOŚĆ BEZWZGLĘDNA";
@@ -45,7 +45,7 @@ function buildSummaryLine(o: {
   return { line: parts.join("   "), parts, majority };
 }
 
-/** Buduje komplet danych raportu jednego głosowania (format zbliżony do wydruków Sejmu). */
+/** Buduje komplet danych raportu jednego głosowania (nagłówek, wynik, wykaz imienny, kluby). */
 export async function buildVoteReportData(voteId: string): Promise<ReportData | null> {
   const vote = await prisma.vote.findUnique({
     where: { id: voteId },

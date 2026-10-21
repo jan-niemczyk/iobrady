@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-// Znacznik głosu w tabeli imiennej - skróty jak w oryginalnych wydrukach.
+// Znacznik głosu w tabeli imiennej - krótkie oznaczenia (legenda pod wykazem).
 export type PdfMark = "za" | "pr." | "ws." | "ng." | "ob.";
 
 export interface PdfPerson {
@@ -28,7 +28,7 @@ export interface PdfCandidate {
   yesCount: number;
 }
 
-// Dane raportu w układzie zbliżonym do wydruków Kancelarii Sejmu RP.
+// Dane raportu głosowania: nagłówek (organ, posiedzenie, głosowanie), przedmiot, wynik, imienny wykaz.
 export interface PdfReportData {
   organizationName?: string;
   meetingTitle?: string;
@@ -74,9 +74,9 @@ export function PrintButton({ fileName = "raport-glosowania", data }: { fileName
       const FS = 9; // jeden rozmiar czcionki w całym dokumencie
       const content: Record<string, unknown>[] = [];
 
-      // Nazwa organu / kadencja na górze (jak „X kadencja Sejmu RP")
+      // Nazwa organu / kadencja na górze strony
       if (data.organizationName) content.push({ text: data.organizationName, fontSize: FS, margin: [0, 0, 0, 2] });
-      // Tytuł (jak w oryginale: Posiedzenie X - głosowanie nr Y (data))
+      // Tytuł: Posiedzenie X - głosowanie nr Y (data)
       content.push({ text: `Posiedzenie ${data.meetingNumber} - głosowanie nr ${data.voteNumber} (${data.timestamp})`, fontSize: FS, bold: true, margin: [0, 0, 0, 2] });
       // Punkt / kontekst
       content.push({ text: data.contextLabel, fontSize: FS, margin: [0, 2, 0, 2] });
@@ -124,7 +124,7 @@ export function PrintButton({ fileName = "raport-glosowania", data }: { fileName
               margin: [0, 0, 0, 4],
             });
           } else {
-            // Układ dwukolumnowy jak w oryginale: NAZWISKO IMIĘ + głos, bez ramek.
+            // Układ dwukolumnowy: NAZWISKO IMIĘ + głos, bez ramek (zwarty wykaz na jednej stronie).
             const cells = g.people.map((p) => ({
               columns: [
                 { text: `${p.lastName} ${p.firstName}`.toUpperCase(), fontSize: FS, width: "*" },
@@ -165,7 +165,7 @@ export function PrintButton({ fileName = "raport-glosowania", data }: { fileName
         content,
         defaultStyle: { font: "Lato", fontSize: FS },
         pageMargins: [40, 48, 40, 40] as [number, number, number, number],
-        // Nagłówek strony jak w oryginale: "Posiedzenie nr X/ głosowanie nr Y   Strona N z M"
+        // Nagłówek strony: "Posiedzenie nr X/ głosowanie nr Y   Strona N z M"
         header: (currentPage: number, pageCount: number) => ({
           margin: [40, 20, 40, 0],
           columns: [

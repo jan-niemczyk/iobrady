@@ -1,6 +1,6 @@
 # Lista poprawek (seria po deployu)
 
-Legenda: [ ] do zrobienia · [~] w trakcie/wymaga ustalenia · [x] zrobione
+Legenda: [ ] do zrobienia; [~] w trakcie/wymaga ustalenia; [x] zrobione
 
 ## A. Obecność / kworum (największa przebudowa)
 - [x] A1. Zintegrować sprawdzenie obecności z listą obecności - JEDEN mechanizm, nie dwa. Usunąć "Otwórz/Zamknij listę".
@@ -205,7 +205,7 @@ Legenda: [ ] do zrobienia · [~] w trakcie/wymaga ustalenia · [x] zrobione
 - [x] Autosortowanie A-Z opcji listy (polskie znaki) przyciskiem w edytorze głosowania.
 
 ## AA. Typografia
-- [x] Zamieniono wszystkie – (en dash) i — (em dash) na - (zwykły dywiz) w całym kodzie (107 plików). Zero pozostałych. tsc bez zmian (423 szum), klamry OK.
+- [x] Zamieniono wszystkie półpauzy (en dash) i pauzy (em dash) na - (zwykły dywiz) w całym kodzie (107 plików). Zero pozostałych. tsc bez zmian (423 szum), klamry OK.
 
 ## BB. Partie 3-4: wyniki operatora + porządek obrad
 - [x] #17 "Przyjęto/Odrzucono" przeniesione do linii "Jawne/Tajne - typ - status" (usunięto osobny pill).
@@ -293,12 +293,12 @@ OPERATOR:
   A=prezentacja do AUTO, R=zakończ bieżący punkt (potwierdzenie).
 Bezpieczeństwo: destrukcyjne akcje operatora (zamknięcie głosowania, zakończenie punktu) z window.confirm.
 
-## LL. Poprawki skrótów + model listy "sejmowej"
+## LL. Poprawki skrótów + lista z aktywną pozycją
 - [x] Duży czerwony wniosek formalny: jednoklawiszowe F (było Shift+F). Lista mówców wniosek: Shift+F.
 - [x] Głos nieważny (tajne) na O (wspólnie z kworum/obecnością - wszystkie potwierdzenia obecności = O).
 - [x] Operator: N - otwórz następny punkt (pierwszy PENDING).
 - [x] Operator wnioski formalne: B - udziel głosu, K/Spacja - zakończ (wspólne z listą mówców).
-- [x] Głosowanie na listę - model "sejmowy" (rozwiązuje >9 kandydatów): nawigacja strzałkami po aktywnej
+- [x] Głosowanie na listę - lista z aktywną pozycją (rozwiązuje >9 kandydatów): nawigacja strzałkami po aktywnej
       pozycji, Z lub + = ZA dla aktywnej, - = kasuj, Enter = zatwierdź. Cyfry 1-9 nadal jako skrót dla krótkich list.
       Aktywna pozycja podświetlona (wyświetlacz).
 
@@ -605,7 +605,7 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
     nie-pigułkowy promień - `$border-radius` nie był nadpisywany dla badge, więc nie wymagały
     zmian.
 
-## AAE. Prawdziwy rdzeń problemu: CSS Cascade Layers (Tailwind vs Bootstrap) - naprawa wzorem sprawdzonej aplikacji
+## AAE. Prawdziwy rdzeń problemu: CSS Cascade Layers (Tailwind vs Bootstrap)
 - Poprawka AAD nie wystarczyła (użytkownik pokazał zrzut ekranu na żywo - "WNIOSKI FORMALNE"
   nadal renderował się jako olbrzymi czerwony nagłówek, `.pill` nadal w pełni zaokrąglone).
   Prawdziwa przyczyna: `globals.css` (Tailwind v4, `@import "tailwindcss"`) owija własne klasy
@@ -617,9 +617,8 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
   layerowanym `.eyebrow{font-size:10px}` (klasa) z `globals.css`, mimo wyższej specyficzności
   klasy - stąd olbrzymie nagłówki wszędzie tam, gdzie `.eyebrow` trafiał na prawdziwy tag
   `<h2>/<h3>`. Poprzednia poprawka AAD nadpisywała tylko margines/line-height, nie font-size.
-- Zdiagnozowane i naprawione wzorem architektury z `jan-niemczyk/systemglosowanobiegowych`
-  (druga aplikacja tego zespołu, gdzie motyw Bootstrapa jest jedynym systemem CSS - bez
-  Tailwinda w tle, więc bez konfliktu layerów):
+- Naprawione przez zdefiniowanie spornych klas wyłącznie po stronie motywu Bootstrapa (jeden
+  system stylów dla tych klas - bez definicji layerowanej w Tailwindzie, więc bez konfliktu layerów):
   - [x] `src/styles/bootstrap-scoped.scss` - `.eyebrow` przeniesiony z layerowanej definicji
         w `globals.css` na PEŁNĄ, samodzielną, unlayered definicję w tym pliku (po imporcie
         Bootstrapa) - font-size/waga/margines/line-height w jednym miejscu, bezwarunkowo
@@ -631,7 +630,7 @@ Schemat: MeetingParticipant.canUseMiniDisplay; Meeting.displaySummaryAfterClose/
         (delikatny cień na wszystkich kartach operatora - jedno dopisanie do własnej reguły
         Bootstrapa, bez zmiany choćby jednego pliku komponentu).
   - [x] `src/styles/_bs-theme.scss` - włączone stonowane cienie (`$box-shadow-sm/$box-shadow/
-        $box-shadow-lg`, wartości 1:1 z `systemglosowanobiegowych`) zamiast całkowitego
+        $box-shadow-lg`, stonowane wartości) zamiast całkowitego
         wyłączenia (`$enable-shadows:false` usunięte) - "miększy" wygląd zamiast płaskich,
         surowych bloków; nieco hojniejszy `$card-spacer-y/x` (1.1rem).
   - [x] Wszystkie pozostałe użycia `.pill*` w panelu operatora zamienione na `badge` +
@@ -1559,3 +1558,45 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
 - Wynik: `npm audit` - **0 podatności** (wcześniej 6: 5 wysokich, 1 średnia - narzędzia budowania).
 - Sprawdzone na świeżej bazie jak w CI: sondy 45/45, e2e 25/25 (`next start`), e2e 13/13 na serwerze standalone
   (`node server.js`, jak w kontenerze), 14 widoków bez naruszeń CSP i błędów, migracja `db push` z nowym `deepmerge-ts`.
+
+## ABI. Grupy organizacyjne, widok publiczny i radnego, obecność, zawiadomienia, Informacje, interpelacje
+
+- [x] **Grupy organizacyjne** (`OrgUnit`, `OrgUnitMember` z funkcją i okresem członkostwa, `MeetingOrgUnit`):
+      dawne szablony składu przeniesione przez `scripts/post-migrate.ts` (rodzaj „Bez klasyfikacji”, nazwy,
+      osoby i domyślne prawo głosu zachowane, mapowanie `legacyTemplateId`); posiedzenie przypisane do kilku
+      grup bez dublowania osób; porównanie i uzupełnienie składu tylko dla niezakończonych posiedzeń.
+      Kluby osobno (`/clubs`), słownik kontaktów (`/contacts`). Menu operatora pogrupowane.
+- [x] **Widok publiczny**: pełny tytuł punktu przy głosowaniu, wyszukiwanie bez polskich znaków (np. „wygasniecia”),
+      powrót z zachowaniem filtra i pozycji, szczegóły z poprzednim/następnym głosowaniem, wyjaśnienie udziału
+      (obecni przy otwarciu vs osoby, które dołączyły i głosowały). Przycisk „Widok publiczny” i „Kopiuj link”
+      w panelu operatora i na stronie posiedzenia radnego; nieopublikowane posiedzenie pozostaje niedostępne.
+- [x] Niespójność głosowania 3 (17 głosów, raport „Za 16”): osoba, która potwierdziła obecność po otwarciu
+      i oddała głos, była oznaczana „nb.”. Raport PDF i CSV liczą teraz każdego głosującego jako obecnego;
+      migawka z otwarcia zostaje bez zmian (wynik historyczny się nie zmienia).
+- [x] **Strona posiedzenia radnego** (`/session/posiedzenie/[id]`): dwie kolumny od 992 px, spis punktów,
+      materiały przy punkcie, prywatna notatka, wyniki w oknie (klawiatura, pułapka fokusu) i pełne szczegóły.
+- [x] **Ręczne zakończenie punktu** bez godzin (`manuallyCompleted`), cofnięcie, wpis w dzienniku.
+- [x] **Wydruk pakietu**: osobne sortowanie przy każdej pozycji (za, przeciw, wstrzymało się, brak głosu,
+      nieobecność; wewnątrz nazwisko i imię w polskiej kolejności), także w blokach klubowych.
+- [x] **Raporty obecności**: historia (`AttendanceEvent`) z każdego źródła, korekty z uzasadnieniem,
+      usprawiedliwienia, spóźnienia/wyjścia z tolerancją z Ustawień; zestawienie zbiorcze z filtrem okresu,
+      grup (okresy członkostwa), osoby; PDF, DOCX, XLSX.
+- [x] **Zawiadomienia DOCX**: edytowalna kopia porządku, adresaci z jednego słownika, prawdziwa stopka strony,
+      wersja ogólna i imienne (ZIP); nazwane szablony tekstów z zakresem i domyślnym (`/notice-templates`).
+- [x] **Informacje**: komunikaty i dokumenty stałe, odbiorcy (wszyscy, grupy, osoby) bez duplikatów, wersje,
+      ewidencja otwarć bieżącej wersji (tylko przy otwarciu treści), załączniki chronione tymi samymi regułami,
+      zestawienie XLSX, powiadomienia w aplikacji (dzwonek w panelu radnego i operatora).
+- [x] **Interpelacje i zapytania** (moduł opcjonalny, domyślnie wyłączony): prawo składania nadawane
+      indywidualnie (`InquiryGrant`, dziennik), kontrole po stronie serwera przy każdej czynności; szkic,
+      złożenie, współautorzy z potwierdzeniem, pismo otrzymane poza aplikacją, rejestracja z numeracją
+      pod blokadą (`pg_advisory_xact_lock` + unikalny indeks), przekazania i terminy osobno dla adresatów,
+      odpowiedzi, uzupełnienia, ponowienia; stan wyliczany ze zdarzeń; PDF pisma i sprawy z treści (znak
+      „PROJEKT” dla szkicu), DOCX, rejestr XLSX/PDF z filtrami; publikacja wersji publicznej
+      (`/public/interpelacje`).
+- [x] Dokumentacja i komentarze: usunięte odniesienia do innych systemów i instytucji jako wzorców
+      (komentarze w raportach głosowań, liście kandydatów, widoku mini; CLAUDE.md, POPRAWKI.md,
+      docs/OPERATOR.md). Wyszukiwanie kontrolne bez trafień poza nazwą rodzaju organu „sejmik”.
+- Testy: `tests/e2e/stages.spec.ts`, `info.spec.ts`, `inquiries.spec.ts` (dodane do CI). Przebieg: e2e 36/36,
+      sondy bezpieczeństwa 45/45, `tsc`, build.
+- Schemat: wyłącznie nowe modele, pola opcjonalne lub z wartością domyślną i nowe wartości enumów -
+      `db push` bez utraty danych. Przed wdrożeniem kopia bazy (wykonuje ją `scripts/update.sh`).

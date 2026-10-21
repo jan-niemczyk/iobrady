@@ -9,9 +9,14 @@ Interfejs i dokumenty są w języku polskim.
 
 ## Funkcje
 
-- **Posiedzenia** - porządek obrad z punktami i podpunktami, szablony składu, uczestnicy z prawem głosu
-  i goście, kluby, przewodniczący wskazywany dla posiedzenia, załączniki do punktów (dostępne tylko
-  po zalogowaniu).
+- **Posiedzenia** - porządek obrad z punktami i podpunktami, uczestnicy z prawem głosu i goście,
+  przewodniczący wskazywany dla posiedzenia, załączniki do punktów (dostępne tylko po zalogowaniu),
+  ręczne oznaczenie punktu jako zakończonego (bez wpisywania godzin).
+- **Grupy organizacyjne** - organy, komisje, zespoły z własnym składem, funkcjami i okresami członkostwa;
+  posiedzenie przypisane do jednej lub kilku grup (wspólne posiedzenie bez dublowania osób), świadoma
+  aktualizacja składu z podglądem różnic. Kluby i koła - osobno, jak dotąd. Słownik kontaktów bez kont.
+- **Widok publiczny** - porządek, materiały i wyniki głosowań opublikowanego posiedzenia z wyszukiwaniem;
+  przycisk „Widok publiczny” i „Kopiuj link” w panelu operatora i na stronie posiedzenia radnego.
 - **Obecność** - potwierdzanie przez operatora lub samodzielnie przez uczestników, sprawdzenia obecności
   z zapisanym stanem, kworum.
 - **Głosowania** - zwykłe (za / przeciw / wstrzymuję się), na listę kandydatów, pakietowe (wiele pozycji),
@@ -30,6 +35,17 @@ Interfejs i dokumenty są w języku polskim.
   Ekran sali i nakładka są dostępne przez link z tokenem, który można unieważnić.
 - **Dokumenty** - raporty głosowań (PDF, CSV), listy obecności i do podpisu, protokół (DOCX),
   odcinki z danymi logowania (PDF z kodem QR). Wydruki czarno-białe.
+- **Raporty obecności** - historia obecności na posiedzeniu (spóźnienia, wyjścia, powroty, korekty
+  z uzasadnieniem, usprawiedliwienia) i zestawienie zbiorcze za okres z filtrem grup i osób; PDF, DOCX, XLSX.
+- **Zawiadomienia** - dokument DOCX z edytowalną kopią porządku obrad (zmiany nie dotykają porządku
+  posiedzenia), adresatami z jednego słownika i prawdziwą stopką strony; wersja ogólna albo imienna
+  dla każdego adresata. Nazwane szablony tekstów (także osobne dla komisji).
+- **Informacje** - komunikaty i dokumenty stałe dla wszystkich radnych, wybranych grup lub osób;
+  wersje, ewidencja otwarć treści, powiadomienia w aplikacji.
+- **Interpelacje i zapytania** (moduł opcjonalny) - indywidualnie nadawane prawo składania, szkic
+  i złożenie, współautorzy z potwierdzeniem, rejestracja z numeracją, przekazania i odpowiedzi osobno
+  dla każdego adresata, ponowienia, PDF każdego pisma, eksport rejestru, publiczny rejestr wersji
+  zanonimizowanych.
 - **Konta** - logowanie e-mailem i hasłem, wymuszona zmiana hasła startowego, limit bezczynności,
   natychmiastowe unieważnienie sesji po zmianie roli, hasła lub dezaktywacji, rejestr logowań
   i dziennik czynności.

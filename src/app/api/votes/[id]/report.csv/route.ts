@@ -104,7 +104,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   // Osoba z oddanym głosem nie jest nieobecna (także gdy obecność potwierdziła po otwarciu głosowania).
   const absentCount = voters.filter((p) => !wasPresent(p) && !ballotByUser.has(p.userId)).length;
 
-  // Imienne - układ jak w wydrukach Sejmu RP
+  // Imienne: wiersz na osobę (Lp., nazwisko, imię, klub), kolumny głosów, status
   if (isList) {
     // kolumny: Lp. | Nazwisko | Imię | Klub | Kandydat 1 | Kandydat 2 | ... | Status
     const header = ["Lp.", "Nazwisko", "Imię", "Klub", ...vote.options.map((o) => o.label), "Status"];

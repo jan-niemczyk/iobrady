@@ -5,7 +5,7 @@ import { VoteBallot, type ActiveVote } from "@/components/participant/Participan
 import { IconClose } from "@/components/ui/Icon";
 
 // Widok "wyświetlacz" (mini) - wąskie, pełne okno nakładane na stream/prezentację.
-// Zamysł (wzorowany na wyświetlaczu sejmowym): pokazuje imię i nazwisko uczestnika (zamiast
+// Zamysł: pokazuje imię i nazwisko uczestnika (zamiast
 // legitymacji) oraz - z NAJWYŻSZYM priorytetem - AKTYWNE GŁOSOWANIE, w którym można oddać głos
 // (z tego widoku, także skrótami klawiszowymi). Jednolite tło. Bez pełnej nazwy głosowania.
 
