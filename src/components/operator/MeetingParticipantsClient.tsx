@@ -21,7 +21,7 @@ interface AvailableUser {
 }
 
 export function MeetingParticipantsClient({
-  meetingId, meetingName, meetingNumber, assigned: initialAssigned, available: initialAvailable, agenda = [], templates = [], embedded, onChanged,
+  meetingId, meetingName, meetingNumber, assigned: initialAssigned, available: initialAvailable, agenda = [], orgUnits = [], meetingStatus, embedded, onChanged,
 }: {
   meetingId: string;
   meetingName: string;
@@ -29,7 +29,8 @@ export function MeetingParticipantsClient({
   assigned: AssignedParticipant[];
   available: AvailableUser[];
   agenda?: { id: string; number: string; title: string }[];
-  templates?: { id: string; name: string; memberCount: number }[];
+  orgUnits?: { id: string; name: string; memberCount: number; linked: boolean }[];
+  meetingStatus?: string;
   /** Osadzony w planerze panelu posiedzenia - bez nagłówka strony, odświeżanie przez onChanged. */
   embedded?: boolean;
   onChanged?: () => void;
@@ -85,34 +86,7 @@ export function MeetingParticipantsClient({
 
   const body = (
     <>
-      {templates.length > 0 && (
-        <div className="card mb-3">
-          <div className="card-body d-flex flex-wrap align-items-center gap-2">
-            <span className="fw-semibold me-1">Zastosuj szablon składu:</span>
-            {templates.map((t) => (
-              <button
-                key={t.id}
-                className="btn btn-sm"
-                disabled={pending}
-                onClick={async () => {
-                  if (!(await ask({ title: "Zastosować szablon składu?", message: `Zostaną dodani uczestnicy z szablonu „${t.name}” (${t.memberCount}). Osoby już przypisane zostaną pominięte.`, confirmLabel: "Dodaj uczestników" }))) return;
-                  startTransition(async () => {
-                    const r = await fetch(`/api/meetings/${meetingId}/apply-template`, {
-                      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ templateId: t.id }),
-                    });
-                    if (!r.ok) { await notifyFailure(r); return; }
-                    const d = await r.json();
-                    notify.success(`Dodano ${d.added}, pominięto ${d.skipped} (już przypisani).`);
-                    refetch();
-                  });
-                }}
-              >
-                {t.name} <span className="text-body-secondary">({t.memberCount})</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <OrgUnitsBar meetingId={meetingId} orgUnits={orgUnits} meetingStatus={meetingStatus} pending={pending} onChanged={refetch} />
 
       <div className="row g-3 align-items-start">
         {/* Przypisani */}
@@ -322,4 +296,95 @@ export function MeetingParticipantsLoader({ meetingId }: { meetingId: string; me
   useEffect(() => { load(); }, [load]);
   if (!data) return <div className="text-body-secondary small">Wczytywanie składu posiedzenia…</div>;
   return <MeetingParticipantsClient key={version} {...data} embedded onChanged={load} />;
+}
+
+
+/**
+ * Grupy organizacyjne posiedzenia: przypisanie (wczytuje skład, bez nadpisywania praw osób już
+ * przypisanych), odłączenie (skład bez zmian) oraz podgląd różnic i świadome uzupełnienie składu.
+ */
+function OrgUnitsBar({ meetingId, orgUnits, meetingStatus, pending, onChanged }: {
+  meetingId: string;
+  orgUnits: { id: string; name: string; memberCount: number; linked: boolean }[];
+  meetingStatus?: string;
+  pending: boolean;
+  onChanged: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [diff, setDiff] = useState<null | { missing: { userId: string; name: string; units: string[]; votingRight: boolean }[]; extra: { participantId: string; name: string }[] }>(null);
+  const locked = meetingStatus === "CLOSED" || meetingStatus === "ARCHIVED" || meetingStatus === "CANCELLED";
+  const linked = orgUnits.filter((o) => o.linked);
+  if (orgUnits.length === 0) return null;
+
+  async function post(body: object, msg: (d: { added: number; skipped: number }) => string) {
+    setBusy(true);
+    const r = await fetch(`/api/meetings/${meetingId}/org-units`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    setBusy(false);
+    if (!r.ok) { await notifyFailure(r); return; }
+    notify.success(msg(await r.json()));
+    setDiff(null);
+    onChanged();
+  }
+
+  return (
+    <div className="card mb-3">
+      <div className="card-body d-flex flex-column gap-2">
+        <div className="d-flex flex-wrap align-items-center gap-2">
+          <span className="fw-semibold me-1">Grupy organizacyjne posiedzenia:</span>
+          {linked.length === 0 && <span className="text-body-secondary small">brak przypisanych</span>}
+          {linked.map((o) => (
+            <span key={o.id} className="badge text-bg-light border d-inline-flex align-items-center gap-1 fw-normal" style={{ fontSize: ".8125rem" }}>
+              {o.name}
+              <button type="button" className="btn btn-sm btn-link p-0 ms-1 text-body-secondary" disabled={busy || pending}
+                aria-label={`Odłącz grupę ${o.name}`} title="Odłącz grupę (skład posiedzenia bez zmian)"
+                onClick={async () => { if (await ask({ title: "Odłączyć grupę?", message: `Posiedzenie przestanie być przypisane do „${o.name}”. Uczestnicy i ich prawa zostaną bez zmian.`, confirmLabel: "Odłącz" })) post({ action: "unlink", orgUnitIds: [o.id] }, () => "Odłączono grupę."); }}>
+                <IconTrash size={13} />
+              </button>
+            </span>
+          ))}
+        </div>
+        {!locked && (
+          <div className="d-flex flex-wrap align-items-center gap-2">
+            <span className="small text-body-secondary">Przypisz i wczytaj skład:</span>
+            {orgUnits.filter((o) => !o.linked).map((o) => (
+              <button key={o.id} type="button" className="btn btn-sm btn-outline-primary" disabled={busy || pending}
+                onClick={async () => {
+                  if (!(await ask({ title: "Przypisać grupę do posiedzenia?", message: `Zostaną dodane osoby ze składu „${o.name}” (${o.memberCount}) z ich domyślnym prawem głosu. Osoby już przypisane do posiedzenia zostaną pominięte - ich prawa się nie zmienią.`, confirmLabel: "Przypisz i dodaj" }))) return;
+                  post({ action: "link", orgUnitIds: [o.id] }, (d) => `Dodano ${d.added}, pominięto ${d.skipped} (już przypisani).`);
+                }}>
+                {o.name} <span className="opacity-75">({o.memberCount})</span>
+              </button>
+            ))}
+            {linked.length > 0 && (
+              <button type="button" className="btn btn-sm btn-outline-secondary" disabled={busy}
+                onClick={async () => { const r = await fetch(`/api/meetings/${meetingId}/org-units`, { cache: "no-store" }); if (!r.ok) { await notifyFailure(r); return; } setDiff(await r.json()); }}>
+                Porównaj ze składem grup
+              </button>
+            )}
+          </div>
+        )}
+        {locked && <div className="small text-body-secondary">Posiedzenie zakończone - jego skład i prawa nie są aktualizowane ze składu grup.</div>}
+        {diff && (
+          <div className="border rounded p-2 small">
+            {diff.missing.length === 0 && diff.extra.length === 0 && <div>Skład posiedzenia zgadza się ze składem przypisanych grup.</div>}
+            {diff.missing.length > 0 && (
+              <div className="mb-2">
+                <div className="fw-semibold">W grupach, a nie w posiedzeniu ({diff.missing.length}):</div>
+                <div>{diff.missing.map((m) => `${m.name}${m.votingRight ? "" : " (bez prawa głosu)"}`).join(", ")}</div>
+                <button type="button" className="btn btn-sm btn-primary mt-1" disabled={busy} onClick={() => post({ action: "sync" }, (d) => `Dodano ${d.added} os. do posiedzenia.`)}>Dodaj brakujące osoby</button>
+              </div>
+            )}
+            {diff.extra.length > 0 && (
+              <div>
+                <div className="fw-semibold">W posiedzeniu, a nie w składzie grup ({diff.extra.length}):</div>
+                <div>{diff.extra.map((m) => m.name).join(", ")}</div>
+                <div className="text-body-secondary">Te osoby pozostają w posiedzeniu - usuń je ręcznie w tabeli, jeśli to potrzebne.</div>
+              </div>
+            )}
+            <button type="button" className="btn btn-sm btn-link px-0" onClick={() => setDiff(null)}>Zamknij porównanie</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

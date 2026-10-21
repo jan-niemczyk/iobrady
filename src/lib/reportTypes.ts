@@ -4,6 +4,8 @@ export type ReportMark = "za" | "pr." | "ws." | "ng." | "ob." | "nb." | "nieob."
 export interface ReportPerson {
   lastName: string;
   firstName: string;
+  /** Stały numer porządkowy osoby (rozstrzyga kolejność przy identycznym imieniu i nazwisku). */
+  seq?: number;
   present?: boolean;
   mark?: ReportMark;
   perCandidate?: ReportMark[];
@@ -23,6 +25,16 @@ export interface ReportGroup {
 }
 
 export interface ReportData {
+  /** Identyfikator głosowania (link do szczegółów). */
+  voteId?: string;
+  /** Punkt porządku obrad - osobno od przedmiotu głosowania. */
+  itemNumber?: string | null;
+  itemTitle?: string | null;
+  /** Rozstrzygnięcie zapisane przy zamknięciu (null - brak, np. lista/pakiet: przy pozycjach). */
+  decision?: { label: string; positive: boolean } | null;
+  /** Liczba oddanych głosów i obecnych uprawnionych w chwili otwarcia (migawka). */
+  castCount?: number;
+  presentAtOpen?: number | null;
   organizationName?: string;
   meetingTitle: string;
   meetingNumber: string;

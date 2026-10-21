@@ -19,6 +19,7 @@ import { MeetingSettingsPanel } from "@/components/operator/MeetingSettingsPanel
 import { MeetingParticipantsLoader } from "@/components/operator/MeetingParticipantsClient";
 import { AttachmentsManager } from "@/components/operator/AttachmentsManager";
 import { IconArrowLeft, IconArrowRight, IconChevronDown, IconChevronRight, IconChevronUp, IconClose, IconDownload, IconTrash, IconUsers } from "@/components/ui/Icon";
+import { PublicViewActions } from "@/components/PublicViewActions";
 import { downloadReportsPdf, downloadReportsZip, downloadSignatureList, downloadAttendanceMergedList, downloadAttendanceLog, downloadCheckReportPdf } from "@/lib/generatePdf";
 import { downloadAgendaPdf, downloadAgendaDocx, downloadProtocolPdf, downloadProtocolDocx, type ProtocolData } from "@/lib/generateProtocol";
 import { downloadSpeechesReportPdf, downloadSpeechesReportDocx, type SpeechesReportData } from "@/lib/generateSpeechesReport";
@@ -78,6 +79,9 @@ export interface MeetingClientState {
   name: string;
   status: MeetingStatus;
   scheduledAt: string;
+  location?: string | null;
+  /** Adres instalacji z konfiguracji (link widoku publicznego); null - bieżąca domena. */
+  publicOrigin?: string | null;
   openedAt: string | null;
   attendanceMode: AttendanceMode;
   attendanceOpen: boolean;
@@ -111,7 +115,7 @@ export interface MeetingClientState {
     candidatePage: number;
     candidateSort: string;
   };
-  agenda: { id: string; order: number; number: string; title: string; status: AgendaItemStatus; isSubItem?: boolean; unnumbered?: boolean }[];
+  agenda: { id: string; order: number; number: string; title: string; status: AgendaItemStatus; isSubItem?: boolean; unnumbered?: boolean; manuallyCompleted?: boolean; hasRun?: boolean }[];
   counts: { total: number; eligible: number; nonVoting: number; present: number; presentEligible: number; checkPresentEligible?: number | null };
   quorum: QuorumStatus;
   participants: {
@@ -632,6 +636,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
           <h1>{state.name}</h1>
         </div>
         <div className="d-flex flex-wrap align-items-center gap-2">
+          <PublicViewActions meetingId={state.id} published={state.settings.publicEnabled} origin={state.publicOrigin ?? null} />
 
           {/* Raporty */}
           <div className="dropdown">
@@ -639,7 +644,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
               Raporty
             </button>
             <ul className="dropdown-menu dropdown-menu-end" style={{ minWidth: 280, maxHeight: "75vh", overflowY: "auto" }}>
-              <li><a className="dropdown-item" href={screenUrl("display", state.id, state.displayToken)} target="_blank" rel="noreferrer">Widok publiczny (ekran świetlny)</a></li>
+              <li><a className="dropdown-item" href={screenUrl("display", state.id, state.displayToken)} target="_blank" rel="noreferrer">Prezentacja (ekran sali)</a></li>
               <li><a className="dropdown-item" href={screenUrl("overlay", state.id, state.displayToken)} target="_blank" rel="noreferrer">Nakładka na transmisję (OBS)</a></li>
               <li><a className="dropdown-item" href={`/chairperson/${state.id}`} target="_blank" rel="noreferrer">Widok przewodniczącego</a></li>
               <li>
@@ -655,6 +660,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                 >Nowy link ekranu (unieważnij stary)</button>
               </li>
               <li><hr className="dropdown-divider" /></li>
+              <li><a className="dropdown-item" href={`/meetings/${state.id}/attendance`}>Lista obecności - historia, korekty, eksport (PDF/DOCX/XLSX)</a></li>
               <li>
                 <button type="button" className="dropdown-item" disabled={pdfBusy === "att-merged"} onClick={downloadAttendanceMerged}>
                   {pdfBusy === "att-merged" ? "Generowanie…" : "Lista obecności (PDF)"}
@@ -864,7 +870,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                     <div className="min-w-0 flex-grow-1">
                       <div className="d-flex align-items-start gap-2">
                         <div className="flex-grow-1 min-w-0" style={{ overflowWrap: "anywhere" }}>{a.title}</div>
-                        <AgendaStatusPill status={a.status} />
+                        <AgendaStatusPill status={a.status} manual={a.manuallyCompleted} />
                         {a.status !== "CURRENT" && state.status !== "CLOSED" && (
                           <button
                             className="btn btn-sm btn-link text-body-secondary agenda-del p-0 lh-1" style={{ minWidth: 36, minHeight: 36 }}
@@ -896,6 +902,31 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                         }
                       >
                         {a.status === "PAUSED" ? "Wznów" : a.status === "COMPLETED" ? "Otwórz ponownie" : "Rozpocznij"}
+                      </button>
+                    )}
+                    {state.status !== "CLOSED" && a.status !== "CURRENT" && a.status !== "COMPLETED" && !a.hasRun && (
+                      <button
+                        className="btn btn-sm btn-outline-secondary"
+                        title="Zmień status na zakończony bez otwierania punktu i bez wpisywania godzin"
+                        onClick={() => act(`/api/agenda/${a.id}/manual-completion`, { action: "mark" }, {
+                          title: "Oznaczyć punkt jako zakończony?",
+                          message: "Punkt otrzyma status „zakończony” bez zarejestrowanego przebiegu - godziny otwarcia i zamknięcia pozostaną puste. Czynność zostanie zapisana w dzienniku. Oznaczenie można cofnąć.",
+                          confirmLabel: "Oznacz jako zakończony",
+                        }, "POST", "Punkt oznaczono jako zakończony.")}
+                      >
+                        Oznacz jako zakończony
+                      </button>
+                    )}
+                    {state.status !== "CLOSED" && a.manuallyCompleted && a.status === "COMPLETED" && (
+                      <button
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => act(`/api/agenda/${a.id}/manual-completion`, { action: "unmark" }, {
+                          title: "Cofnąć oznaczenie zakończenia?",
+                          message: "Punkt wróci do stanu „oczekuje”. Godziny pozostaną puste.",
+                          confirmLabel: "Cofnij oznaczenie",
+                        }, "POST", "Cofnięto oznaczenie zakończenia.")}
+                      >
+                        Cofnij oznaczenie
                       </button>
                     )}
                     {state.status !== "CLOSED" && (
@@ -1338,6 +1369,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
           initialName={state.name}
           initialNumber={state.number}
           initialScheduledAt={state.scheduledAt}
+          initialLocation={state.location ?? ""}
           settings={state.settings}
           onClose={() => setEditingMeeting(false)}
           onSaved={() => { setEditingMeeting(false); refetch(); }}
@@ -2644,10 +2676,10 @@ function BallotCounter({ label, color, value, bordered }: { label: string; color
   );
 }
 
-function AgendaStatusPill({ status }: { status: AgendaItemStatus }) {
+function AgendaStatusPill({ status, manual }: { status: AgendaItemStatus; manual?: boolean }) {
   if (status === "CURRENT") return <span className="badge badge-live">Rozpatrywany</span>;
   if (status === "PAUSED") return <span className="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Zawieszony</span>;
-  if (status === "COMPLETED") return <span className="badge bg-success-subtle text-success-emphasis border border-success-subtle">Zakończony</span>;
+  if (status === "COMPLETED") return <span className="badge bg-success-subtle text-success-emphasis border border-success-subtle" title={manual ? "Oznaczony ręcznie - bez zarejestrowanych godzin" : undefined}>{manual ? "Zakończony (bez godzin)" : "Zakończony"}</span>;
 
   if (status === "SKIPPED") return <span className="badge text-bg-light border">Pominięty</span>;
   return <span className="badge text-bg-light border">Oczekuje</span>;
@@ -2768,12 +2800,13 @@ function MessagesPanel({
 // ─────────────────────────────────────────────────────────────────────────
 
 function EditMeetingModal({
-  meetingId, initialName, initialNumber, initialScheduledAt, settings, onClose, onSaved,
+  meetingId, initialName, initialNumber, initialScheduledAt, initialLocation, settings, onClose, onSaved,
 }: {
   meetingId: string;
   initialName: string;
   initialNumber: string;
   initialScheduledAt: string;
+  initialLocation: string;
   settings: MeetingClientState["settings"];
   onClose: () => void;
   onSaved: () => void;
@@ -2793,6 +2826,7 @@ function EditMeetingModal({
   const [name, setName] = useState(initialName);
   const [number, setNumber] = useState(initialNumber);
   const [scheduledLocal, setScheduledLocal] = useState(toLocalInput(initialScheduledAt));
+  const [location, setLocation] = useState(initialLocation);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -2806,6 +2840,7 @@ function EditMeetingModal({
       body: JSON.stringify({
         name, number,
         scheduledAt: localInputToWarsawISO(scheduledLocal),
+        location: location.trim() || null,
       }),
     });
     if (!r.ok) {
@@ -2832,6 +2867,10 @@ function EditMeetingModal({
             <label className="form-label" htmlFor="em-date">Data i godzina</label>
             <input id="em-date" type="datetime-local" className="form-control" value={scheduledLocal} onChange={(e) => setScheduledLocal(e.target.value)} required />
             <div className="form-text">Czas warszawski.</div>
+          </div>
+          <div className="col-12">
+            <label className="form-label" htmlFor="em-location">Miejsce <span className="text-body-secondary fw-normal">(opcjonalnie)</span></label>
+            <input id="em-location" className="form-control" value={location} maxLength={300} onChange={(e) => setLocation(e.target.value)} />
           </div>
         </div>
         {error && <div className="alert alert-danger py-2 mb-0">{error}</div>}

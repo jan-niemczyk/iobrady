@@ -6,6 +6,7 @@ import { audit } from "@/lib/audit";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { evaluateQuorum } from "@/lib/quorum";
+import { applyAttendance } from "@/lib/attendanceEvents";
 
 const schema = z.object({
   action: z.enum(["close", "interrupt"]),
@@ -64,14 +65,13 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   await prisma.$transaction(async (tx) => {
     // Nadpisz bieżącą obecność (Attendance) wg migawki - zerowanie i zapis od zera.
     const participants = await tx.meetingParticipant.findMany({ where: { meetingId: id } });
-    const presentByUser = new Map(check.entries.map((e) => [e.userId, e.present]));
+    const entryByUser = new Map(check.entries.map((e) => [e.userId, e]));
+    const closedAt = new Date();
     for (const mp of participants) {
-      const present = presentByUser.get(mp.userId) ?? false;
-      await tx.attendance.upsert({
-        where: { participantId: mp.id },
-        create: { participantId: mp.id, status: present ? "PRESENT" : "ABSENT", source: "OPERATOR", confirmedByUserId: session.user.id },
-        update: { status: present ? "PRESENT" : "ABSENT", confirmedAt: new Date(), source: "OPERATOR", confirmedByUserId: session.user.id },
-      });
+      const e = entryByUser.get(mp.userId);
+      const present = e?.present ?? false;
+      // Moment zdarzenia: potwierdzenie osoby w sprawdzeniu; brak potwierdzenia - zamknięcie sprawdzenia.
+      await applyAttendance(tx, { meetingId: id, participantId: mp.id, userId: mp.userId, present, source: "CHECK", byUserId: session.user.id, at: present ? (e?.markedAt ?? closedAt) : closedAt });
     }
 
     await tx.attendanceCheck.update({

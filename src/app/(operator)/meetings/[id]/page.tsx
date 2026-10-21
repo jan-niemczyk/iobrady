@@ -1,6 +1,7 @@
 import { ensureDisplayToken } from "@/lib/displayAccess";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { configuredOrigin } from "@/lib/http";
 import { evaluateQuorum } from "@/lib/quorum";
 import { MEETING_STATUS_LABEL, formatDateTime } from "@/lib/labels";
 import { MeetingStatus } from "@prisma/client";
@@ -40,6 +41,8 @@ export default async function MeetingPanelPage({ params }: { params: Promise<{ i
     name: meeting.name,
     status: meeting.status,
     scheduledAt: meeting.scheduledAt.toISOString(),
+    location: meeting.location ?? null,
+    publicOrigin: configuredOrigin(),
     openedAt: meeting.openedAt?.toISOString() ?? null,
     attendanceMode: meeting.attendanceMode,
     attendanceOpen: meeting.attendanceOpen,
@@ -71,7 +74,7 @@ export default async function MeetingPanelPage({ params }: { params: Promise<{ i
       candidateSort: meeting.displayCandidateSort,
     },
     agenda: meeting.agenda.map((a) => ({
-      id: a.id, order: a.order, number: a.number, title: a.title, status: a.status,
+      id: a.id, order: a.order, number: a.number, title: a.title, status: a.status, manuallyCompleted: a.manuallyCompleted, hasRun: !!a.startedAt,
       isSubItem: a.isSubItem, unnumbered: a.unnumbered, hiddenFromDisplay: a.hiddenFromDisplay,
       description: a.description, presenter: a.presenter, committee: a.committee, speechLimitSec: a.speechLimitSec,
     })),

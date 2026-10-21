@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { z } from "zod";
 import { NextResponse } from "next/server";
+import { applyAttendance } from "@/lib/attendanceEvents";
 
 const schema = z.object({
   entries: z.array(z.object({ userId: z.string().max(64), present: z.boolean() })).min(1).max(5000),
@@ -53,17 +54,11 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string; c
   if (parsed.data.applyToCurrent) {
     const parts = await prisma.meetingParticipant.findMany({ where: { meetingId: id } });
     const byUser = new Map(parts.map((mp) => [mp.userId, mp.id]));
-    await prisma.$transaction(
-      updated
-        .filter((e) => e.userId && byUser.has(e.userId))
-        .map((e) =>
-          prisma.attendance.upsert({
-            where: { participantId: byUser.get(e.userId!)! },
-            create: { participantId: byUser.get(e.userId!)!, status: e.present ? "PRESENT" : "ABSENT", source: "OPERATOR", confirmedByUserId: session.user.id },
-            update: { status: e.present ? "PRESENT" : "ABSENT", confirmedAt: new Date(), source: "OPERATOR", confirmedByUserId: session.user.id },
-          }),
-        ),
-    );
+    await prisma.$transaction(async (tx) => {
+      for (const e of updated.filter((x) => x.userId && byUser.has(x.userId))) {
+        await applyAttendance(tx, { meetingId: id, participantId: byUser.get(e.userId!)!, userId: e.userId!, present: e.present, source: "OPERATOR", byUserId: session.user.id, reason: "Zastosowano poprawioną migawkę obecności" });
+      }
+    });
   }
 
   await audit({

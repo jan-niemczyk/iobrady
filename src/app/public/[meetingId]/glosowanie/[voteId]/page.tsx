@@ -2,55 +2,74 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { loadPublicMeeting, loadPublicVote, type PublicVoteDetail } from "@/lib/publicMeeting";
-import { fmtDate, fmtTime, TYPE_LABEL, plural } from "@/components/public/publicFormat";
+import { TYPE_LABEL, itemNumberLabel, plural, voteWhen } from "@/components/public/publicFormat";
 import { ClubSummary, VotePeople } from "@/components/public/VotePeople";
 import { PublicAutoRefresh } from "@/components/public/PublicAutoRefresh";
 import { PublicPdfButton } from "@/components/public/PublicPdfButton";
-import { IconArrowLeft } from "@/components/ui/Icon";
+import { IconArrowLeft, IconArrowRight } from "@/components/ui/Icon";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ meetingId: string; voteId: string }> }): Promise<Metadata> {
   const { meetingId, voteId } = await params;
   const v = await loadPublicVote(meetingId, voteId);
-  return { title: v ? `Głosowanie nr ${v.number ?? ""} - ${v.title}` : "Głosowanie" };
+  return { title: v ? `Głosowanie nr ${v.number ?? ""} - ${v.item?.title ?? v.title}` : "Głosowanie" };
 }
 
 export default async function PublicVotePage({ params, searchParams }: {
   params: Promise<{ meetingId: string; voteId: string }>;
-  searchParams: Promise<{ z?: string }>;
+  searchParams: Promise<{ z?: string; q?: string }>;
 }) {
   const { meetingId, voteId } = await params;
-  const { z } = await searchParams;
+  const { z, q } = await searchParams;
   const [meeting, vote] = await Promise.all([loadPublicMeeting(meetingId), loadPublicVote(meetingId, voteId)]);
   if (!meeting || !vote) notFound();
 
-  const item = vote.agendaItemId ? meeting.agenda.find((a) => a.id === vote.agendaItemId) : null;
-  // Powrót do widoku, z którego przyszedł użytkownik, i do tego głosowania na liście.
-  const back = `/public/${meeting.id}${z === "glosowania" ? "?widok=glosowania" : ""}#g-${vote.id}`;
+  // Powrót do widoku, z którego przyszedł użytkownik (zakładka i fraza wyszukiwania), i do tego głosowania.
+  const fromList = z === "glosowania";
+  const qs = (extra: Record<string, string>) => {
+    const p = new URLSearchParams(extra);
+    if (fromList && typeof q === "string" && q.trim()) p.set("q", q.trim().slice(0, 200));
+    const t = p.toString();
+    return t ? `?${t}` : "";
+  };
+  const back = `/public/${meeting.id}${qs(fromList ? { widok: "glosowania" } : {})}${fromList ? "" : `#g-${vote.id}`}`;
+  const sibling = (id: string) => `/public/${meeting.id}/glosowanie/${id}${qs(fromList ? { z: "glosowania" } : {})}`;
   const closed = vote.status === "CLOSED";
+  const itemLabel = itemNumberLabel(vote.item);
 
   return (
     <>
       <PublicAutoRefresh active={meeting.active && !closed} seconds={15} />
       <header className="pub-header">
         <div className="container-lg py-3" style={{ maxWidth: 1080 }}>
-          <Link href={back} className="small pub-tap gap-1"><IconArrowLeft size={14} /> Wróć do posiedzenia</Link>
-          <div className="small text-body-secondary mt-2" style={{ overflowWrap: "anywhere" }}>
-            {meeting.name}{meeting.number ? `, posiedzenie nr ${meeting.number}` : ""}
+          <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <Link href={back} className="btn btn-sm btn-outline-secondary"><IconArrowLeft size={14} /> {fromList ? "Wróć do listy głosowań" : "Wróć do porządku obrad"}</Link>
+            <nav aria-label="Sąsiednie głosowania" className="d-flex gap-2">
+              {vote.prev && <Link href={sibling(vote.prev.id)} className="btn btn-sm btn-outline-secondary"><IconArrowLeft size={14} /> Głosowanie nr {vote.prev.number ?? "-"}</Link>}
+              {vote.next && <Link href={sibling(vote.next.id)} className="btn btn-sm btn-outline-secondary">Głosowanie nr {vote.next.number ?? "-"} <IconArrowRight size={14} /></Link>}
+            </nav>
           </div>
-          <h1 className="h4 mb-1" style={{ overflowWrap: "anywhere" }}>
-            <span className="text-body-secondary fw-normal">Głosowanie nr {vote.number ?? "-"}:</span> {vote.title}
+          <div className="small text-body-secondary mt-3" style={{ overflowWrap: "anywhere" }}>
+            {meeting.organization ? `${meeting.organization} - ` : ""}{meeting.name}{meeting.number ? `, posiedzenie nr ${meeting.number}` : ""}
+          </div>
+          <div className="pub-vote-kicker mt-1">
+            Głosowanie nr {vote.number ?? "-"}{vote.time ? ` - ${voteWhen(vote.time)}` : ""}
+          </div>
+          <h1 className="pub-vote-title" style={{ overflowWrap: "anywhere" }}>
+            {vote.item
+              ? <>{itemLabel && <span className="text-nowrap">{itemLabel} </span>}{vote.item.title}</>
+              : (vote.contextLabel ?? "Głosowanie poza porządkiem obrad")}
           </h1>
+          <p className="pub-vote-subject mb-1" style={{ overflowWrap: "anywhere" }}>
+            <span className="text-body-secondary">Przedmiot głosowania:</span> {vote.title}
+          </p>
           {vote.description && <p className="mb-1" style={{ overflowWrap: "anywhere" }}>{vote.description}</p>}
-          <div className="small text-body-secondary d-flex flex-wrap column-gap-3 row-gap-1">
-            {vote.time && <span>{fmtDate(vote.time)}, godz. {fmtTime(vote.time)}</span>}
-            <span>{vote.secret ? "Głosowanie tajne" : "Głosowanie jawne"}{vote.booth ? " (kabina)" : ""}, {TYPE_LABEL[vote.type]}</span>
-            <span>
-              {item
-                ? <>Punkt porządku obrad: {item.unnumbered || !item.number ? "" : `${item.number}. `}{item.title}</>
-                : "Bez przypisania do punktu porządku obrad"}
-            </span>
+          <div className="d-flex flex-wrap align-items-center gap-2 mt-2">
+            <span className="badge text-bg-light border fw-normal">{vote.secret ? "Głosowanie tajne" : "Głosowanie jawne"}{vote.booth ? " (kabina)" : ""}</span>
+            <span className="badge text-bg-light border fw-normal">{TYPE_LABEL[vote.type]}</span>
+            {vote.decision && <span className={`badge fs-6 ${vote.decision.positive ? "text-bg-success" : "text-bg-danger"}`}>{vote.decision.label}</span>}
+            {!vote.item && !vote.contextLabel && <span className="small text-body-secondary">Bez przypisania do punktu porządku obrad</span>}
           </div>
         </div>
       </header>
@@ -67,10 +86,10 @@ export default async function PublicVotePage({ params, searchParams }: {
           </section>
         ) : (
           <>
+            <Summary vote={vote} />
             <div>
               <PublicPdfButton meetingId={meeting.id} voteId={vote.id} fileName={`glosowanie-${vote.number ?? vote.id}`} label="Pobierz raport PDF" />
             </div>
-            <Summary vote={vote} />
             {vote.groupsEnabled && !vote.secret && vote.type !== "PACKAGE" && vote.people.length > 0 && (
               <section className="card" aria-labelledby="pv-clubs">
                 <div className="card-body">
@@ -81,9 +100,10 @@ export default async function PublicVotePage({ params, searchParams }: {
             )}
             <section className="card" aria-labelledby="pv-people">
               <div className="card-body">
-                <h2 id="pv-people" className="h5 mb-1">{vote.secret ? "Udział w głosowaniu" : "Wyniki indywidualne"}</h2>
+                <h2 id="pv-people" className="h5 mb-1">{vote.type === "QUORUM" ? "Obecność" : vote.secret ? "Udział w głosowaniu" : "Wyniki indywidualne"}</h2>
                 {vote.secret && <p className="small text-body-secondary mb-2">Głosowanie tajne: lista pokazuje tylko, kto oddał głos - bez treści głosu.</p>}
-                {!vote.presenceKnown && vote.type !== "QUORUM" && <p className="small text-body-secondary mb-2">Obecność z chwili głosowania nie została zapisana - osoby bez głosu oznaczono jako „nie oddał głosu”.</p>}
+                {vote.type === "QUORUM" && <p className="small text-body-secondary mb-2">Sprawdzenie kworum: obecność stwierdzają osoby, które potwierdziły ją w tym sprawdzeniu.</p>}
+                {!vote.presenceKnown && vote.type !== "QUORUM" && <p className="small text-body-secondary mb-2">Obecność z chwili głosowania nie została zapisana - osoby bez głosu oznaczono jako „brak głosu” (nie wiadomo, czy były obecne).</p>}
                 <VotePeople vote={vote} />
               </div>
             </section>
@@ -105,14 +125,14 @@ function Stat({ label, value, tone }: { label: string; value: number | string; t
 
 function Summary({ vote }: { vote: PublicVoteDetail }) {
   const r = vote.result!;
-  const notVoted = r.present != null ? Math.max(0, r.present - r.cast) : null;
+  const p = vote.participation;
   return (
     <section className="card" aria-labelledby="pv-sum">
       <div className="card-body">
         <div className="d-flex flex-wrap align-items-center gap-2 mb-2">
-          <h2 id="pv-sum" className="h5 mb-0 me-2">Wynik</h2>
+          <h2 id="pv-sum" className="h5 mb-0 me-2">{vote.type === "QUORUM" ? "Wynik sprawdzenia kworum" : "Wynik"}</h2>
           {vote.decision && <span className={`badge fs-6 ${vote.decision.positive ? "text-bg-success" : "text-bg-danger"}`}>{vote.decision.label}</span>}
-          {vote.majority && <span className="small text-body-secondary">Większość: {vote.majority}</span>}
+          {vote.majority && <span className="small text-body-secondary">Wymagana większość: {vote.majority}</span>}
         </div>
 
         {vote.type === "STANDARD" && (
@@ -165,12 +185,20 @@ function Summary({ vote }: { vote: PublicVoteDetail }) {
           </div>
         )}
 
-        <p className="small text-body-secondary mb-0 mt-2">
-          Oddano {r.cast} {plural(r.cast, "głos", "głosy", "głosów")}
-          {r.present != null && <>, obecnych uprawnionych {r.present}</>}
-          {notVoted != null && notVoted > 0 && vote.type !== "QUORUM" && <>, nie oddało głosu {notVoted}</>}
-          {r.eligible != null && <>, uprawnionych {r.eligible}</>}.
-        </p>
+        {vote.type !== "QUORUM" && (
+          <dl className="pub-facts small mb-0 mt-3">
+            <div><dt>Oddane głosy</dt><dd>{r.cast}</dd></div>
+            {p?.presentAtOpen != null && <div><dt>Obecni uprawnieni w chwili otwarcia głosowania</dt><dd>{p.presentAtOpen}</dd></div>}
+            {p && p.notVotedPresentAtOpen > 0 && <div><dt>Obecni przy otwarciu, bez oddanego głosu</dt><dd>{p.notVotedPresentAtOpen}</dd></div>}
+            {p && p.votedJoinedLater > 0 && <div><dt>Głosy osób, których obecność potwierdzono po otwarciu</dt><dd>{p.votedJoinedLater}</dd></div>}
+            {r.eligible != null && <div><dt>Uprawnieni do głosowania</dt><dd>{r.eligible}</dd></div>}
+          </dl>
+        )}
+        {vote.type !== "QUORUM" && p && p.votedJoinedLater > 0 && (
+          <p className="small text-body-secondary mb-0 mt-2">
+            Liczba obecnych pochodzi z chwili otwarcia głosowania. {p.votedJoinedLater} {plural(p.votedJoinedLater, "osoba potwierdziła", "osoby potwierdziły", "osób potwierdziło")} obecność później i {plural(p.votedJoinedLater, "oddała", "oddały", "oddało")} głos - dlatego liczba głosów i liczba obecnych przy otwarciu mogą się różnić od listy imiennej.
+          </p>
+        )}
       </div>
     </section>
   );

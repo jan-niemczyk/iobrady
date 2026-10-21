@@ -392,7 +392,7 @@ export function ParticipantSessionClient({ initial }: { initial: InitialState })
       )}
 
       <div>
-        <a href={`/session/archive/${state.meetingId}`} className="pt-btn pt-btn-sm">
+        <a href={`/session/posiedzenie/${state.meetingId}`} className="pt-btn pt-btn-sm">
           Pełny porządek obrad, materiały i wyniki głosowań
         </a>
       </div>

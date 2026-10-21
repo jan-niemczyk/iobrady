@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db";
 import { meetingNameWithDate } from "@/lib/meetingName";
 import { secretTallyHidden } from "@/lib/secretTally";
 import type { ReportData, ReportGroup, ReportPerson } from "@/lib/reportTypes";
+import { compareByName } from "@/lib/reportSort";
+import { comparePl } from "@/lib/sortPl";
 
 export type { ReportData, ReportGroup, ReportPerson, ReportMark } from "@/lib/reportTypes";
 
@@ -76,15 +78,30 @@ export async function buildVoteReportData(voteId: string): Promise<ReportData | 
   const useRosterPresence = hasRoster && rosterHasAnyPresent;
   // Kworum jest SPECJALNYM głosowaniem = samodzielne sprawdzenie obecności liczone OD ZERA.
   // Obecny w kworum = ten, kto oddał w nim głos. Nie dziedziczymy wcześniejszej obecności/rostera.
+  // Kto oddał głos w głosowaniu tajnym - z anonimowych znaczników (bez treści głosu).
+  const secretVoters = isSecret && !isQuorum
+    ? new Set((await prisma.secretBallotMarker.findMany({ where: { voteId }, select: { userId: true } })).map((m) => m.userId))
+    : new Set<string>();
+  // Oddanie głosu oznacza udział - także osoby, która potwierdziła obecność po otwarciu głosowania
+  // (w migawce z chwili otwarcia była nieobecna). Bez tego jej głos liczyłby się w wyniku, a na
+  // liście imiennej figurowałaby jako nieobecna.
+  const voted = (userId: string) => ballotByUser.has(userId) || secretVoters.has(userId);
   const isPresent = (mp: { userId: string; attendance?: { status: string } | null }) =>
     isQuorum
       ? ballotByUser.has(mp.userId)
-      : useRosterPresence
+      : voted(mp.userId) || (useRosterPresence
         ? (presentByUser.get(mp.userId) ?? (mp.attendance?.status === "PRESENT"))
-        : (mp.attendance?.status === "PRESENT");
+        : (mp.attendance?.status === "PRESENT"));
 
   // Nieobecni (nb) - uczestnicy z prawem głosu nieobecni w chwili głosowania.
   const votingParticipants = vote.meeting.participants.filter((mp) => mp.hasVotingRight);
+  // Stały numer porządkowy (nazwisko, imię, identyfikator) - deterministyczna kolejność przy
+  // identycznym imieniu i nazwisku. Identyfikator nie trafia do raportu.
+  const seqByUser = new Map(
+    [...votingParticipants]
+      .sort((a, b) => comparePl(a.user.lastName, b.user.lastName) || comparePl(a.user.firstName, b.user.firstName) || (a.userId < b.userId ? -1 : a.userId > b.userId ? 1 : 0))
+      .map((mp, i) => [mp.userId, i + 1]),
+  );
   const totalAbsent = votingParticipants.filter((mp) => !isPresent(mp)).length;
 
   const NO = "__noGroup";
@@ -108,7 +125,7 @@ export async function buildVoteReportData(voteId: string): Promise<ReportData | 
     for (const mp of g.members) {
       const present = isPresent(mp);
       const ballot = ballotByUser.get(mp.userId);
-      const person: ReportPerson = { lastName: mp.user.lastName, firstName: mp.user.firstName, present };
+      const person: ReportPerson = { lastName: mp.user.lastName, firstName: mp.user.firstName, present, seq: seqByUser.get(mp.userId) };
 
       // Wykluczony z posiedzenia - nie liczy się do głosowania; osobna lista + znacznik.
       if ((mp as { excludedFromMeeting?: boolean }).excludedFromMeeting) {
@@ -152,8 +169,7 @@ export async function buildVoteReportData(voteId: string): Promise<ReportData | 
     }
 
     const isPackage = vote.type === "PACKAGE";
-    const alpha = (a: typeof voters[number], b: typeof voters[number]) =>
-      `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`, "pl");
+    const alpha = compareByName;
 
     let people: typeof voters;
     if (isSecret) {
@@ -171,7 +187,8 @@ export async function buildVoteReportData(voteId: string): Promise<ReportData | 
       // Lista: w obrębie klubu wyłącznie alfabetycznie (obecni i nieobecni razem, alfabetycznie).
       people = [...voters, ...absentees, ...excluded].sort(alpha);
     } else if (isPackage) {
-      // Pakiet: najpierw głosujący (ob.) przed niegłosującymi/nieobecnymi, potem alfabetycznie.
+      // Pakiet: lista zbiorcza - głosujący (ob.) przed niegłosującymi i nieobecnymi, potem alfabetycznie.
+      // Wydruk każdej pozycji sortuje osobno według głosu na tę pozycję (lib/reportSort).
       const rank: Record<string, number> = { "ob.": 1, "ng.": 2, "nb.": 3 };
       voters.sort((a, b) => {
         const ra = rank[a.mark ?? "ng."] ?? 2, rb = rank[b.mark ?? "ng."] ?? 2;
@@ -271,7 +288,19 @@ export async function buildVoteReportData(voteId: string): Promise<ReportData | 
   // Głosowania tajne: pokazujemy listę obecnych/nieobecnych (jak w kworum), bez treści głosów.
   const outGroups = groupsEnabled ? groups : mergeToSingleGroup(groups);
 
+  const decision = vote.status !== "CLOSED" || vote.resultPassed == null || isList || vote.type === "PACKAGE"
+    ? null
+    : isQuorum
+      ? { label: vote.resultPassed ? "Kworum jest" : "Brak kworum", positive: vote.resultPassed }
+      : { label: vote.resultPassed ? "Przyjęto" : "Odrzucono", positive: vote.resultPassed };
+
   return {
+    voteId: vote.id,
+    itemNumber: ai && !ai.unnumbered ? (ai.number ?? null) : null,
+    itemTitle: ai?.title ?? null,
+    decision,
+    castCount: vote.resultCastCount ?? undefined,
+    presentAtOpen: isQuorum ? null : (vote.resultPresentCount ?? null),
     organizationName: settings?.organizationName ?? undefined,
     meetingTitle: meetingNameWithDate(vote.meeting.name, vote.meeting.scheduledAt),
     meetingNumber: vote.meeting.number,

@@ -2,6 +2,7 @@
 
 import type { ReportData, ReportGroup } from "@/lib/reportTypes";
 import { withDateText } from "@/lib/meetingName";
+import { markAtPosition, sortForPosition } from "@/lib/reportSort";
 
 const LATO = "/fonts";
 const FS = 9;
@@ -159,13 +160,15 @@ function reportContent(data: ReportData): Record<string, unknown>[] {
       const nameCell = (p: typeof allPeople[number]) => ({
         columns: [
           { text: `${p.lastName} ${p.firstName}`.toUpperCase(), fontSize: FS, width: "*" },
-          { text: p.present ? (MARK_LABEL[p.perPosition?.[pi] ?? "ng."] ?? "") : "nb.", fontSize: FS, width: 30, alignment: "right" },
+          { text: MARK_LABEL[markAtPosition(p, pi)] ?? "", fontSize: FS, width: 30, alignment: "right" },
         ],
         columnGap: 6,
         margin: [0, 0.6, 0, 0.6],
       });
+      // Kolejność osobno dla TEJ pozycji: za, przeciw, wstrzymało się, brak głosu, nieobecni;
+      // w każdej kategorii nazwisko i imię (lib/reportSort). W klubach - wewnątrz każdego bloku.
       const twoCols = (people: typeof allPeople) => {
-        const cells = people.map(nameCell);
+        const cells = sortForPosition(people, pi).map(nameCell);
         const half = Math.ceil(cells.length / 2);
         return {
           columns: [{ stack: cells.slice(0, half), width: "*" }, { stack: cells.slice(half), width: "*" }],

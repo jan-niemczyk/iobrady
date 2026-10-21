@@ -19,3 +19,12 @@
 /* Cele dotyku/kliknięcia: min. 44 px wysokości (linki w tekście listy). */
 .pub-root .pub-tap { display: inline-flex; align-items: center; min-height: 44px; }
 .pub-root .table-responsive:focus-visible { outline: 2px solid var(--bs-primary); outline-offset: 2px; }
+
+/* Szczegóły głosowania: hierarchia nagłówka (kontekst punktu jako tytuł, przedmiot pod nim). */
+.pub-vote-kicker { font-size: .9375rem; font-weight: 600; color: #3A4658; }
+.pub-vote-title { font-size: clamp(1.25rem, 1.05rem + .9vw, 1.75rem); font-weight: 700; line-height: 1.25; margin: .25rem 0 .5rem; }
+.pub-vote-subject { font-size: 1.0625rem; }
+.pub-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .5rem 1.5rem; }
+.pub-facts > div { display: flex; justify-content: space-between; gap: .75rem; border-bottom: 1px solid #E8ECF1; padding: .25rem 0; }
+.pub-facts dt { font-weight: 400; color: #4A5568; }
+.pub-facts dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }

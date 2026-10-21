@@ -13,6 +13,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // pdfmake (generowanie PDF na serwerze) ładowany z node_modules w czasie działania, nie pakowany.
+  serverExternalPackages: ["pdfmake"],
+  outputFileTracingIncludes: { "/api/**/*": ["./public/fonts/**/*"] },
   poweredByHeader: false,
   experimental: {
     serverActions: {
@@ -29,6 +32,13 @@ const nextConfig: NextConfig = {
       // H-04: odpowiedzi API (dane osobowe, hasła startowe, wyniki) bez zapisu w pamięci podręcznej
       // przeglądarki i pośredników. Wyjątki niżej: strumień zdarzeń i wgrane obrazy.
       { source: "/api/:path*", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
+      // Otwieranie PDF/obrazu w przeglądarce (?inline=1): wbudowana przeglądarka PDF wymaga
+      // object-src 'self'; skrypty nadal zablokowane.
+      {
+        source: "/api/attachments/:id/download",
+        has: [{ type: "query" as const, key: "inline" }],
+        headers: [{ key: "Content-Security-Policy", value: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; object-src 'self'; frame-ancestors 'self'" }],
+      },
       // UW-01: wgrane obrazy (logo, plansza) - ostra polityka z sandboxem. Musi być PO regule ogólnej:
       // nagłówki z next.config nadpisują te ustawione w trasie, więc bez tego SVG dostawałby CSP strony.
       ...["/api/uploads/:file*", "/uploads/:file*"].map((source) => ({

@@ -18,7 +18,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     await finishActiveSpeaker(tx, item.meetingId);
     await tx.agendaItem.update({
       where: { id: item.id },
-      data: { status: "COMPLETED", completedAt: new Date() },
+      data: { status: "COMPLETED", completedAt: new Date(), manuallyCompleted: false },
     });
     await tx.meeting.update({
       where: { id: item.meetingId },
@@ -44,9 +44,11 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
           where: { meetingId: item.meetingId, isSubItem: false, number: parentNumber },
         });
         if (parent && parent.status !== "COMPLETED") {
+          // Godzina zakończenia tylko dla punktu nadrzędnego z zarejestrowanym otwarciem - bez
+          // przebiegu punkt dostaje sam status (bez fikcyjnej godziny).
           await tx.agendaItem.update({
             where: { id: parent.id },
-            data: { status: "COMPLETED", completedAt: new Date() },
+            data: { status: "COMPLETED", completedAt: parent.startedAt ? new Date() : null },
           });
         }
       }

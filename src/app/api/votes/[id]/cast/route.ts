@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Prisma, VoteChoice, VoteStatus, VoteType } from "@prisma/client";
 import { lockVoteRow } from "@/lib/booth";
 import { safeErrorText } from "@/lib/logSafe";
+import { applyAttendance } from "@/lib/attendanceEvents";
 
 // H-01: uprawnienia głosującego sprawdzane ponownie pod blokadą wiersza głosowania - odebranie prawa
 // głosu, wykluczenie albo zmiana obecności równolegle z oddaniem głosu rozstrzyga się w jednej kolejności.
@@ -283,16 +284,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     await recheckVoter(tx, vote.meetingId, targetUserId, voteId, vote.type);
     // Dla QUORUM: oznacz uczestnika jako obecnego (główny sens głosowania kworum).
     if (vote.type === VoteType.QUORUM) {
-      await tx.attendance.upsert({
-        where: { participantId: mp.id },
-        update: { status: "PRESENT", confirmedAt: new Date() },
-        create: {
-          participantId: mp.id,
-          status: "PRESENT",
-          source: targetUserId === session.user.id ? "PARTICIPANT" : "OPERATOR",
-          confirmedAt: new Date(),
-        },
-      });
+      await applyAttendance(tx, { meetingId: vote.meetingId, participantId: mp.id, userId: targetUserId, present: true, source: "QUORUM", byUserId: session.user.id });
     }
 
     const existing = await tx.ballot.findUnique({

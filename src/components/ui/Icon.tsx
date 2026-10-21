@@ -136,3 +136,39 @@ export const IconDot = ({ size = 10, className, style }: Props) => (
     <circle cx="5" cy="5" r="5" fill="currentColor" />
   </svg>
 );
+
+export const IconExternal = (p: Props) => (
+  <Svg {...p}><path d="M14 4h6v6" /><path d="M20 4l-9 9" /><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></Svg>
+);
+
+export const IconCopy = (p: Props) => (
+  <Svg {...p}><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" /></Svg>
+);
+
+export const IconSearch = (p: Props) => (
+  <Svg {...p}><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4.2-4.2" /></Svg>
+);
+
+export const IconPlus = (p: Props) => (
+  <Svg {...p}><path d="M12 5v14" /><path d="M5 12h14" /></Svg>
+);
+
+export const IconEdit = (p: Props) => (
+  <Svg {...p}><path d="M4 20h4L19 9l-4-4L4 16v4z" /><path d="M13.5 6.5l4 4" /></Svg>
+);
+
+export const IconBell = (p: Props) => (
+  <Svg {...p}><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20a2 2 0 0 0 4 0" /></Svg>
+);
+
+export const IconInfo = (p: Props) => (
+  <Svg {...p}><circle cx="12" cy="12" r="8.5" /><path d="M12 11v5" /><path d="M12 8h.01" /></Svg>
+);
+
+export const IconPin = (p: Props) => (
+  <Svg {...p}><path d="M9 4h6l-1 6 3 3H7l3-3z" /><path d="M12 13v7" /></Svg>
+);
+
+export const IconFile = (p: Props) => (
+  <Svg {...p}><path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" /><path d="M14 3v5h5" /></Svg>
+);

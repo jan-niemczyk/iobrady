@@ -575,3 +575,88 @@
 .pt-file-name { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 .pt-file-meta { flex-shrink: 0; font-size: 12px; color: var(--color-ink-3); white-space: nowrap; }
 @media (min-width: 960px) { .pt-files { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); } }
+
+/* ═══ Strona posiedzenia radnego (/session/upcoming/[id], /session/archive/[id]) ═════════════
+ * Telefon: jedna kolumna. Od 992 px: spis porządku obrad po lewej (przyklejony), treść punktów
+ * po prawej - szerokość wykorzystana bez sztywnej kolumny „telefonowej" i bez przewijania w poziomie. */
+.pt-page.pt-mtg { max-width: 1440px; }
+.pt-mtg-header { display: flex; flex-direction: column; gap: 6px; }
+.pt-mtg-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; font-size: 15px; color: var(--color-ink-2); }
+.pt-mtg-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; }
+.pt-mtg-actions .pt-btn { min-height: 44px; }
+.pt-mtg-me { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 6px 0 0; font-size: 14px; }
+.pt-mtg-me > div { display: flex; gap: 6px; }
+.pt-mtg-me dt { font-weight: 400; color: var(--color-ink-3); }
+.pt-mtg-me dd { margin: 0; font-weight: 600; color: var(--color-ink); }
+.pt-mtg-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.pt-mtg-toc { display: none; }
+@media (min-width: 992px) {
+  .pt-mtg-grid { grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 24px; align-items: start; }
+  .pt-mtg-toc {
+    display: block; position: sticky; top: 124px; max-height: calc(100vh - 140px); overflow-y: auto;
+    background: var(--color-paper); border: 1px solid var(--color-rule-soft); border-radius: 10px; padding: 10px 6px;
+  }
+}
+@media (min-width: 1600px) { .pt-mtg-grid { grid-template-columns: 380px minmax(0, 1fr); } }
+.pt-mtg-toc ol { list-style: none; margin: 0; padding: 0; }
+.pt-mtg-toc a {
+  display: flex; gap: 8px; align-items: baseline; min-height: 40px; padding: 8px; border-radius: 6px;
+  color: var(--color-ink-2); text-decoration: none; font-size: 14px; line-height: 1.35;
+}
+.pt-mtg-toc a:hover { background: var(--color-paper-2); color: var(--color-ink); }
+.pt-mtg-toc a:focus-visible { outline: 2px solid var(--color-ink); outline-offset: -2px; }
+.pt-mtg-toc a[aria-current="location"] { background: var(--color-paper-2); color: var(--color-ink); font-weight: 600; }
+.pt-mtg-toc a.is-current { box-shadow: inset 3px 0 0 var(--color-live); color: var(--color-ink); }
+.pt-mtg-toc a.is-done .pt-mtg-toc-title { color: var(--color-ink-3); }
+.pt-mtg-toc .num { flex-shrink: 0; min-width: 2.2em; color: var(--color-ink-3); font-variant-numeric: tabular-nums; }
+.pt-mtg-toc-sub a { padding-left: 24px; }
+.pt-mtg-items { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.pt-mtg-item { scroll-margin-top: 130px; }
+.pt-mtg-item.is-sub { margin-left: 20px; }
+.pt-mtg-item.is-current { border-color: var(--color-live); box-shadow: inset 4px 0 0 var(--color-live); }
+.pt-mtg-item-head { display: flex; gap: 10px; align-items: baseline; }
+.pt-mtg-item-num { font-size: 17px; font-weight: 600; color: var(--color-ink-3); flex-shrink: 0; }
+.pt-mtg-item-title { margin: 0; font-size: 18px; line-height: 1.35; font-weight: 600; color: var(--color-ink); overflow-wrap: anywhere; }
+.pt-mtg-item-title:focus { outline: none; }
+.pt-mtg-item-title:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+@media (min-width: 768px) { .pt-mtg-item-title { font-size: 19px; } }
+.pt-mtg-item-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 6px; font-size: 14px; color: var(--color-ink-3); }
+.pt-mtg-files { margin-top: 12px; }
+.pt-mtg-file {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 12px;
+  border: 1px solid var(--color-rule-soft); border-radius: 8px; background: var(--color-paper);
+}
+.pt-mtg-file .pt-file-name { font-size: 15px; }
+.pt-mtg-file .pt-file-meta { margin-left: 6px; }
+.pt-mtg-file .pt-btn-group { margin-left: auto; }
+@media (min-width: 960px) { .pt-mtg-files { grid-template-columns: minmax(0, 1fr); } }
+.pt-mtg-votes { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+.pt-mtg-votes > li { border-left: 3px solid var(--color-rule-soft); padding: 2px 0 2px 12px; }
+.pt-mtg-vote-subject { font-size: 15px; overflow-wrap: anywhere; }
+.pt-note-state { font-size: 13px; color: var(--color-ink-3); margin-top: 2px; }
+.pt-note-state.is-error { color: var(--color-no); }
+
+/* Okno wyników - szersze na komputerze; na telefonie pełna wysokość z przewijaną treścią. */
+.pt-modal.pt-modal-wide { max-width: 960px; display: flex; flex-direction: column; overflow: hidden; }
+.pt-modal.pt-modal-wide > .pt-modal-scroll { overflow-y: auto; min-height: 0; flex: 1 1 auto; }
+@media (max-width: 600px) {
+  .pt-modal-backdrop:has(.pt-modal-wide) { padding: 0; align-items: stretch; }
+  .pt-modal.pt-modal-wide { max-height: 100dvh; height: 100dvh; border-radius: 0; }
+}
+.pt-results-filters { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; }
+.pt-input {
+  min-height: 40px; padding: 6px 10px; font: inherit; font-size: 15px; color: var(--color-ink);
+  background: var(--color-paper); border: 1px solid var(--color-rule-soft); border-radius: 8px;
+}
+.pt-input:focus-visible { outline: 2px solid var(--color-ink); outline-offset: -1px; }
+.pt-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 4px 20px; margin: 0; font-size: 14px; }
+.pt-facts > div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--color-rule-soft); padding: 4px 0; }
+.pt-facts dt { font-weight: 400; color: var(--color-ink-3); }
+.pt-facts dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (min-width: 992px) {
+  .pt-shell:has(.pt-mtg) .pt-topbar-inner, .pt-shell:has(.pt-mtg) .pt-nav-inner { max-width: 1440px; }
+}
+@media (min-width: 640px) { .pt-mtg-org { display: none; } } /* nazwa organu jest już w pasku górnym */
+.pt-results-filters .pt-input[type=search] { min-width: 14rem; }
+.pt-results-filters select.pt-input { min-width: 11rem; }
+.pt-input { text-align: left; }

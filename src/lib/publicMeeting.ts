@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { formatMajority } from "@/lib/majority";
+import { comparePl } from "@/lib/sortPl";
 import type { MajorityBase, MajorityKind, VoteStatus } from "@prisma/client";
 
 /**
@@ -41,12 +42,25 @@ export interface PublicOptionResult {
   passed?: boolean | null;
 }
 
+/** Punkt porządku obrad głosowania (osobne pole - nie doklejamy go do przedmiotu głosowania). */
+export interface PublicVoteItem {
+  id: string;
+  /** Numer punktu; null dla pozycji bez numeru. */
+  number: string | null;
+  title: string;
+  isSubItem: boolean;
+}
+
 export interface PublicVoteSummary {
   id: string;
   number: number | null;
+  /** Przedmiot głosowania (zapisana treść głosowania). */
   title: string;
   description: string | null;
   agendaItemId: string | null;
+  item: PublicVoteItem | null;
+  /** Głosowanie bez punktu: własny opis kontekstu z ustawień głosowania. */
+  contextLabel: string | null;
   status: VoteStatus;
   type: "STANDARD" | "LIST" | "QUORUM" | "PACKAGE";
   secret: boolean;
@@ -65,6 +79,16 @@ export interface PublicVoteSummary {
 
 export interface PublicVoteDetail extends PublicVoteSummary {
   people: PublicPerson[];
+  /** Uczestnictwo: obecni uprawnieni w chwili OTWARCIA głosowania (migawka) i ich udział. */
+  participation: {
+    presentAtOpen: number | null;
+    votedPresentAtOpen: number;
+    notVotedPresentAtOpen: number;
+    /** Głosy osób, które w chwili otwarcia nie były oznaczone jako obecne (obecność potwierdzona później). */
+    votedJoinedLater: number;
+  } | null;
+  prev: { id: string; number: number | null } | null;
+  next: { id: string; number: number | null } | null;
   /** Obecność z chwili głosowania jest zapisana (migawka składu z obecnymi). */
   presenceKnown: boolean;
   /** Przynależność pochodzi z migawki głosowania (a nie z bieżących danych). */
@@ -79,6 +103,8 @@ export interface PublicAgendaItem {
   unnumbered: boolean;
   isSubItem: boolean;
   title: string;
+  /** Status punktu (zakończony - także oznaczony ręcznie, bez godzin przebiegu). */
+  status: string;
   presenter: string | null;
   committee: string | null;
   attachments: { id: string; fileName: string; sizeBytes: number }[];
@@ -91,6 +117,7 @@ export interface PublicMeeting {
   name: string;
   number: string;
   scheduledAt: string;
+  location: string | null;
   status: string;
   active: boolean;
   agenda: PublicAgendaItem[];
@@ -122,7 +149,15 @@ function decisionOf(v: VoteRow): PublicVoteSummary["decision"] {
   return { label: v.resultPassed ? "Przyjęto" : "Odrzucono", positive: v.resultPassed };
 }
 
-function summaryOf(v: VoteRow): PublicVoteSummary {
+type ItemRow = { id: string; number: string; unnumbered: boolean; isSubItem: boolean; title: string };
+
+function itemOf(items: Map<string, ItemRow>, id: string | null): PublicVoteItem | null {
+  const a = id ? items.get(id) : undefined;
+  if (!a) return null;
+  return { id: a.id, number: a.unnumbered || !a.number?.trim() ? null : a.number.trim(), title: a.title, isSubItem: a.isSubItem };
+}
+
+function summaryOf(v: VoteRow, items: Map<string, ItemRow>): PublicVoteSummary {
   const closed = v.status === "CLOSED";
   const secret = v.visibility === "SECRET";
   let result: PublicVoteSummary["result"] = null;
@@ -153,6 +188,8 @@ function summaryOf(v: VoteRow): PublicVoteSummary {
     title: v.title,
     description: v.description,
     agendaItemId: v.agendaItemId,
+    item: itemOf(items, v.agendaItemId),
+    contextLabel: v.agendaItemId ? null : (v.contextLabel?.trim() || null),
     status: v.status,
     type: v.type as PublicVoteSummary["type"],
     secret,
@@ -170,7 +207,7 @@ export async function loadPublicMeeting(meetingId: string): Promise<PublicMeetin
     prisma.meeting.findUnique({
       where: { id: meetingId },
       include: {
-        agenda: { orderBy: { order: "asc" }, where: { hiddenFromDisplay: false } },
+        agenda: { orderBy: { order: "asc" } },
         attachments: { where: { visibleToPublic: true }, orderBy: { createdAt: "asc" }, select: { id: true, fileName: true, sizeBytes: true, agendaItemId: true } },
       },
     }),
@@ -178,7 +215,8 @@ export async function loadPublicMeeting(meetingId: string): Promise<PublicMeetin
   ]);
   if (!meeting || !meeting.publicEnabled) return null;
 
-  const votes = (await loadVotes(meetingId)).map(summaryOf);
+  const items = new Map<string, ItemRow>(meeting.agenda.map((a) => [a.id, a]));
+  const votes = (await loadVotes(meetingId)).map((v) => summaryOf(v, items));
   const attByItem = new Map<string, PublicAgendaItem["attachments"]>();
   const meetingAttachments: PublicMeeting["meetingAttachments"] = [];
   for (const a of meeting.attachments) {
@@ -194,10 +232,12 @@ export async function loadPublicMeeting(meetingId: string): Promise<PublicMeetin
     name: meeting.name,
     number: meeting.number,
     scheduledAt: meeting.scheduledAt.toISOString(),
+    location: meeting.location ?? null,
     status: meeting.status,
     active: meeting.status === "OPEN" || meeting.status === "IN_PROGRESS" || meeting.status === "PAUSED",
-    agenda: meeting.agenda.map((a) => ({
-      id: a.id, number: a.number, unnumbered: a.unnumbered, isSubItem: a.isSubItem, title: a.title,
+    // Porządek bez pozycji ukrytych na prezentacji; kontekst głosowań - ze wszystkich punktów.
+    agenda: meeting.agenda.filter((a) => !a.hiddenFromDisplay).map((a) => ({
+      id: a.id, number: a.number, unnumbered: a.unnumbered, isSubItem: a.isSubItem, title: a.title, status: a.status,
       presenter: a.presenter, committee: a.committee,
       attachments: attByItem.get(a.id) ?? [],
     })),
@@ -208,11 +248,21 @@ export async function loadPublicMeeting(meetingId: string): Promise<PublicMeetin
 
 /** Szczegóły jednego głosowania posiedzenia z publicznym dostępem (null - brak dostępu / nie istnieje). */
 export async function loadPublicVote(meetingId: string, voteId: string): Promise<PublicVoteDetail | null> {
-  const meeting = await prisma.meeting.findUnique({ where: { id: meetingId }, select: { publicEnabled: true } });
+  const meeting = await prisma.meeting.findUnique({
+    where: { id: meetingId },
+    select: { publicEnabled: true, agenda: { select: { id: true, number: true, unnumbered: true, isSubItem: true, title: true } } },
+  });
   if (!meeting?.publicEnabled) return null;
-  const [v] = await loadVotes(meetingId, voteId);
-  if (!v) return null;
-  const summary = summaryOf(v);
+  const all = await loadVotes(meetingId);
+  const idx = all.findIndex((x) => x.id === voteId);
+  if (idx < 0) return null;
+  const v = all[idx];
+  const items = new Map<string, ItemRow>(meeting.agenda.map((a) => [a.id, a]));
+  const summary = summaryOf(v, items);
+  const nav = {
+    prev: idx > 0 ? { id: all[idx - 1].id, number: all[idx - 1].number } : null,
+    next: idx < all.length - 1 ? { id: all[idx + 1].id, number: all[idx + 1].number } : null,
+  };
 
   const settings = await prisma.settings.findUnique({ where: { id: "singleton" }, select: { groupsEnabled: true } });
   const groupsEnabled = settings?.groupsEnabled === true;
@@ -222,7 +272,7 @@ export async function loadPublicVote(meetingId: string, voteId: string): Promise
 
   // Lista osób - tylko dla zakończonych (w trakcie nie ujawniamy, kto już głosował w widoku publicznym).
   if (v.status !== "CLOSED") {
-    return { ...summary, people: [], presenceKnown: false, clubsFromSnapshot: false, groupsEnabled, clubNames };
+    return { ...summary, ...nav, people: [], participation: null, presenceKnown: false, clubsFromSnapshot: false, groupsEnabled, clubNames };
   }
 
   const roster = await prisma.voteRoster.findMany({ where: { voteId: v.id, hasVotingRight: true }, orderBy: { order: "asc" } });
@@ -288,7 +338,23 @@ export async function loadPublicVote(meetingId: string, voteId: string): Promise
     }
     return person;
   });
-  people.sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`, "pl"));
+  people.sort((a, b) => comparePl(a.lastName, b.lastName) || comparePl(a.firstName, b.firstName));
 
-  return { ...summary, people, presenceKnown, clubsFromSnapshot, groupsEnabled, clubNames };
+  // Uczestnictwo względem migawki z chwili otwarcia (bez mieszania z bieżącą obecnością).
+  // Liczba „obecnych uprawnionych" zapisana przy otwarciu nie obejmuje osób, które potwierdziły
+  // obecność później - ich głosy liczymy osobno, żeby podsumowanie zgadzało się z listą imienną.
+  let participation: PublicVoteDetail["participation"] = null;
+  if (v.type !== "QUORUM" && presenceKnown) {
+    let votedPresentAtOpen = 0, notVotedPresentAtOpen = 0, votedJoinedLater = 0;
+    for (const p of base) {
+      const voted = !!p.userId && votedIds.has(p.userId);
+      if (p.present) { if (voted) votedPresentAtOpen++; else notVotedPresentAtOpen++; }
+      else if (voted) votedJoinedLater++;
+    }
+    participation = { presentAtOpen: v.resultPresentCount ?? null, votedPresentAtOpen, notVotedPresentAtOpen, votedJoinedLater };
+  }
+
+  // Bez rzeczywiście skonfigurowanych klubów w danych głosowania - bez kolumn i zestawień klubowych.
+  const hasClubs = groupsEnabled && people.some((p) => !!p.club);
+  return { ...summary, ...nav, people, participation, presenceKnown, clubsFromSnapshot, groupsEnabled: hasClubs, clubNames };
 }

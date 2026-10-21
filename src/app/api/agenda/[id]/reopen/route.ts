@@ -17,7 +17,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
 
   await prisma.agendaItem.update({
     where: { id: item.id },
-    data: { status: "PENDING", completedAt: null },
+    data: { status: "PENDING", completedAt: null, manuallyCompleted: false },
   });
 
   await audit({

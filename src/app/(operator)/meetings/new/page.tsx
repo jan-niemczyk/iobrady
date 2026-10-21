@@ -5,6 +5,7 @@ import { newMeetingId } from "@/lib/ids";
 import { redirect } from "next/navigation";
 import { audit } from "@/lib/audit";
 import { PageContainer, PageHeader } from "@/components/operator/ui";
+import { applyOrgUnitsToMeeting } from "@/lib/orgUnits";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,8 @@ async function createMeeting(formData: FormData) {
   const scheduledAt = new Date(String(formData.get("scheduledAt")));
   const attendanceMode = (String(formData.get("attendanceMode")) === "SELF_CONFIRMATION" ? "SELF_CONFIRMATION" : "MANUAL") as "MANUAL" | "SELF_CONFIRMATION";
   const description = String(formData.get("description") ?? "").trim() || null;
+  const location = String(formData.get("location") ?? "").trim().slice(0, 300) || null;
+  const orgUnitIds = formData.getAll("orgUnitIds").map(String).filter(Boolean).slice(0, 50);
 
   if (!number || !name || isNaN(scheduledAt.getTime())) {
     throw new Error("Niepełne dane");
@@ -31,7 +34,7 @@ async function createMeeting(formData: FormData) {
     data: {
       id: newMeetingId(),
       displayToken: newDisplayToken(),
-      number, name, description, meetingType, scheduledAt, attendanceMode, status: "PREPARED",
+      number, name, description, location, meetingType, scheduledAt, attendanceMode, status: "PREPARED",
       quorumRule: settings?.defaultQuorumRule ?? undefined,
       quorumValue: settings?.defaultQuorumValue ?? undefined,
       // Domyślne dla prezentacji głosowań z ustawień globalnych (operator może zmienić per posiedzenie).
@@ -43,6 +46,15 @@ async function createMeeting(formData: FormData) {
 
   await audit({ action: "MEETING_CREATED", description: `Utworzono posiedzenie ${number} - ${name}`, meetingId: m.id, userId: session.user.id });
 
+  // Grupy organizacyjne: powiązanie i wczytanie składu (członkostwa obejmujące termin posiedzenia).
+  // Skład operator może zmienić w panelu posiedzenia.
+  if (orgUnitIds.length) {
+    await prisma.$transaction(async (tx) => {
+      const r = await applyOrgUnitsToMeeting(tx, m.id, orgUnitIds, scheduledAt);
+      await audit({ action: "ORG_UNIT_CHANGED", description: `Przypisano grupy do nowego posiedzenia: dodano ${r.added} os.`, meetingId: m.id, userId: session.user.id, metadata: { orgUnitIds, ...r } }, tx);
+    });
+  }
+
   redirect(`/meetings/${m.id}`);
 }
 
@@ -52,6 +64,7 @@ export default async function NewMeetingPage() {
 
   const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
   const defaultAttMode = settings?.defaultAttendanceMode === "SELF_CONFIRMATION" ? "SELF_CONFIRMATION" : "MANUAL";
+  const orgUnits = await prisma.orgUnit.findMany({ where: { active: true }, orderBy: { name: "asc" }, include: { _count: { select: { members: true } } } });
 
   return (
     <PageContainer size="sm">
@@ -87,6 +100,24 @@ export default async function NewMeetingPage() {
                 <option value="SELF_CONFIRMATION">Uczestnik potwierdza samodzielnie</option>
               </select>
             </div>
+            <div className="col-12">
+              <label className="form-label" htmlFor="location">Miejsce <span className="text-body-secondary fw-normal">(opcjonalnie)</span></label>
+              <input className="form-control" id="location" name="location" maxLength={300} placeholder="np. sala obrad, ul. Ratuszowa 1" />
+            </div>
+            {orgUnits.length > 0 && (
+              <fieldset className="col-12">
+                <legend className="form-label fs-6 mb-1">Grupy organizacyjne <span className="text-body-secondary fw-normal">(skład zostanie wczytany - można go potem zmienić)</span></legend>
+                <div className="d-flex flex-wrap gap-3">
+                  {orgUnits.map((u) => (
+                    <div key={u.id} className="form-check">
+                      <input className="form-check-input" type="checkbox" name="orgUnitIds" value={u.id} id={`ou-${u.id}`} />
+                      <label className="form-check-label" htmlFor={`ou-${u.id}`}>{u.name} <span className="text-body-secondary small">({u._count.members})</span></label>
+                    </div>
+                  ))}
+                </div>
+                <div className="form-text">Wspólne posiedzenie: zaznacz kilka grup - osoba należąca do kilku z nich zostanie dodana raz.</div>
+              </fieldset>
+            )}
             <div className="col-12">
               <label className="form-label" htmlFor="description">Opis <span className="text-body-secondary fw-normal">(opcjonalnie)</span></label>
               <textarea className="form-control" id="description" name="description" rows={3} />

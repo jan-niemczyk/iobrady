@@ -7,6 +7,7 @@ import { computeListVoteResult } from "@/lib/listVote";
 import { evaluateQuorum } from "@/lib/quorum";
 import { HttpError, lockVoteRow } from "@/lib/booth";
 import { purgeSecretResetPayloads } from "@/lib/secretReset";
+import { applyAttendance } from "@/lib/attendanceEvents";
 
 /**
  * Zamknięcie głosowania: liczenie wyniku w jednej transakcji pod blokadą wiersza głosowania,
@@ -216,11 +217,9 @@ export async function closeVoteNow(id: string, actorUserId: string | null): Prom
     // Kto oddał głos = obecny, pozostali uprawnieni = nieobecni.
     for (const mp of parts) {
       const present = votedUsers.has(mp.userId);
-      await tx.attendance.upsert({
-        where: { participantId: mp.id },
-        create: { participantId: mp.id, status: present ? "PRESENT" : "ABSENT", source: "OPERATOR", confirmedByUserId: actorUserId },
-        update: { status: present ? "PRESENT" : "ABSENT", confirmedAt: now, source: "OPERATOR", confirmedByUserId: actorUserId },
-      });
+      // Obecny od chwili oddania głosu w kworum; nieobecny - stwierdzone przy zamknięciu kworum.
+      const castAt = vote.ballots.find((b) => b.userId === mp.userId)?.castAt;
+      await applyAttendance(tx, { meetingId: vote.meetingId, participantId: mp.id, userId: mp.userId, present, source: "QUORUM", byUserId: actorUserId, at: present ? (castAt ?? now) : now });
     }
   }
 

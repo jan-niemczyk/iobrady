@@ -1,6 +1,7 @@
 import { ensureDisplayToken } from "@/lib/displayAccess";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { configuredOrigin } from "@/lib/http";
 import { evaluateQuorum } from "@/lib/quorum";
 import { getOnlineUserIds, getOnlineGlobalIds } from "@/lib/events";
 import { NextResponse } from "next/server";
@@ -53,6 +54,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   return NextResponse.json({
     id: meeting.id, displayToken: await ensureDisplayToken(meeting.id), number: meeting.number, name: meeting.name, status: meeting.status,
     scheduledAt: meeting.scheduledAt.toISOString(),
+    location: meeting.location ?? null,
+    publicOrigin: configuredOrigin(),
     openedAt: meeting.openedAt?.toISOString() ?? null,
     attendanceMode: meeting.attendanceMode,
     attendanceOpen: meeting.attendanceOpen,
@@ -85,7 +88,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       candidatePage: meeting.displayCandidatePage,
       candidateSort: meeting.displayCandidateSort,
     },
-    agenda: meeting.agenda.map(a => ({ id: a.id, order: a.order, number: a.number, title: a.title, status: a.status, isSubItem: a.isSubItem, unnumbered: a.unnumbered, hiddenFromDisplay: a.hiddenFromDisplay, description: a.description, presenter: a.presenter, committee: a.committee, speechLimitSec: a.speechLimitSec })),
+    agenda: meeting.agenda.map(a => ({ id: a.id, order: a.order, number: a.number, title: a.title, status: a.status, manuallyCompleted: a.manuallyCompleted, hasRun: !!a.startedAt, isSubItem: a.isSubItem, unnumbered: a.unnumbered, hiddenFromDisplay: a.hiddenFromDisplay, description: a.description, presenter: a.presenter, committee: a.committee, speechLimitSec: a.speechLimitSec })),
     counts: {
       total: meeting.participants.length,
       eligible: eligible.length,

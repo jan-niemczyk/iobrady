@@ -35,3 +35,10 @@ export function validationError(error: { issues: { code: string; message: string
   const msg = custom ? first.message : "Nieprawidłowe dane żądania.";
   return badRequest(msg, error.issues);
 }
+
+/** Adres instalacji z konfiguracji (bez żądania) - do linków widoku publicznego; null gdy brak. */
+export function configuredOrigin(): string | null {
+  const configured = process.env.NEXTAUTH_URL || process.env.AUTH_URL;
+  if (!configured) return null;
+  try { return new URL(configured).origin; } catch { return null; }
+}

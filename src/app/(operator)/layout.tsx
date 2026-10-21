@@ -23,6 +23,7 @@ export default async function OperatorLayout({ children }: { children: React.Rea
       <TopBar
         userName={`${session.user.firstName} ${session.user.lastName}`}
         logoUrl={settings?.presentationLogoUrl ?? null}
+        inquiriesEnabled={settings?.inquiriesEnabled === true}
       />
       <main className="flex-grow-1">{children}</main>
       <FeedbackHost variant="bootstrap" />
@@ -30,7 +31,7 @@ export default async function OperatorLayout({ children }: { children: React.Rea
   );
 }
 
-function TopBar({ userName, logoUrl }: { userName: string; logoUrl: string | null }) {
+function TopBar({ userName, logoUrl, inquiriesEnabled }: { userName: string; logoUrl: string | null; inquiriesEnabled: boolean }) {
   return (
     <nav className="navbar navbar-expand-lg sticky-top border-bottom bg-white no-print">
       <div className="container-fluid px-3 px-lg-4">
@@ -46,7 +47,7 @@ function TopBar({ userName, logoUrl }: { userName: string; logoUrl: string | nul
           <span className="navbar-toggler-icon" />
         </button>
         <div className="collapse navbar-collapse" id="opNav">
-          <NavLinks />
+          <NavLinks inquiriesEnabled={inquiriesEnabled} />
           <div className="d-flex align-items-center gap-3 py-2 py-lg-0">
             <div className="small text-lg-end lh-sm">
               <div className="text-body-secondary">Zalogowano jako</div>

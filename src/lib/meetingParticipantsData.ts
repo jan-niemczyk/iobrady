@@ -2,10 +2,11 @@ import { prisma } from "@/lib/db";
 
 /** Dane edytora składu posiedzenia (strona uczestników posiedzenia i planer w panelu). */
 export async function loadMeetingParticipantsData(meetingId: string) {
-  const [meeting, allUsers, templates] = await Promise.all([
+  const [meeting, allUsers, orgUnits] = await Promise.all([
     prisma.meeting.findUnique({
       where: { id: meetingId },
       include: {
+        orgUnits: { select: { orgUnitId: true } },
         participants: { include: { user: { include: { group: true } } }, orderBy: { user: { lastName: "asc" } } },
         agenda: { where: { hiddenFromDisplay: false }, orderBy: { order: "asc" } },
       },
@@ -15,7 +16,8 @@ export async function loadMeetingParticipantsData(meetingId: string) {
       include: { group: true },
       orderBy: { lastName: "asc" },
     }),
-    prisma.meetingTemplate.findMany({
+    prisma.orgUnit.findMany({
+      where: { active: true },
       orderBy: { name: "asc" },
       include: { _count: { select: { members: true } } },
     }),
@@ -41,7 +43,8 @@ export async function loadMeetingParticipantsData(meetingId: string) {
       canUseMiniDisplay: (p as { canUseMiniDisplay?: boolean }).canUseMiniDisplay ?? false,
     })),
     agenda: meeting.agenda.map((a) => ({ id: a.id, number: a.number, title: a.title })),
-    templates: templates.map((t) => ({ id: t.id, name: t.name, memberCount: t._count.members })),
+    meetingStatus: meeting.status,
+    orgUnits: orgUnits.map((t) => ({ id: t.id, name: t.name, memberCount: t._count.members, linked: meeting.orgUnits.some((o) => o.orgUnitId === t.id) })),
     available: allUsers
       .filter((u) => !assignedUserIds.has(u.id))
       .map((u) => ({

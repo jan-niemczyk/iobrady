@@ -4,6 +4,7 @@ import { publishToMeeting } from "@/lib/events";
 import { audit } from "@/lib/audit";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { applyAttendance } from "@/lib/attendanceEvents";
 
 const schema = z.object({
   status: z.enum(["PRESENT", "ABSENT"]),
@@ -44,21 +45,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   await prisma.$transaction(async (tx) => {
     for (const t of targets) {
-      await tx.attendance.upsert({
-        where: { participantId: t.id },
-        create: {
-          participantId: t.id,
-          status: d.status,
-          source: "OPERATOR",
-          confirmedByUserId: session.user.id,
-        },
-        update: {
-          status: d.status,
-          confirmedAt: new Date(),
-          source: "OPERATOR",
-          confirmedByUserId: session.user.id,
-        },
-      });
+      await applyAttendance(tx, { meetingId, participantId: t.id, userId: t.userId, present: d.status === "PRESENT", source: "OPERATOR", byUserId: session.user.id });
     }
   });
 

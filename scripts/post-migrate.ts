@@ -2,7 +2,8 @@
  * Migracje danych wykonywane PO `prisma db push` (scripts/migrate.sh). Idempotentne.
  *  - SA-07: token ekranu dla posiedzeń sprzed migracji,
  *  - SA-11: szyfrowanie hasła SMTP zapisanego jawnie + usunięcie haseł SMTP z dawnych wpisów dziennika,
- *  - rotacja klucza (`--rotate`): ponowne zaszyfrowanie kluczem głównym APP_ENCRYPTION_KEY.
+ *  - rotacja klucza (`--rotate`): ponowne zaszyfrowanie kluczem głównym APP_ENCRYPTION_KEY,
+ *  - dawne szablony składu -> grupy organizacyjne (OrgUnit, mapowanie przez legacyTemplateId).
  * Nie wypisuje żadnych sekretów.
  */
 import { PrismaClient } from "@prisma/client";
@@ -62,6 +63,29 @@ async function main() {
     FROM "Meeting" m WHERE m.id = mp."meetingId" AND mp."isInvitedGuest" = true AND mp."hasVotingRight" = true
       AND m.status NOT IN ('CLOSED', 'ARCHIVED', 'CANCELLED')`;
   if (guests) console.log(`[migrate] Goście bez prawa głosu: ${guests}`);
+
+  // Dawne szablony składu -> grupy organizacyjne. Nazwa, opis, osoby i domyślne prawo głosu bez zmian;
+  // typ neutralny (UNCLASSIFIED) do klasyfikacji przez operatora, bez dat członkostwa (brak danych).
+  // Mapowanie identyfikowalne: OrgUnit.legacyTemplateId = MeetingTemplate.id. Dawnych posiedzeń nie
+  // przypisujemy do grup (brak zapisanego powiązania). Szablony zostają w bazie bez zmian.
+  const templates = await prisma.meetingTemplate.findMany({ include: { members: true } });
+  let movedUnits = 0, movedMembers = 0;
+  for (const t of templates) {
+    const exists = await prisma.orgUnit.findUnique({ where: { legacyTemplateId: t.id }, select: { id: true } });
+    if (exists) continue;
+    await prisma.$transaction(async (tx) => {
+      const unit = await tx.orgUnit.create({
+        data: { name: t.name, description: t.description, kind: "UNCLASSIFIED", legacyTemplateId: t.id },
+      });
+      if (t.members.length) {
+        await tx.orgUnitMember.createMany({
+          data: t.members.map((m) => ({ orgUnitId: unit.id, userId: m.userId, defaultVotingRight: m.hasVotingRight })),
+        });
+      }
+    });
+    movedUnits++; movedMembers += t.members.length;
+  }
+  if (movedUnits) console.log(`[migrate] Szablony składu przeniesione do grup organizacyjnych: ${movedUnits} (osób: ${movedMembers})`);
 }
 
 main()

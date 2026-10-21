@@ -101,7 +101,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   const noVoteStatus = (p: (typeof voters)[number]) =>
     wasPresent(p) ? "ng." : "nb.";
 
-  const absentCount = voters.filter((p) => !wasPresent(p)).length;
+  // Osoba z oddanym głosem nie jest nieobecna (także gdy obecność potwierdziła po otwarciu głosowania).
+  const absentCount = voters.filter((p) => !wasPresent(p) && !ballotByUser.has(p.userId)).length;
 
   // Imienne - układ jak w wydrukach Sejmu RP
   if (isList) {
@@ -151,7 +152,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   rows.push([]);
   rows.push(["PODSUMOWANIE"]);
   rows.push(["Uprawnionych", vote.resultEligibleCount ?? voters.length]);
-  rows.push(["Obecnych", vote.resultPresentCount ?? (voters.length - absentCount)]);
+  rows.push(["Obecnych przy otwarciu głosowania", vote.resultPresentCount ?? (voters.length - absentCount)]);
   rows.push(["Nieobecnych", absentCount]);
   rows.push(["Głosujących", vote.resultCastCount ?? 0]);
   if (!isList && !isQuorum && !isPackage) {

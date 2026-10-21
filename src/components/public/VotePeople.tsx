@@ -2,19 +2,23 @@
 
 import { useMemo, useState } from "react";
 import type { PublicPerson, PublicVoteDetail } from "@/lib/publicMeeting";
-import { NO_CLUB, personStatusClass, personStatusLabel } from "@/components/public/publicFormat";
+import { NO_CLUB, normSearch, personStatusClass, personStatusLabel } from "@/components/public/publicFormat";
 
 const ALL = "__all";
 const NONE = "__none";
 
 /**
- * Wyniki indywidualne: pełna lista od razu (bez paginacji). Przy włączonej obsłudze klubów i kół -
- * kolumna przynależności, filtr (wszyscy / klub / bez przynależności) i opcjonalne grupowanie.
- * Głosowanie tajne: tylko „oddał / nie oddał głosu” - bez treści głosu.
+ * Wyniki indywidualne: pełna lista od razu (bez wewnętrznego przewijania), zapis „Nazwisko Imię",
+ * sortowanie po nazwisku. Wyszukiwanie nazwiska i filtr głosu/statusu; przy skonfigurowanych
+ * klubach i kołach - także filtr i grupowanie według przynależności z dnia głosowania.
+ * Głosowanie tajne: tylko „głos oddany / brak głosu" - bez treści głosu.
  */
 export function VotePeople({ vote }: { vote: PublicVoteDetail }) {
   const clubs = vote.groupsEnabled;
+  const quorum = vote.type === "QUORUM";
   const [filter, setFilter] = useState<string>(ALL);
+  const [status, setStatus] = useState<string>(ALL);
+  const [q, setQ] = useState("");
   const [grouped, setGrouped] = useState(false);
 
   const clubKeys = useMemo(() => {
@@ -23,10 +27,18 @@ export function VotePeople({ vote }: { vote: PublicVoteDetail }) {
     return [...keys].sort((a, b) => a.localeCompare(b, "pl"));
   }, [vote.people]);
   const hasNoClub = vote.people.some((p) => !p.club);
+  const statuses = useMemo(() => {
+    const present = new Set(vote.people.map((p) => p.status));
+    return (["YES", "NO", "ABSTAIN", "VOTED", "NOT_VOTED", "ABSENT"] as const).filter((s) => present.has(s));
+  }, [vote.people]);
 
-  const visible = useMemo(() => vote.people.filter((p) =>
-    !clubs || filter === ALL ? true : filter === NONE ? !p.club : p.club === filter,
-  ), [vote.people, filter, clubs]);
+  const visible = useMemo(() => {
+    const needle = normSearch(q.trim());
+    return vote.people.filter((p) =>
+      (!clubs || filter === ALL ? true : filter === NONE ? !p.club : p.club === filter)
+      && (status === ALL || p.status === status)
+      && (!needle || normSearch(`${p.lastName} ${p.firstName}`).includes(needle)));
+  }, [vote.people, filter, clubs, status, q]);
 
   if (vote.people.length === 0) {
     return <p className="text-body-secondary mb-0">Brak listy uczestników dla tego głosowania.</p>;
@@ -47,69 +59,86 @@ export function VotePeople({ vote }: { vote: PublicVoteDetail }) {
 
   return (
     <>
-      {clubs && (
-        <div className="d-flex flex-wrap align-items-end gap-3 mb-2">
+      <div className="d-flex flex-wrap align-items-end gap-3 mb-2">
+        <div>
+          <label className="form-label small mb-1" htmlFor="pv-q">Szukaj osoby</label>
+          <input id="pv-q" type="search" className="form-control form-control-sm" placeholder="Nazwisko lub imię" value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
+        {statuses.length > 1 && (
           <div>
-            <label className="form-label small mb-1" htmlFor="pv-club">Klub / koło</label>
-            <select id="pv-club" className="form-select form-select-sm" value={filter} onChange={(e) => setFilter(e.target.value)}>
-              <option value={ALL}>Wszystkie osoby</option>
-              {clubKeys.map((k) => <option key={k} value={k}>{clubLabel(k)}</option>)}
-              {hasNoClub && <option value={NONE}>{NO_CLUB}</option>}
+            <label className="form-label small mb-1" htmlFor="pv-status">{quorum ? "Obecność" : vote.secret ? "Udział" : "Głos"}</label>
+            <select id="pv-status" className="form-select form-select-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value={ALL}>Wszystkie</option>
+              {statuses.map((s) => <option key={s} value={s}>{personStatusLabel({ status: s } as PublicPerson, quorum)}</option>)}
             </select>
           </div>
-          <div className="form-check mb-1">
-            <input className="form-check-input" type="checkbox" id="pv-group" checked={grouped} onChange={(e) => setGrouped(e.target.checked)} />
-            <label className="form-check-label small" htmlFor="pv-group">Grupuj według klubów i kół</label>
-          </div>
-          <div className="small text-body-secondary mb-1" aria-live="polite">Osób: {visible.length}</div>
-        </div>
-      )}
+        )}
+        {clubs && (
+          <>
+            <div>
+              <label className="form-label small mb-1" htmlFor="pv-club">Klub / koło</label>
+              <select id="pv-club" className="form-select form-select-sm" value={filter} onChange={(e) => setFilter(e.target.value)}>
+                <option value={ALL}>Wszystkie osoby</option>
+                {clubKeys.map((k) => <option key={k} value={k}>{clubLabel(k)}</option>)}
+                {hasNoClub && <option value={NONE}>{NO_CLUB}</option>}
+              </select>
+            </div>
+            <div className="form-check mb-1">
+              <input className="form-check-input" type="checkbox" id="pv-group" checked={grouped} onChange={(e) => setGrouped(e.target.checked)} />
+              <label className="form-check-label small" htmlFor="pv-group">Grupuj według klubów i kół</label>
+            </div>
+          </>
+        )}
+        <div className="small text-body-secondary mb-1" aria-live="polite">Osób: {visible.length}{visible.length !== vote.people.length ? ` z ${vote.people.length}` : ""}</div>
+      </div>
       {clubs && !vote.clubsFromSnapshot && (
         <p className="small text-warning-emphasis mb-2">Przynależność według bieżących danych - dla tego głosowania nie zapisano przynależności z dnia głosowania.</p>
       )}
 
-      <div className="table-responsive" tabIndex={0} role="region" aria-label="Tabela (przewijana)">
-        <table className="table table-sm align-middle pub-table mb-0">
-          <caption className="visually-hidden">Wyniki indywidualne</caption>
-          <thead>
-            <tr>
-              <th scope="col" className="text-end" style={{ width: "3rem" }}>Lp.</th>
-              <th scope="col">Imię i nazwisko</th>
-              {clubs && <th scope="col">Klub / koło</th>}
-              <th scope="col">{vote.secret || vote.type === "QUORUM" ? "Status" : "Głos"}</th>
-            </tr>
-          </thead>
-          {groups.map((g) => (
-            <tbody key={g.key ?? "none"}>
-              {grouped && clubs && (
-                <tr className="table-light">
-                  <th scope="rowgroup" colSpan={4} className="small">{clubLabel(g.key)} <span className="fw-normal text-body-secondary">({g.people.length})</span></th>
-                </tr>
-              )}
-              {g.people.map((p) => {
-                lp++;
-                const ex = extra(p);
-                return (
-                  <tr key={`${p.lastName}-${p.firstName}-${lp}`}>
-                    <td className="text-end text-body-secondary">{lp}</td>
-                    <td style={{ overflowWrap: "anywhere" }}>{p.firstName} {p.lastName}</td>
-                    {clubs && <td className="small">{p.club ?? <span className="text-body-secondary">{NO_CLUB}</span>}</td>}
-                    <td>
-                      <span className={personStatusClass(p.status)}>{personStatusLabel(p)}</span>
-                      {ex && <div className="small text-body-secondary" style={{ overflowWrap: "anywhere" }}>{ex}</div>}
-                    </td>
+      {visible.length === 0 ? <p className="text-body-secondary mb-0">Brak osób spełniających kryteria.</p> : (
+        <div className="table-responsive">
+          <table className="table table-sm align-middle pub-table mb-0">
+            <caption className="visually-hidden">{quorum ? "Obecność w sprawdzeniu kworum" : "Wyniki indywidualne"}</caption>
+            <thead>
+              <tr>
+                <th scope="col" className="text-end" style={{ width: "3rem" }}>Lp.</th>
+                <th scope="col">Nazwisko i imię</th>
+                {clubs && <th scope="col">Klub / koło</th>}
+                <th scope="col">{quorum ? "Obecność" : vote.secret ? "Udział" : "Głos"}</th>
+              </tr>
+            </thead>
+            {groups.map((g) => (
+              <tbody key={g.key ?? "none"}>
+                {grouped && clubs && (
+                  <tr className="table-light">
+                    <th scope="rowgroup" colSpan={4} className="small">{clubLabel(g.key)} <span className="fw-normal text-body-secondary">({g.people.length})</span></th>
                   </tr>
-                );
-              })}
-            </tbody>
-          ))}
-        </table>
-      </div>
+                )}
+                {g.people.map((p) => {
+                  lp++;
+                  const ex = extra(p);
+                  return (
+                    <tr key={`${p.lastName}-${p.firstName}-${lp}`}>
+                      <td className="text-end text-body-secondary">{lp}</td>
+                      <td style={{ overflowWrap: "anywhere" }}>{p.lastName} {p.firstName}</td>
+                      {clubs && <td className="small">{p.club ?? <span className="text-body-secondary">{NO_CLUB}</span>}</td>}
+                      <td>
+                        <span className={personStatusClass(p.status)}>{personStatusLabel(p, quorum)}</span>
+                        {ex && <div className="small text-body-secondary" style={{ overflowWrap: "anywhere" }}>{ex}</div>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            ))}
+          </table>
+        </div>
+      )}
     </>
   );
 }
 
-/** Zestawienie wyników według klubów i kół (tylko głosowania jawne, zakończone). Wiersz „Razem” = suma. */
+/** Zestawienie wyników według klubów i kół (tylko głosowania jawne, zakończone). Wiersz „Razem" = suma. */
 export function ClubSummary({ vote }: { vote: PublicVoteDetail }) {
   const rows = useMemo(() => {
     const map = new Map<string, PublicPerson[]>();
@@ -127,19 +156,19 @@ export function ClubSummary({ vote }: { vote: PublicVoteDetail }) {
   const count = (ps: PublicPerson[], s: PublicPerson["status"]) => ps.filter((p) => p.status === s).length;
   const voted = (ps: PublicPerson[]) => ps.filter((p) => p.status !== "NOT_VOTED" && p.status !== "ABSENT").length;
   const cols: { label: string; value: (ps: PublicPerson[]) => number }[] = isQuorum
-    ? [{ label: "Obecni", value: (ps) => count(ps, "VOTED") }, { label: "Nie potwierdzili", value: (ps) => count(ps, "NOT_VOTED") }]
+    ? [{ label: "Obecni", value: (ps) => count(ps, "VOTED") }, { label: "Bez potwierdzenia", value: (ps) => count(ps, "NOT_VOTED") }]
     : vote.type === "STANDARD"
       ? [
           { label: "Za", value: (ps) => count(ps, "YES") },
           { label: "Przeciw", value: (ps) => count(ps, "NO") },
           { label: "Wstrz.", value: (ps) => count(ps, "ABSTAIN") },
-          { label: "Nie głosowało", value: (ps) => count(ps, "NOT_VOTED") },
+          { label: "Brak głosu", value: (ps) => count(ps, "NOT_VOTED") },
           { label: "Nieobecni", value: (ps) => count(ps, "ABSENT") },
         ]
       : [
           { label: "Głosowało", value: voted },
           ...candidates.map((c) => ({ label: `Za: ${c}`, value: (ps: PublicPerson[]) => ps.filter((p) => p.selected?.includes(c)).length })),
-          { label: "Nie głosowało", value: (ps) => count(ps, "NOT_VOTED") },
+          { label: "Brak głosu", value: (ps) => count(ps, "NOT_VOTED") },
           { label: "Nieobecni", value: (ps) => count(ps, "ABSENT") },
         ];
 

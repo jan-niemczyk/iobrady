@@ -6,6 +6,9 @@ import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
 
+/** Typy, które można otworzyć w przeglądarce (?inline=1) - pozostałe zawsze jako pobranie pliku. */
+const INLINE_TYPES = new Set(["application/pdf", "image/png", "image/jpeg", "image/webp"]);
+
 /**
  * GET /api/attachments/[id]/download - jedyna droga do treści załącznika. Reguły dostępu:
  *  - operator zalogowany -> zawsze OK.
@@ -15,8 +18,9 @@ import path from "path";
  *    i attachment.visibleToPublic === true.
  * W pozostałych przypadkach 404 (nie zdradzamy różnicy między "nie istnieje" a "brak dostępu").
  */
-export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
+  const inline = new URL(req.url).searchParams.get("inline") === "1";
   const attachment = await prisma.attachment.findUnique({
     where: { id },
     include: { meeting: { select: { publicEnabled: true } } },
@@ -37,11 +41,12 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 
   try {
     const buf = await readFile(path.join(ATTACHMENTS_DIR, attachment.storedName));
+    const disposition = inline && INLINE_TYPES.has(attachment.mimeType) ? "inline" : "attachment";
     return new NextResponse(new Uint8Array(buf), {
       headers: {
         "Content-Type": attachment.mimeType,
         // RFC 6266: nazwa z polskimi znakami w filename*, zapasowa wersja ASCII w filename.
-        "Content-Disposition": `attachment; filename="${asciiFileName(attachment.fileName)}"; filename*=UTF-8''${encodeRFC5987(attachment.fileName)}`,
+        "Content-Disposition": `${disposition}; filename="${asciiFileName(attachment.fileName)}"; filename*=UTF-8''${encodeRFC5987(attachment.fileName)}`,
         "Cache-Control": "private, no-store",
       },
     });

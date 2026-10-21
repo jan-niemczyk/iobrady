@@ -28,6 +28,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
         startedAt: item.startedAt ?? new Date(),
         // Jeśli był COMPLETED, czyścimy completedAt (operator ponownie otwiera)
         completedAt: null,
+        manuallyCompleted: false,
       },
     });
     await tx.meeting.update({

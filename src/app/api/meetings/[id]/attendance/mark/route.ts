@@ -4,6 +4,7 @@ import { publishToMeeting } from "@/lib/events";
 import { audit } from "@/lib/audit";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { applyAttendance } from "@/lib/attendanceEvents";
 
 const schema = z.object({
   participantId: z.string().max(64),
@@ -39,21 +40,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       return new NextResponse("Uczestnik został wykluczony z posiedzenia", { status: 403 });
   }
 
-  await prisma.attendance.upsert({
-    where: { participantId: mp.id },
-    create: {
-      participantId: mp.id,
-      status,
-      source: isOperator ? "OPERATOR" : "PARTICIPANT",
-      confirmedByUserId: isOperator ? session.user.id : null,
-    },
-    update: {
-      status,
-      confirmedAt: new Date(),
-      source: isOperator ? "OPERATOR" : "PARTICIPANT",
-      confirmedByUserId: isOperator ? session.user.id : null,
-    },
-  });
+  await prisma.$transaction((tx) => applyAttendance(tx, {
+    meetingId: id, participantId: mp.id, userId: mp.userId, present: status === "PRESENT",
+    source: isOperator ? "OPERATOR" : "SELF", byUserId: session.user.id,
+  }));
 
   await audit({
     action: "ATTENDANCE_MARKED",

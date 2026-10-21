@@ -57,16 +57,19 @@ export function resultShort(v: PublicVoteSummary): string {
   return `głosowało ${r.cast}; ${n} ${plural(n, "pozycja", "pozycje", "pozycji")}`;
 }
 
-/** Status osoby w wynikach - z formą żeńską, gdy ustawiona. */
-export function personStatusLabel(p: PublicPerson): string {
-  const f = !!p.female;
+/**
+ * Status osoby w wynikach - etykiety neutralne (bez zgadywania formy gramatycznej z imienia).
+ * Sprawdzenie kworum ma własne etykiety obecności (to nie jest głosowanie za/przeciw).
+ */
+export function personStatusLabel(p: PublicPerson, quorum = false): string {
+  if (quorum) return p.status === "VOTED" ? "Obecność potwierdzona" : "Brak potwierdzenia";
   const labels: Record<PublicPersonStatus, string> = {
     YES: "Za",
     NO: "Przeciw",
-    ABSTAIN: f ? "Wstrzymała się" : "Wstrzymał się",
-    VOTED: f ? "Oddała głos" : "Oddał głos",
-    NOT_VOTED: f ? "Nie oddała głosu" : "Nie oddał głosu",
-    ABSENT: f ? "Nieobecna" : "Nieobecny",
+    ABSTAIN: "Wstrzymanie się",
+    VOTED: "Głos oddany",
+    NOT_VOTED: "Brak głosu",
+    ABSENT: "Nieobecność",
   };
   return labels[p.status];
 }
@@ -82,3 +85,26 @@ export function personStatusClass(s: PublicPersonStatus): string {
 }
 
 export const NO_CLUB = "Bez przynależności";
+
+/** Tekst do wyszukiwania: małe litery, bez polskich znaków diakrytycznych („wygaśnięcia" = „wygasniecia"). */
+export function normSearch(s: string): string {
+  return s.toLocaleLowerCase("pl").replace(/ł/g, "l").normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+/** Etykieta punktu porządku: „Punkt 3." (z numerem) albo pusta (punkt bez numeru). */
+export function itemNumberLabel(item: { number: string | null } | null): string {
+  return item?.number ? `Punkt ${item.number}.` : "";
+}
+
+/** Data i godzina głosowania: „7 sierpnia 2026, godz. 15:15". */
+export function voteWhen(iso: string | null): string {
+  return iso ? `${fmtDate(iso)}, godz. ${fmtTime(iso)}` : "";
+}
+
+/** Pełny tekst do wyszukiwania głosowania: tytuł punktu, przedmiot, numer głosowania i numer druku z treści. */
+export function voteSearchText(v: PublicVoteSummary): string {
+  return normSearch([
+    v.item?.number ? `punkt ${v.item.number}` : "", v.item?.title ?? "", v.contextLabel ?? "",
+    v.title, v.description ?? "", v.number != null ? `glosowanie nr ${v.number} nr ${v.number} ${v.number}` : "",
+  ].join(" "));
+}
