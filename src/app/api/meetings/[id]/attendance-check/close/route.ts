@@ -83,7 +83,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   await audit({
     action: "ATTENDANCE_CLOSED",
-    description: `Zamknięto sprawdzenie obecności: ${presentCount}/${eligibleCount}${q.met ? " (kworum jest)" : " (brak kworum)"}`,
+    description: `Zamknięto sprawdzenie obecności: ${presentCount}/${eligibleCount}${q.met ? " (kworum potwierdzone)" : " (brak kworum)"}`,
     meetingId: id, userId: session.user.id,
     metadata: { checkId, presentCount, eligibleCount, quorumMet: q.met },
   });

@@ -110,7 +110,7 @@ export function AttendanceCheckPanel({
             <div>Obecnych wg ostatniej migawki: <span className="fw-semibold">{lastClosed.presentCount ?? presentNow}</span> / {lastClosed.eligibleCount ?? eligible.length}</div>
             <div className="small text-body-secondary">
               {kindLabel(lastClosed.kind)} {fmtTime(lastClosed.closedAt)}
-              {lastClosed.quorumMet != null && (lastClosed.quorumMet ? " - kworum jest" : " - brak kworum")}
+              {lastClosed.quorumMet != null && (lastClosed.quorumMet ? " - kworum potwierdzone" : " - brak kworum")}
             </div>
           </div>
         ) : (

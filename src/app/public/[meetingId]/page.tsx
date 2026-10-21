@@ -128,7 +128,7 @@ function VoteLine({ v, meetingId }: { v: PublicVoteSummary; meetingId: string })
       <div className="small text-body-secondary">
         Głosowanie nr {v.number ?? "-"}{v.time ? ` - ${voteWhen(v.time)}` : ""}{v.secret ? ", tajne" : ""}
       </div>
-      <div style={{ overflowWrap: "anywhere" }}><span className="text-body-secondary">Przedmiot głosowania:</span> {v.title}</div>
+      <div style={{ overflowWrap: "anywhere" }}>{v.title}</div>
       <div className="d-flex flex-wrap align-items-center gap-2 small">
         <span>{resultShort(v)}</span>
         {v.decision && <span className={`badge ${v.decision.positive ? "text-bg-success" : "text-bg-danger"}`}>{v.decision.label}</span>}

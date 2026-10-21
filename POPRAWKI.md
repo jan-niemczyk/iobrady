@@ -1600,3 +1600,6 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
       sondy bezpieczeństwa 45/45, `tsc`, build.
 - Schemat: wyłącznie nowe modele, pola opcjonalne lub z wartością domyślną i nowe wartości enumów -
       `db push` bez utraty danych. Przed wdrożeniem kopia bazy (wykonuje ją `scripts/update.sh`).
+- [x] Etykieta wyniku sprawdzenia obecności: „Kworum potwierdzone” (zamiast „Kworum jest”) - widok publiczny,
+      strona radnego, widok przewodniczącego, raporty i dziennik. Usunięty prefiks „Przedmiot głosowania:”
+      przed nazwą głosowania (lista, szczegóły, okno wyników radnego).

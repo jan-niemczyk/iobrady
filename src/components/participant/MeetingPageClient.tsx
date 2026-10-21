@@ -30,7 +30,7 @@ function Votes({ votes, onResults }: { votes: Vote[]; onResults: (id: string, el
       {votes.map((v) => (
         <li key={v.id}>
           <div className="pt-label">Głosowanie nr {v.number ?? "-"}{v.time ? `, godz. ${fmtTime(v.time)}` : ""}{v.secret ? ", tajne" : ""}</div>
-          <div className="pt-mtg-vote-subject"><span className="pt-muted">Przedmiot:</span> {v.title}</div>
+          <div className="pt-mtg-vote-subject">{v.title}</div>
           <div className="pt-btn-group" style={{ marginTop: 6 }}>
             {v.status === "OPEN" ? <span className="pt-badge pt-badge-warn">Trwa</span> : v.decision && <span className={`pt-badge ${v.decision === "Odrzucono" || v.decision === "Brak kworum" ? "pt-badge-no" : "pt-badge-yes"}`}>{v.decision}</span>}
             {v.status === "CLOSED" && (

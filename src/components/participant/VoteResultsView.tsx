@@ -54,7 +54,7 @@ export function VoteResultsBody({ data, headingLevel = 3 }: { data: ReportData; 
         <H style={{ margin: "4px 0", fontSize: headingLevel === 1 ? 24 : 19, fontWeight: 600, lineHeight: 1.3, overflowWrap: "anywhere" }}>
           {data.itemTitle ? <>{data.itemNumber ? `Punkt ${data.itemNumber}. ` : ""}{data.itemTitle}</> : data.contextLabel}
         </H>
-        <div style={{ fontSize: 16, overflowWrap: "anywhere" }}><span className="pt-muted">Przedmiot głosowania:</span> {data.voteTitle}</div>
+        <div style={{ fontSize: 16, overflowWrap: "anywhere" }}>{data.voteTitle}</div>
         <div className="pt-btn-group" style={{ marginTop: 8 }}>
           <span className="pt-badge">{data.isSecret ? "Głosowanie tajne" : "Głosowanie jawne"}</span>
           {data.decision && <span className={`pt-badge ${data.decision.positive ? "pt-badge-yes" : "pt-badge-no"}`}>{data.decision.label}</span>}

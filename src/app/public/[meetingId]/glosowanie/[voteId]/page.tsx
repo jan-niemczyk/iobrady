@@ -62,7 +62,7 @@ export default async function PublicVotePage({ params, searchParams }: {
               : (vote.contextLabel ?? "Głosowanie poza porządkiem obrad")}
           </h1>
           <p className="pub-vote-subject mb-1" style={{ overflowWrap: "anywhere" }}>
-            <span className="text-body-secondary">Przedmiot głosowania:</span> {vote.title}
+            {vote.title}
           </p>
           {vote.description && <p className="mb-1" style={{ overflowWrap: "anywhere" }}>{vote.description}</p>}
           <div className="d-flex flex-wrap align-items-center gap-2 mt-2">

@@ -291,7 +291,7 @@ export async function buildVoteReportData(voteId: string): Promise<ReportData | 
   const decision = vote.status !== "CLOSED" || vote.resultPassed == null || isList || vote.type === "PACKAGE"
     ? null
     : isQuorum
-      ? { label: vote.resultPassed ? "Kworum jest" : "Brak kworum", positive: vote.resultPassed }
+      ? { label: vote.resultPassed ? "Kworum potwierdzone" : "Brak kworum", positive: vote.resultPassed }
       : { label: vote.resultPassed ? "Przyjęto" : "Odrzucono", positive: vote.resultPassed };
 
   return {

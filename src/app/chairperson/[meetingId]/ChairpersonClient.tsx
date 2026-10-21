@@ -177,7 +177,7 @@ function ResultsHoldView({ vote }: { vote: NonNullable<ChairData["lastClosedVote
   const isPackage = vote.type === "PACKAGE";
   const isQuorum = vote.type === "QUORUM";
   const label = isQuorum
-    ? (vote.resultPassed ? "Kworum jest" : "Brak kworum")
+    ? (vote.resultPassed ? "Kworum potwierdzone" : "Brak kworum")
     : (vote.resultPassed ? "Przyjęto" : "Odrzucono");
   return (
     <>

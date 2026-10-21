@@ -64,7 +64,7 @@ export function VotesTable({ meetingId, votes, initialQuery = "" }: {
         <div className="fw-semibold text-body-secondary" style={{ overflowWrap: "anywhere" }}>{v.contextLabel ?? "Poza porządkiem obrad"}</div>
       )}
       <div style={{ overflowWrap: "anywhere" }}>
-        <span className="text-body-secondary">Przedmiot głosowania:</span> {v.title}
+        {v.title}
         {v.secret && <span className="badge text-bg-light border ms-2 fw-normal">tajne</span>}
       </div>
     </>

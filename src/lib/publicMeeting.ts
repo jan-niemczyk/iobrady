@@ -72,7 +72,7 @@ export interface PublicVoteSummary {
     yes?: number; no?: number; abstain?: number; invalid?: number;
     options?: PublicOptionResult[];
   } | null;
-  /** Rozstrzygnięcie zapisane w systemie (np. „Przyjęto”, „Kworum jest”); null - brak. */
+  /** Rozstrzygnięcie zapisane w systemie (np. „Przyjęto”, „Kworum potwierdzone”); null - brak. */
   decision: { label: string; positive: boolean } | null;
   majority: string | null;
 }
@@ -142,7 +142,7 @@ function decisionOf(v: VoteRow): PublicVoteSummary["decision"] {
   if (v.type === "QUORUM") {
     // Rozstrzygnięcie głosowania kworum zapisane przy zamknięciu (resultPassed = wynik liczenia).
     const met = v.resultPassed ?? v.resultQuorumMet;
-    return met == null ? null : { label: met ? "Kworum jest" : "Brak kworum", positive: met };
+    return met == null ? null : { label: met ? "Kworum potwierdzone" : "Brak kworum", positive: met };
   }
   if (v.type === "LIST" || v.type === "PACKAGE") return null; // rozstrzygnięcia przy pozycjach / kandydaturach
   if (v.resultPassed == null) return null;

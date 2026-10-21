@@ -28,7 +28,7 @@ export async function loadParticipantMeeting(userId: string, meetingId: string) 
 
   const decisionOf = (v: (typeof meeting.votes)[number]) => {
     if (v.status !== "CLOSED") return null;
-    if (v.type === "QUORUM") return v.resultPassed == null ? null : (v.resultPassed ? "Kworum jest" : "Brak kworum");
+    if (v.type === "QUORUM") return v.resultPassed == null ? null : (v.resultPassed ? "Kworum potwierdzone" : "Brak kworum");
     if (v.type === "LIST" || v.type === "PACKAGE") return null;
     return v.resultPassed == null ? null : (v.resultPassed ? "Przyjęto" : "Odrzucono");
   };

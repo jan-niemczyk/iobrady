@@ -56,7 +56,7 @@ export async function buildAttendanceReportData(checkId: string): Promise<Report
   });
 
   const kindLabel = check.kind === "QUORUM_VOTE" ? "Głosowanie kworum" : "Potwierdzenie obecności";
-  const quorumNote = check.quorumMet == null ? "" : check.quorumMet ? " - kworum jest" : " - brak kworum";
+  const quorumNote = check.quorumMet == null ? "" : check.quorumMet ? " - kworum potwierdzone" : " - brak kworum";
 
   return {
     organizationName: settings?.organizationName ?? undefined,
