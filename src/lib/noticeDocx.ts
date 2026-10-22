@@ -199,7 +199,13 @@ export async function buildNoticeDocx(input: NoticeRenderInput): Promise<Buffer>
       ],
     },
     sections: [{
-      properties: { page: { size: { width: A4_W, height: A4_H }, margin: { top, bottom, left, right, header: Math.min(567, Math.round(top / 2)), footer: paper ? Math.max(200, bottom - 340 - footerChildren.length * 200) : Math.min(567, Math.round(bottom / 2)) } } },
+      properties: { page: { size: { width: A4_W, height: A4_H }, margin: {
+        top, left, right, header: Math.min(567, Math.round(top / 2)),
+        // Z papierem firmowym margines dolny = wysokość stopki papieru: stopka dokumentu od niej w górę,
+        // treść nad stopką dokumentu (ok. 200 twipów na wiersz stopki).
+        bottom: paper && footerChildren.length ? bottom + footerChildren.length * 200 + 120 : bottom,
+        footer: paper ? bottom : Math.min(567, Math.round(bottom / 2)),
+      } } },
       headers: headerChildren.length ? { default: new Header({ children: headerChildren }) } : undefined,
       footers: footerChildren.length ? { default: new Footer({ children: footerChildren }) } : undefined,
       children: body,

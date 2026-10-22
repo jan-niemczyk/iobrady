@@ -705,3 +705,8 @@ textarea.pt-field-input { min-height: 8rem; line-height: 1.5; resize: vertical; 
 .pt-inq-people li + li { border-top: 1px solid var(--color-rule-soft); }
 .pt-inq-person { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 12px; font-size: 16px; cursor: pointer; }
 .pt-inq-person input { width: 20px; height: 20px; flex-shrink: 0; }
+
+/* Tło strony jak w panelu operatora (bootstrap-scoped.scss: body #F5F7FA) - pasek górny i panele
+   pozostają białe. Arkusz Bootstrapa nie jest tu ładowany, więc kolor ustawiony osobno. */
+.pt-shell { background: #F5F7FA; }
+[data-theme="dark"] .pt-shell { background: #000000; }

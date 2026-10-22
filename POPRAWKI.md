@@ -1642,4 +1642,10 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
 - Testy: nowy `tests/e2e/correspondence.spec.ts` (w CI). Przebieg: e2e 41/41 (także od zera w kolejności CI),
       sondy 45/45, `tsc`, build.
 - Schemat: pola opcjonalne, nowa wartość enuma; usunięcie tabeli wersji jawnie w `pre-push.sql`.
+- [x] **Tło panelu radnego** jak u operatora (`#F5F7FA`; panel radnego nie ładuje arkusza Bootstrapa, więc
+      dziedziczył białe `--color-paper`). Tryb czarny bez zmian.
+- [x] **Papier firmowy - stopka różnej wysokości**: przy papierze margines dolny oznacza wysokość stopki papieru
+      (strefa wolna). Stopka dokumentu (tekst, numeracja) stoi tuż nad nią, treść kończy się nad stopką
+      dokumentu - w PDF i DOCX (`footer` = wysokość stopki papieru). Podgląd: pełna strona A4 z przerywanymi
+      granicami stref; pola nazywają się „Nagłówek papieru” / „Stopka papieru”.
 

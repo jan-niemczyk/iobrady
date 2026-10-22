@@ -276,8 +276,9 @@ i **Dodaj brakujące osoby** (posiedzenia niezakończone). Zakończone posiedzen
   z datą, adresat po prawej, treść, porządek obrad, podpis po prawej.
 - **Numer posiedzenia**: jak w posiedzeniu, cyframi rzymskimi albo arabskimi (zmienna `{{numer_posiedzenia}}`;
   także `{{numer_posiedzenia_rzymski}}` i `{{numer_posiedzenia_arabski}}`).
-- **Stopka, papier firmowy i marginesy**: wgraj obraz strony A4 (PNG, JPG, WEBP, SVG) i ustaw marginesy tak,
-  aby treść nie nachodziła na nagłówek i stopkę papieru. Papieru w postaci pliku PDF nie można wgrać - użyj obrazu.
+- **Stopka, papier firmowy i marginesy**: wgraj obraz strony A4 (PNG, JPG, WEBP, SVG) i wpisz wysokość
+  nagłówka i stopki papieru (w mm) - podgląd pokazuje ich granice linią przerywaną. Stopka dokumentu
+  (tekst, numeracja stron) jest drukowana tuż nad stopką papieru, treść kończy się nad nią. Papieru w postaci pliku PDF nie można wgrać - użyj obrazu.
 - **Posiedzenia → Szablony dokumentów** - nazwane szablony (zakres: jednostka albo grupa), domyślny,
   powielanie, archiwum. Zmiana szablonu nie zmienia utworzonych wcześniej zawiadomień.
 

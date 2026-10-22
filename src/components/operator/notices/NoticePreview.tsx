@@ -29,10 +29,15 @@ export function NoticePreview({ content: c, agenda, values, recipient, logoUrl }
 
   return (
     <div className="notice-page" style={{
-      position: "relative", fontFamily: "Arial, sans-serif", fontSize: 14.7, lineHeight: 1.45, color: "#000", background: "#fff", maxWidth: 794, minHeight: 1123 * 0.6, margin: "0 auto",
+      position: "relative", fontFamily: "Arial, sans-serif", fontSize: 14.7, lineHeight: 1.45, color: "#000", background: "#fff", maxWidth: 794, minHeight: c.letterheadImage ? 1123 : 1123 * 0.6, margin: "0 auto",
       padding: `${c.marginTopMm * 3.78}px ${c.marginRightMm * 3.78}px ${c.marginBottomMm * 3.78}px ${c.marginLeftMm * 3.78}px`, boxShadow: "0 1px 6px rgba(0,0,0,.18)",
       ...(c.letterheadImage ? { backgroundImage: `url(${c.letterheadImage})`, backgroundSize: "100% auto", backgroundRepeat: "no-repeat" } : {}),
     }}>
+      {c.letterheadImage && <>
+        {/* Granice stref papieru firmowego - tylko w podglądzie, do dopasowania marginesów. */}
+        <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, top: 0, height: c.marginTopMm * 3.78, borderBottom: "1px dashed #0d6efd", pointerEvents: "none" }} />
+        <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, top: 1123 - c.marginBottomMm * 3.78, borderTop: "1px dashed #0d6efd", pointerEvents: "none" }} />
+      </>}
       {c.letterhead.trim() && <div style={{ position: "absolute", top: 12, left: 0, right: 0, fontSize: 12, textAlign: "center" }}>{lines(c.letterhead)}</div>}
       {(c.useLogo && logoUrl) || c.unitName.trim() || c.unitDetails.trim() ? (
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>

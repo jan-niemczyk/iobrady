@@ -90,7 +90,7 @@ export function NoticeContentEditor({ value: c, onChange, withDocumentFields, id
               <label className="btn btn-sm btn-outline-secondary mb-0">{uploading ? "Wgrywanie…" : c.letterheadImage ? "Zmień" : "Wgraj"}<input type="file" className="visually-hidden" accept=".png,.jpg,.jpeg,.webp,.svg" onChange={(e) => uploadPaper(e.target.files)} /></label>
             </div>
           </div>
-          {mmField("marginTopMm", "Margines górny")}{mmField("marginBottomMm", "Margines dolny")}{mmField("marginLeftMm", "Margines lewy")}{mmField("marginRightMm", "Margines prawy")}
+          {mmField("marginTopMm", c.letterheadImage ? "Nagłówek papieru" : "Margines górny")}{mmField("marginBottomMm", c.letterheadImage ? "Stopka papieru" : "Margines dolny")}{mmField("marginLeftMm", "Margines lewy")}{mmField("marginRightMm", "Margines prawy")}
         </div>
       </details>
     </div>

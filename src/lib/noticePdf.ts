@@ -87,10 +87,14 @@ export async function buildNoticePdf(input: { content: NoticeContent; agenda: No
 
   const footerLines = nonEmpty(fill(c.footer, v));
   const header = nonEmpty(fill(c.letterhead, v));
+  // Z papierem firmowym margines dolny to wysokość stopki papieru (strefa wolna, różna dla papierów):
+  // stopka dokumentu stoi tuż nad nią, a treść kończy się nad stopką dokumentu.
+  const footerH = footerLines.length * 10 + (c.footerPageNumbers ? 10 : 0);
+  const bottom = paper && footerH ? m.b + footerH + 6 : m.b;
   return renderPdf({
     info: { title: fill(c.title, v) || "Zawiadomienie" },
     pageSize: "A4",
-    pageMargins: [m.l, m.t, m.r, m.b],
+    pageMargins: [m.l, m.t, m.r, bottom],
     defaultStyle: { font: "Lato", fontSize: 11, lineHeight: 1.2, color: "#000000" },
     ...(paper ? { background: () => ({ image: dataUrl(paper), width: A4.w, height: A4.h }) } : {}),
     ...(header.length ? { header: () => ({ stack: header.map((l) => ({ text: l, alignment: "center", fontSize: 9 })), margin: [m.l, Math.max(8, m.t / 2 - 10), m.r, 0] }) } : {}),
@@ -99,7 +103,6 @@ export async function buildNoticePdf(input: { content: NoticeContent; agenda: No
         ...footerLines.map((l) => ({ text: l, alignment: "center", fontSize: 8 })),
         ...(c.footerPageNumbers ? [{ text: `Strona ${cp} z ${pc}`, alignment: "right", fontSize: 8 }] : []),
       ],
-      // Z papierem firmowym stopka dokumentu tuż pod treścią - nad stopką papieru.
       margin: [m.l, paper ? 4 : Math.max(6, m.b - 14 - footerLines.length * 10 - 10), m.r, 0],
     }),
     content,
