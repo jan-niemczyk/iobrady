@@ -67,13 +67,13 @@ export async function canViewPost(user: { id: string; role: string; active?: boo
  * Bieżący zbiór odbiorców (konta aktywne, bez operatorów) - do raportu odczytów i powiadomień.
  * „Wszyscy” oznacza wszystkie aktywne konta uczestników.
  */
-export async function resolveAudience(post: { audienceAll: boolean; audienceOrgUnitIds: string[]; audienceUserIds: string[] }, at = new Date()) {
+export async function resolveAudience(post: { audienceAll: boolean; audienceOrgUnitIds: string[]; audienceUserIds: string[] }, at = new Date(), db: Prisma.TransactionClient | typeof prisma = prisma) {
   const ids = new Set<string>();
   if (post.audienceAll) {
-    for (const u of await prisma.user.findMany({ where: { active: true, role: "PARTICIPANT" }, select: { id: true } })) ids.add(u.id);
+    for (const u of await db.user.findMany({ where: { active: true, role: "PARTICIPANT" }, select: { id: true } })) ids.add(u.id);
   }
   if (post.audienceOrgUnitIds.length) {
-    const rows = await prisma.orgUnitMember.findMany({
+    const rows = await db.orgUnitMember.findMany({
       where: {
         orgUnitId: { in: post.audienceOrgUnitIds }, orgUnit: { active: true },
         OR: [{ validFrom: null }, { validFrom: { lte: at } }],
@@ -85,7 +85,7 @@ export async function resolveAudience(post: { audienceAll: boolean; audienceOrgU
   }
   for (const id of post.audienceUserIds) ids.add(id);
   if (ids.size === 0) return [];
-  return prisma.user.findMany({
+  return db.user.findMany({
     where: { id: { in: [...ids] }, active: true, role: "PARTICIPANT" },
     select: { id: true, firstName: true, lastName: true, email: true, group: { select: { shortName: true } } },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],

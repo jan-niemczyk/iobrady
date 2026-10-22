@@ -79,7 +79,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       await audit({ action: "INQUIRY_CHANGED", description: `${final ? "Dodano" : "Utworzono szkic"}: ${what} - sprawa „${c.title}”`, userId: session.user.id, metadata: { caseId: id, letterId: l.id, kind: d.kind, status } }, tx);
       if (final && isOperator && (d.kind === "ANSWER" || d.kind === "OTHER" || d.kind === "SUPPLEMENT"))
         await notify(tx, await confirmedAuthorIds(tx, id), `${d.kind === "ANSWER" ? "Nowa odpowiedź" : what}: ${c.title}`, `/session/interpelacje/${id}`);
-      if (final && !isOperator) await notify(tx, await operatorIds(), `${what}: ${c.title}`, `/inquiries/${id}`);
+      if (final && !isOperator) await notify(tx, await operatorIds(tx), `${what}: ${c.title}`, `/inquiries/${id}`);
       return l;
     });
     return NextResponse.json({ ok: true, id: letter.id });

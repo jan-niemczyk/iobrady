@@ -1634,6 +1634,12 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
       znaku wodnego, zestawienie sprawy i każde pismo od nowej strony.
 - [x] **Informacje**: PDF ewidencji otwarć; bez historii wersji (`InfoPostVersion` usunięty w `pre-push.sql`),
       dziennik bez tytułów i treści (dotychczasowe wpisy oczyszczone w `post-migrate.ts`).
-- Testy: nowy `tests/e2e/correspondence.spec.ts` (w CI). Przebieg: e2e 41/41, sondy 45/45, `tsc`, build.
+- [x] **Transakcje przy małej puli połączeń** (przyczyna czerwonego CI od af0f9d6, krok „Interpelacje i zapytania”):
+      w transakcjach wołano funkcje czytające przez globalnego klienta (`numberPeriod`, `operatorIds`,
+      `resolveAudience`) - przy wyczerpanej puli transakcje czekały na siebie (P2024/P2028, odpowiedź 500 przy
+      równoczesnej rejestracji). Funkcje przyjmują `tx`; domyślne `maxWait` transakcji 10 s zamiast 2 s.
+      Odtworzone lokalnie przy `connection_limit=2`, po poprawce 3/3 przebiegi bez błędu.
+- Testy: nowy `tests/e2e/correspondence.spec.ts` (w CI). Przebieg: e2e 41/41 (także od zera w kolejności CI),
+      sondy 45/45, `tsc`, build.
 - Schemat: pola opcjonalne, nowa wartość enuma; usunięcie tabeli wersji jawnie w `pre-push.sql`.
 

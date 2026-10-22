@@ -98,7 +98,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     if (action === "publish") notify = { kind: "INFO", title: `Nowa informacja: ${p.title}` };
     if (newVersion) notify = { kind: "INFO", title: `Zmieniona informacja: ${p.title}` };
     if (notify) {
-      const audience = await resolveAudience(p);
+      const audience = await resolveAudience(p, new Date(), tx);
       await notifyAudience(tx, audience.map((u) => u.id), { ...notify, link: `/session/informacje/${id}` });
     }
     const what = action === "publish" ? "Opublikowano" : action === "archive" ? "Zarchiwizowano" : action === "restore" ? "Przywrócono" : newVersion ? "Zmieniono istotnie" : "Zmieniono";

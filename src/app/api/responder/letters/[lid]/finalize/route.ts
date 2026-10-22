@@ -26,7 +26,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ lid: string }
       await tx.inquiryLetter.update({ where: { id: lid }, data: { seq: await nextLetterSeq(tx, l.caseId), state: "FINAL", finalizedAt: now, receivedAt: now, letterDate: l.letterDate ?? now } });
       const status = await refreshStatus(tx, l.caseId);
       await audit({ action: "INQUIRY_CHANGED", description: "Złożono odpowiedź (konto odpowiadającego)", userId: session.user.id, metadata: { caseId: l.caseId, letterId: lid, status } }, tx);
-      await notify(tx, await operatorIds(), `Nowa odpowiedź: ${l.case.title}`, `/inquiries/${l.caseId}`);
+      await notify(tx, await operatorIds(tx), `Nowa odpowiedź: ${l.case.title}`, `/inquiries/${l.caseId}`);
       await notify(tx, await confirmedAuthorIds(tx, l.caseId), `Nowa odpowiedź: ${l.case.title}`, `/session/interpelacje/${l.caseId}`);
     });
     return NextResponse.json({ ok: true });

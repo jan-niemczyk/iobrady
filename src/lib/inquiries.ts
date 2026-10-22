@@ -60,8 +60,9 @@ export async function refreshStatus(tx: Prisma.TransactionClient, caseId: string
 }
 
 /** Okres numeracji według konfiguracji: rok wpływu/złożenia albo oznaczenie bieżącej kadencji. */
-export async function numberPeriod(at: Date): Promise<string> {
-  const s = await prisma.settings.findUnique({ where: { id: "singleton" }, select: { inquiryNumberScope: true, currentTermLabel: true } });
+/** W transakcji przekazywać `tx` - zapytanie przez osobne połączenie przy wyczerpanej puli czekałoby na samo siebie. */
+export async function numberPeriod(at: Date, db: Prisma.TransactionClient | typeof prisma = prisma): Promise<string> {
+  const s = await db.settings.findUnique({ where: { id: "singleton" }, select: { inquiryNumberScope: true, currentTermLabel: true } });
   if (s?.inquiryNumberScope === "TERM") {
     if (!s.currentTermLabel) throw new Error("TERM_LABEL_MISSING");
     return s.currentTermLabel;
@@ -95,8 +96,8 @@ export async function dueFromRule(kind: string, forwardedAt: Date, receivedAt: D
 }
 
 /** Konta operatorów - adresaci powiadomień o złożeniu i nowych pismach autorów. */
-export async function operatorIds(): Promise<string[]> {
-  return (await prisma.user.findMany({ where: { role: "OPERATOR", active: true }, select: { id: true } })).map((u) => u.id);
+export async function operatorIds(db: Prisma.TransactionClient | typeof prisma = prisma): Promise<string[]> {
+  return (await db.user.findMany({ where: { role: "OPERATOR", active: true }, select: { id: true } })).map((u) => u.id);
 }
 
 /** Potwierdzeni autorzy (konta) sprawy - adresaci powiadomień o rejestracji i odpowiedziach. */

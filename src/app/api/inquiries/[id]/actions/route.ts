@@ -71,7 +71,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           // Złożenie utrwala datę i treść (wersja złożona); dalsze zmiany tylko jawnymi pismami.
           await tx.inquiryLetter.update({ where: { id: letter.id }, data: { state: "FINAL", finalizedAt: now, letterDate: letter.letterDate ?? now, authorName: c.authors.filter((a) => a.confirmation !== "PENDING").map((a) => a.name).join(", ") } });
           await tx.inquiryCase.update({ where: { id }, data: { submittedAt: now } });
-          await notify(tx, await operatorIds(), `Złożono: ${label}`, link(true));
+          await notify(tx, await operatorIds(tx), `Złożono: ${label}`, link(true));
           await notify(tx, c.authors.filter((a) => a.confirmation === "PENDING" && a.userId).map((a) => a.userId!), `Prośba o potwierdzenie współautorstwa: ${label}`, link(false));
           return "Złożono";
         }
@@ -90,7 +90,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           if (!c.submittedAt && !c.receivedAt) throw new HttpError(409, "Sprawa nie została złożona.");
           if (c.withdrawnAt) throw new HttpError(409, "Sprawa została wycofana.");
           let period: string;
-          try { period = d.manualPeriod ?? await numberPeriod(c.receivedAt ?? c.submittedAt!); } catch { throw new HttpError(400, "Numeracja według kadencji wymaga oznaczenia bieżącej kadencji w Ustawieniach."); }
+          try { period = d.manualPeriod ?? await numberPeriod(c.receivedAt ?? c.submittedAt!, tx); } catch { throw new HttpError(400, "Numeracja według kadencji wymaga oznaczenia bieżącej kadencji w Ustawieniach."); }
           let seq: number;
           if (d.manualSeq) {
             await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`inquiry:${c.kind}:${period}`}))`;
@@ -107,7 +107,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           if (c.withdrawnAt || c.status === "DRAFT") throw new HttpError(409, "Tej sprawy nie można wycofać.");
           await tx.inquiryCase.update({ where: { id }, data: { withdrawnAt: new Date() } });
           if (isOperator) await notify(tx, await confirmedAuthorIds(tx, id), `Odnotowano wycofanie: ${label}`, link(false));
-          else await notify(tx, await operatorIds(), `Wycofano: ${label}`, link(true));
+          else await notify(tx, await operatorIds(tx), `Wycofano: ${label}`, link(true));
           return "Wycofano";
         }
         case "close": {

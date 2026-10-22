@@ -68,7 +68,7 @@ export async function POST(req: Request) {
           },
         });
         if (d.registerNow) {
-          const period = await numberPeriod(receivedAt);
+          const period = await numberPeriod(receivedAt, tx);
           const seq = await nextSeq(tx, d.kind, period);
           await tx.inquiryCase.update({ where: { id: c.id }, data: { seq, period, number: formatNumber(seq, period), registeredAt: new Date(), registeredById: session.user.id } });
         }

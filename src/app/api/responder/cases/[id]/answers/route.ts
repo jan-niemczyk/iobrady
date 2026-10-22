@@ -56,7 +56,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       const status = await refreshStatus(tx, id);
       await audit({ action: "INQUIRY_CHANGED", description: submit ? "Złożono odpowiedź (konto odpowiadającego)" : "Utworzono szkic odpowiedzi (konto odpowiadającego)", userId: session.user.id, metadata: { caseId: id, letterId: l.id, addresseeId: ad.id, status } }, tx);
       if (submit) {
-        await notify(tx, await operatorIds(), `Nowa odpowiedź (${ad.name}): ${c.title}`, `/inquiries/${id}`);
+        await notify(tx, await operatorIds(tx), `Nowa odpowiedź (${ad.name}): ${c.title}`, `/inquiries/${id}`);
         await notify(tx, await confirmedAuthorIds(tx, id), `Nowa odpowiedź: ${c.title}`, `/session/interpelacje/${id}`);
       }
       return l;
