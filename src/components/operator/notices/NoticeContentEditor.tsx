@@ -47,8 +47,20 @@ export function NoticeContentEditor({ value: c, onChange, withDocumentFields, id
       <fieldset className="border rounded p-3">
         <legend className="float-none w-auto px-1 fs-6 fw-semibold mb-0">Nagłówek</legend>
         <div className="row g-2">
-          <div className="col-12 col-md-6"><label className="form-label" htmlFor={id("unit")}>Nazwa organu</label><textarea id={id("unit")} className="form-control" rows={2} value={c.unitName} onChange={(e) => set({ unitName: e.target.value })} maxLength={300} /></div>
-          <div className="col-12 col-md-6"><label className="form-label" htmlFor={id("unitd")}>Pod nazwą</label><textarea id={id("unitd")} className="form-control" rows={2} value={c.unitDetails} onChange={(e) => set({ unitDetails: e.target.value })} maxLength={2000} placeholder={"{{nazwa_posiedzenia}}\n{{data_posiedzenia}}, godz. {{godzina}}"} /></div>
+          <div className="col-12 col-md-6">
+            <div className="d-flex align-items-center justify-content-between gap-2 mb-1">
+              <label className="form-label mb-0" htmlFor={id("unit")}>Nazwa organu</label>
+              <div className="form-check form-switch mb-0"><input className="form-check-input" type="checkbox" role="switch" id={id("unit-on")} checked={c.showUnitName} onChange={(e) => set({ showUnitName: e.target.checked })} /><label className="form-check-label small" htmlFor={id("unit-on")}>W dokumencie</label></div>
+            </div>
+            <textarea id={id("unit")} className="form-control" rows={2} value={c.unitName} disabled={!c.showUnitName} onChange={(e) => set({ unitName: e.target.value })} maxLength={300} />
+          </div>
+          <div className="col-12 col-md-6">
+            <div className="d-flex align-items-center justify-content-between gap-2 mb-1">
+              <label className="form-label mb-0" htmlFor={id("unitd")}>Pod nazwą</label>
+              <div className="form-check form-switch mb-0"><input className="form-check-input" type="checkbox" role="switch" id={id("unitd-on")} checked={c.showUnitDetails} onChange={(e) => set({ showUnitDetails: e.target.checked })} /><label className="form-check-label small" htmlFor={id("unitd-on")}>W dokumencie</label></div>
+            </div>
+            <textarea id={id("unitd")} className="form-control" rows={2} value={c.unitDetails} disabled={!c.showUnitDetails} onChange={(e) => set({ unitDetails: e.target.value })} maxLength={2000} />
+          </div>
           <div className="col-6 col-md-3"><label className="form-label" htmlFor={id("place")}>Miejscowość</label><input id={id("place")} className="form-control" value={c.place} onChange={(e) => set({ place: e.target.value })} maxLength={120} /></div>
           {withDocumentFields && <div className="col-6 col-md-3"><label className="form-label" htmlFor={id("date")}>Data pisma</label><input id={id("date")} type="date" className="form-control" value={c.letterDate} onChange={(e) => set({ letterDate: e.target.value })} /></div>}
           {withDocumentFields && <div className="col-12 col-md-3"><label className="form-label" htmlFor={id("ref")}>Znak sprawy</label><input id={id("ref")} className="form-control" value={c.caseRef} onChange={(e) => set({ caseRef: e.target.value })} maxLength={120} /></div>}
@@ -70,8 +82,7 @@ export function NoticeContentEditor({ value: c, onChange, withDocumentFields, id
         </div>
         <RichEditor id={id("outro")} label="Po porządku obrad" value={c.outro} onChange={(v) => set({ outro: v })} minHeight={90} extra={(insert) => <PlaceholderPicker insert={insert} />} />
         <div className="row g-2 mt-1">
-          <div className="col-12 col-md-6"><label className="form-label" htmlFor={id("sig")}>Podpis</label><textarea id={id("sig")} className="form-control" rows={3} value={c.signature} onChange={(e) => set({ signature: e.target.value })} maxLength={2000} placeholder={"Przewodniczący Rady\n{{podpisujacy}}"} /></div>
-          <div className="col-12 col-md-6"><label className="form-label" htmlFor={id("signer")}>Osoba podpisująca</label><input id={id("signer")} className="form-control" value={c.signer} onChange={(e) => set({ signer: e.target.value })} maxLength={300} /></div>
+          <div className="col-12 col-md-6"><label className="form-label" htmlFor={id("sig")}>Podpis</label><textarea id={id("sig")} className="form-control" rows={3} value={c.signature} onChange={(e) => set({ signature: e.target.value })} maxLength={2000} placeholder={"Przewodniczący Rady\nImię Nazwisko"} /></div>
         </div>
       </fieldset>
 

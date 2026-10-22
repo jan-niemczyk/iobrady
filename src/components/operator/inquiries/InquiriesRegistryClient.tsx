@@ -32,8 +32,9 @@ export function InquiriesRegistryClient({ enabled, publicArchive, units, users }
     <PageContainer size="xl">
       <PageHeader title="Interpelacje i zapytania"
         description={enabled
-          ? `Rejestr spraw, przekazania, odpowiedzi i publikacja.${publicArchive ? " Publiczny rejestr: /public/interpelacje." : " Publiczny rejestr jest wyłączony w Ustawieniach."}`
-          : "Moduł jest wyłączony w Ustawieniach - nowe sprawy i czynności są zablokowane. Odczyt i eksport archiwum pozostają dostępne."} />
+          ? (publicArchive ? undefined : "Publiczny rejestr jest wyłączony w Ustawieniach.")
+          : "Moduł jest wyłączony w Ustawieniach - nowe sprawy i czynności są zablokowane. Odczyt i eksport archiwum pozostają dostępne."}
+        actions={publicArchive ? <a className="btn btn-outline-secondary" href="/public/interpelacje" target="_blank" rel="noopener">Rejestr publiczny</a> : undefined} />
       {!enabled && <div className="alert alert-warning">Moduł wyłączony. Włączysz go w <Link href="/settings">Ustawieniach</Link>.</div>}
       <ul className="nav nav-tabs mb-3">
         {([["registry", "Rejestr"], ["external", "Wprowadź pismo"], ["grants", "Prawo składania"], ["responders", "Konta odpowiadających"]] as [Tab, string][]).map(([k, l]) => (

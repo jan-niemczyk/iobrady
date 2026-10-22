@@ -66,7 +66,7 @@ export function personStatusLabel(p: PublicPerson, quorum = false): string {
   const labels: Record<PublicPersonStatus, string> = {
     YES: "Za",
     NO: "Przeciw",
-    ABSTAIN: "Wstrzymanie się",
+    ABSTAIN: "Wstrzymał/a się",
     VOTED: "Głos oddany",
     NOT_VOTED: "Brak głosu",
     ABSENT: "Nieobecność",

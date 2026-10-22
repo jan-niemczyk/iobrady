@@ -39,12 +39,12 @@ export function NoticePreview({ content: c, agenda, values, recipient, logoUrl }
         <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, top: 1123 - c.marginBottomMm * 3.78, borderTop: "1px dashed #0d6efd", pointerEvents: "none" }} />
       </>}
       {c.letterhead.trim() && <div style={{ position: "absolute", top: 12, left: 0, right: 0, fontSize: 12, textAlign: "center" }}>{lines(c.letterhead)}</div>}
-      {(c.useLogo && logoUrl) || c.unitName.trim() || c.unitDetails.trim() ? (
+      {(c.useLogo && logoUrl) || (c.showUnitName && c.unitName.trim()) || (c.showUnitDetails && c.unitDetails.trim()) ? (
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           {c.useLogo && logoUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={logoUrl} alt="" style={{ maxHeight: 76, maxWidth: 132 }} />}
           <div>
-            {c.unitName.trim() && <div style={{ fontWeight: 700 }}>{lines(c.unitName)}</div>}
-            {c.unitDetails.trim() && <div>{lines(c.unitDetails)}</div>}
+            {c.showUnitName && c.unitName.trim() && <div style={{ fontWeight: 700 }}>{lines(c.unitName)}</div>}
+            {c.showUnitDetails && c.unitDetails.trim() && <div>{lines(c.unitDetails)}</div>}
           </div>
         </div>
       ) : null}

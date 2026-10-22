@@ -69,7 +69,7 @@ function LetterView({ v, l }: { v: View; l: Letter }) {
       <div className="card-body">
         <div className="small text-body-secondary">Pismo {l.seq} - {fmt(l.receivedAt ?? l.letterDate)}</div>
         <h3 className="h6 mb-1">{LETTER_KIND_LABEL[l.kind]}{ad ? ` - ${l.kind === "ANSWER" ? "od" : "do"}: ${ad.name}` : ""}</h3>
-        {(l.authorName || ref) && <div className="small mb-2">{[l.authorName && `Autor: ${l.authorName}`, ref && `w odniesieniu do pisma ${ref.seq}`].filter(Boolean).join(" - ")}</div>}
+        {(l.authorName || ref) && <div className="small mb-2">{[l.authorName && `Autor: ${l.authorName.replace(/\n+/g, ", ")}`, ref && `w odniesieniu do pisma ${ref.seq}`].filter(Boolean).join(" - ")}</div>}
         {l.body.trim() ? <div style={{ maxWidth: "75ch" }}><RichTextView text={l.body} /></div> : <p className="small fst-italic mb-1">Treść w załączonym pliku.</p>}
         <div className="d-flex flex-wrap gap-2 mt-2">
           {l.attachments.map((a) => <a key={a.id} className="btn btn-sm btn-outline-secondary" href={`/api/responder/attachments/${a.id}`}><IconDownload size={14} /> {a.fileName}</a>)}

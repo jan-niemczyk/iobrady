@@ -560,6 +560,9 @@ model Meeting {
   inquiries        InquiryCase[]
   /// Miejsce posiedzenia (zawiadomienia, nagłówek strony radnego).
   location         String?
+  /// Formy odmienione do pism (zawiadomienia): nazwa w bierniku („zwołuję XX Sesję...”), miejsce w miejscowniku („w Sali obrad”).
+  nameInflected     String?
+  locationInflected String?
 
   @@index([status])
   @@index([scheduledAt])

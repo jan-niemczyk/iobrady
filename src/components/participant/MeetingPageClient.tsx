@@ -36,7 +36,6 @@ function Votes({ votes, onResults }: { votes: Vote[]; onResults: (id: string, el
             {v.status === "CLOSED" && (
               <>
                 <button type="button" className="pt-btn pt-btn-sm" onClick={(e) => onResults(v.id, e.currentTarget)}>Wyniki<span className="sr-only"> głosowania nr {v.number}</span></button>
-                <a className="pt-btn pt-btn-sm" href={`/session/glosowanie/${v.id}`}>Szczegóły<span className="sr-only"> głosowania nr {v.number}</span></a>
               </>
             )}
           </div>

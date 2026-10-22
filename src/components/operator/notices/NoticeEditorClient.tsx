@@ -53,7 +53,12 @@ export function NoticeEditorClient({ meetingId, noticeId, logoUrl }: { meetingId
   const values = useMemo(() => {
     if (!d || !content) return {};
     const letter = /^\d{4}-\d{2}-\d{2}$/.test(content.letterDate) ? plDate(new Date(`${content.letterDate}T12:00:00Z`)) : "";
-    return { ...d.values, podpisujacy: content.signer, miejscowosc: content.place, data_pisma: letter };
+    // Zapis numeru według bieżącego wyboru (bez zapisu i odświeżenia); gdy numeru nie da się przeliczyć - jak w posiedzeniu.
+    const v = d.values;
+    const numer = content.meetingNumberFormat === "roman" && v.numer_posiedzenia_rzymski ? v.numer_posiedzenia_rzymski
+      : content.meetingNumberFormat === "arabic" && v.numer_posiedzenia_arabski ? v.numer_posiedzenia_arabski
+      : (v.numer_posiedzenia_surowy ?? v.numer_posiedzenia);
+    return { ...v, numer_posiedzenia: numer, podpisujacy: content.signer, miejscowosc: content.place, data_pisma: letter };
   }, [d, content]);
   const unresolved = useMemo(() => {
     if (!content) return [];

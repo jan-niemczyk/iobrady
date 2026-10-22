@@ -3,6 +3,7 @@ import type { AttendanceSummary, MeetingAttendance, PersonResult } from "@/lib/a
 import { SOURCE_LABEL } from "@/lib/attendanceReport";
 import { renderPdf } from "@/lib/serverPdf";
 import { buildXlsx, type Cell } from "@/lib/xlsx";
+import { BW_HORIZONTAL_LINES } from "@/lib/pdfLayouts";
 
 /** Eksport raportów obecności - PDF, DOCX i XLSX z tych samych danych co widok (lib/attendanceReport). */
 
@@ -72,10 +73,10 @@ export async function meetingAttendancePdf(r: MeetingAttendance, org: string, wi
       { text: h[4], fontSize: 8, color: "#000000" },
       { text: h[5], fontSize: 9, bold: true, margin: [0, 6, 0, 6] },
       ...r.basisNotes.map((n) => ({ text: n, fontSize: 8, italics: true })),
-      { table: { headerRows: 1, widths: rows[0].map((_, i) => (i === 1 ? "*" : "auto")), body: rows.map((row, ri) => row.map((c) => ({ text: String(c ?? ""), fontSize: 8, bold: ri === 0 }))) }, layout: "lightHorizontalLines", margin: [0, 6, 0, 8] },
+      { table: { headerRows: 1, widths: rows[0].map((_, i) => (i === 1 ? "*" : "auto")), body: rows.map((row, ri) => row.map((c) => ({ text: String(c ?? ""), fontSize: 8, bold: ri === 0 }))) }, layout: BW_HORIZONTAL_LINES, margin: [0, 6, 0, 8] },
       ...(guestRows.length ? [
         { text: "Goście (bez prawa głosu, poza kworum i frekwencją)", fontSize: 10, bold: true, margin: [0, 6, 0, 4] },
-        { table: { headerRows: 1, widths: ["auto", "*", "auto", "auto"], body: [["Lp.", "Nazwisko i imię", "Status", "Godziny"].map((t) => ({ text: t, bold: true, fontSize: 8 })), ...guestRows.map((g) => g.map((c) => ({ text: c, fontSize: 8 })))] }, layout: "lightHorizontalLines" },
+        { table: { headerRows: 1, widths: ["auto", "*", "auto", "auto"], body: [["Lp.", "Nazwisko i imię", "Status", "Godziny"].map((t) => ({ text: t, bold: true, fontSize: 8 })), ...guestRows.map((g) => g.map((c) => ({ text: c, fontSize: 8 })))] }, layout: BW_HORIZONTAL_LINES },
       ] : []),
       { text: "Legenda", fontSize: 9, bold: true, margin: [0, 10, 0, 2] },
       ...LEGEND.map((l) => ({ text: l, fontSize: 8, margin: [0, 0, 0, 2] })),
@@ -163,11 +164,11 @@ export async function summaryPdf(s: AttendanceSummary, org: string): Promise<Buf
       { text: h[0], fontSize: 10, bold: true },
       { text: h[1], fontSize: 14, bold: true, margin: [0, 4, 0, 4] },
       ...h.slice(2).map((t) => ({ text: t, fontSize: 9 })),
-      { table: { headerRows: 1, widths: rows[0].map((_, i) => (i === 1 ? "*" : "auto")), body: rows.map((row, ri) => row.map((c) => ({ text: String(c ?? ""), fontSize: 8, bold: ri === 0 }))) }, layout: "lightHorizontalLines", margin: [0, 8, 0, 8] },
+      { table: { headerRows: 1, widths: rows[0].map((_, i) => (i === 1 ? "*" : "auto")), body: rows.map((row, ri) => row.map((c) => ({ text: String(c ?? ""), fontSize: 8, bold: ri === 0 }))) }, layout: BW_HORIZONTAL_LINES, margin: [0, 8, 0, 8] },
       { text: "Legenda", fontSize: 9, bold: true, margin: [0, 6, 0, 2] },
       ...LEGEND.map((l) => ({ text: l, fontSize: 8, margin: [0, 0, 0, 2] })),
       { text: "Szczegóły - posiedzenia osób", fontSize: 10, bold: true, pageBreak: "before", margin: [0, 0, 0, 4] },
-      { table: { headerRows: 1, widths: ["auto", "auto", "*", "auto", "auto", "auto", "auto", "auto"], body: detailRows(s).map((row, ri) => row.map((c) => ({ text: String(c ?? ""), fontSize: 7, bold: ri === 0 }))) }, layout: "lightHorizontalLines" },
+      { table: { headerRows: 1, widths: ["auto", "auto", "*", "auto", "auto", "auto", "auto", "auto"], body: detailRows(s).map((row, ri) => row.map((c) => ({ text: String(c ?? ""), fontSize: 7, bold: ri === 0 }))) }, layout: BW_HORIZONTAL_LINES },
     ],
   });
 }

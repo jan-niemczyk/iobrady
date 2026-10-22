@@ -61,7 +61,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     const final = isOperator || d.submit === true;
     const now = new Date();
     const addresseeName = c.addressees.find((a) => a.id === d.addresseeId)?.name;
-    const authorName = isOperator ? (d.authorName || (d.kind === "ANSWER" ? addresseeName : null) || null) : c.authors.filter((a) => a.confirmation !== "PENDING").map((a) => a.name).join(", ");
+    // Odpowiedź: imię i nazwisko podpisującego, pod nim adresat (funkcja/urząd); bez nazwiska - sam adresat.
+    const answerAuthor = d.kind === "ANSWER" && d.authorName && addresseeName && !d.authorName.includes(addresseeName) ? `${d.authorName}\n${addresseeName}` : d.authorName;
+    const authorName = isOperator ? (answerAuthor || (d.kind === "ANSWER" ? addresseeName : null) || null) : c.authors.filter((a) => a.confirmation !== "PENDING").map((a) => a.name).join(", ");
     const letter = await prisma.$transaction(async (tx) => {
       // Numer porządkowy tylko dla pisma utrwalonego (szkic dostaje go przy złożeniu).
       const seq = final ? await nextLetterSeq(tx, id) : null;

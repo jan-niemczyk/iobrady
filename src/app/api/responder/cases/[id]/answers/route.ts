@@ -43,12 +43,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     const submit = d.submit === true;
     if (submit && !d.body.trim()) throw new HttpError(400, "Uzupełnij treść odpowiedzi albo zapisz szkic i dołącz plik.");
     const now = new Date();
+    // Autor odpowiedzi: imię i nazwisko z konta, pod nim funkcja (albo adresat) i instytucja.
+    const me = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id }, select: { firstName: true, lastName: true, functionTitle: true } });
+    const authorName = [`${me.firstName} ${me.lastName}`, me.functionTitle || ad.name, ad.institution].filter(Boolean).join("\n");
     const l = await prisma.$transaction(async (tx) => {
       const seq = submit ? await nextLetterSeq(tx, id) : null;
       const l = await tx.inquiryLetter.create({
         data: {
           caseId: id, seq, kind: "ANSWER", addresseeId: ad.id, refLetterId: d.refLetterId || null,
-          authorName: [ad.name, ad.institution].filter(Boolean).join(", "), authorUserId: session.user.id,
+          authorName, authorUserId: session.user.id,
           title: d.title || null, body: d.body, letterDate: d.letterDate ? new Date(d.letterDate) : submit ? now : null,
           receivedAt: submit ? now : null, state: submit ? "FINAL" : "DRAFT", finalizedAt: submit ? now : null, createdById: session.user.id,
         },

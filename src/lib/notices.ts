@@ -26,7 +26,7 @@ export function agendaDiff(notice: NoticeAgendaItem[], meeting: NoticeAgendaItem
 /** Wartości znaczników dla posiedzenia (adresat i zwrot dochodzą przy dokumencie spersonalizowanym). */
 export async function noticeValues(meetingId: string, content: NoticeContent): Promise<Record<string, string>> {
   const [m, s] = await Promise.all([
-    prisma.meeting.findUnique({ where: { id: meetingId }, select: { name: true, number: true, scheduledAt: true, location: true, orgUnits: { select: { orgUnit: { select: { name: true } } } } } }),
+    prisma.meeting.findUnique({ where: { id: meetingId }, select: { name: true, nameInflected: true, number: true, scheduledAt: true, location: true, locationInflected: true, orgUnits: { select: { orgUnit: { select: { name: true } } } } } }),
     prisma.settings.findUnique({ where: { id: "singleton" }, select: { organizationName: true } }),
   ]);
   if (!m) return {};
@@ -36,11 +36,15 @@ export async function noticeValues(meetingId: string, content: NoticeContent): P
     organ: m.orgUnits.length ? m.orgUnits.map((o) => o.orgUnit.name).join(", ") : (s?.organizationName ?? ""),
     nazwa_posiedzenia: m.name,
     numer_posiedzenia: content.meetingNumberFormat === "roman" && num ? toRoman(num) : content.meetingNumberFormat === "arabic" && num ? String(num) : m.number,
+    numer_posiedzenia_surowy: m.number,
     numer_posiedzenia_rzymski: num ? toRoman(num) : "",
     numer_posiedzenia_arabski: num ? String(num) : "",
     data_posiedzenia: plDate(m.scheduledAt),
     godzina: plTime(m.scheduledAt),
     miejsce: m.location ?? "",
+    // Formy odmienione z danych posiedzenia; bez nich - forma podstawowa.
+    miejsce_odmienione: m.locationInflected || m.location || "",
+    nazwa_posiedzenia_odmieniona: m.nameInflected || m.name,
     podpisujacy: content.signer,
     data_pisma: letter ? plDate(letter) : "",
     miejscowosc: content.place,

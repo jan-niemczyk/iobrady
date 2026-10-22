@@ -57,13 +57,16 @@ export const PLACEHOLDERS: { key: string; label: string }[] = [
   { key: "data_posiedzenia", label: "Data posiedzenia (np. 7 sierpnia 2026 r.)" },
   { key: "godzina", label: "Godzina rozpoczęcia" },
   { key: "miejsce", label: "Miejsce posiedzenia" },
+  { key: "miejsce_odmienione", label: "Miejsce posiedzenia - forma odmieniona (np. Sali obrad)" },
+  { key: "nazwa_posiedzenia_odmieniona", label: "Nazwa posiedzenia - forma odmieniona (np. XX Sesję Rady)" },
   { key: "adresat", label: "Adresat (w dokumencie spersonalizowanym)" },
   { key: "zwrot", label: "Zwrot grzecznościowy adresata" },
-  { key: "podpisujacy", label: "Osoba podpisująca" },
   { key: "data_pisma", label: "Data pisma" },
   { key: "miejscowosc", label: "Miejscowość" },
 ];
-const KNOWN = new Set(PLACEHOLDERS.map((p) => p.key));
+/** Znaczniki obsługiwane, ale niepokazywane w wyborze (zgodność ze starszymi szablonami, wartości pomocnicze). */
+const HIDDEN_PLACEHOLDERS = ["podpisujacy", "numer_posiedzenia_surowy"];
+const KNOWN = new Set([...PLACEHOLDERS.map((p) => p.key), ...HIDDEN_PLACEHOLDERS]);
 
 /** Podstawia znaczniki; zwraca tekst i listę nierozwiązanych (nieznanych albo bez wartości). */
 export function fillPlaceholders(text: string, values: Record<string, string | null | undefined>): { text: string; unresolved: string[] } {
@@ -84,6 +87,9 @@ export interface NoticeContent {
   place: string;
   letterDate: string;
   caseRef: string;
+  /** Przełączniki widoczności nazwy organu i wierszy pod nią (nagłówek obok logo). */
+  showUnitName: boolean;
+  showUnitDetails: boolean;
   title: string;
   intro: string;
   agendaLabel: string;
@@ -105,9 +111,11 @@ export interface NoticeContent {
   meetingNumberFormat: "asis" | "roman" | "arabic";
 }
 
+export const DEFAULT_UNIT_DETAILS = "{{nazwa_posiedzenia}}\n{{data_posiedzenia}}, godz. {{godzina}}";
+
 export const EMPTY_CONTENT: NoticeContent = {
-  unitName: "", unitDetails: "", useLogo: false, place: "", letterDate: "", caseRef: "",
-  title: "ZAWIADOMIENIE", intro: "", agendaLabel: "Proponowany porządek obrad:", agendaPosition: "after-intro",
+  unitName: "{{organ}}", unitDetails: DEFAULT_UNIT_DETAILS, showUnitName: true, showUnitDetails: true, useLogo: false, place: "", letterDate: "", caseRef: "",
+  title: "", intro: "", agendaLabel: "Porządek obrad:", agendaPosition: "after-intro",
   outro: "", signature: "", signer: "", footer: "", footerPageNumbers: true, letterhead: "",
   letterheadImage: "", marginTopMm: 20, marginBottomMm: 20, marginLeftMm: 25, marginRightMm: 20, meetingNumberFormat: "asis",
 };
@@ -141,6 +149,7 @@ export function normalizeContent(raw: unknown): NoticeContent {
   const s = (k: keyof NoticeContent, max = 20000) => (typeof o[k] === "string" ? (o[k] as string).slice(0, max) : (EMPTY_CONTENT[k] as string));
   return {
     unitName: s("unitName", 300), unitDetails: s("unitDetails", 2000), useLogo: o.useLogo === true,
+    showUnitName: o.showUnitName !== false, showUnitDetails: o.showUnitDetails !== false,
     place: s("place", 120), letterDate: s("letterDate", 20), caseRef: s("caseRef", 120), title: s("title", 300),
     intro: s("intro"), agendaLabel: s("agendaLabel", 300), agendaPosition: o.agendaPosition === "none" ? "none" : "after-intro",
     outro: s("outro"), signature: s("signature", 2000), signer: s("signer", 300), footer: s("footer", 2000),

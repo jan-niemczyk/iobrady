@@ -16,6 +16,7 @@ type Tpl = {
 const SAMPLE_VALUES: Record<string, string> = {
   organ: "Rada", nazwa_posiedzenia: "Sesja", numer_posiedzenia: "XII", data_posiedzenia: "15 października 2026",
   godzina: "10:00", miejsce: "Sala obrad", podpisujacy: "", data_pisma: "1 października 2026", miejscowosc: "",
+  miejsce_odmienione: "Sali obrad", nazwa_posiedzenia_odmieniona: "Sesję", numer_posiedzenia_rzymski: "XII", numer_posiedzenia_arabski: "12",
 };
 const SAMPLE_AGENDA: NoticeAgendaItem[] = [
   { key: "a", number: "1", title: "Otwarcie posiedzenia.", level: 0 },
@@ -108,7 +109,7 @@ export function NoticeTemplatesClient({ units, logoUrl }: { units: { id: string;
             <div className="card">
               <CardHeader title="Podgląd (przykładowe dane)" />
               <div className="card-body bg-body-tertiary" style={{ overflowX: "auto" }}>
-                <NoticePreview content={editing.content} agenda={SAMPLE_AGENDA} values={{ ...SAMPLE_VALUES, podpisujacy: editing.content.signer }} recipient={null} logoUrl={logoUrl} />
+                <NoticePreview content={editing.content} agenda={SAMPLE_AGENDA} values={{ ...SAMPLE_VALUES, podpisujacy: editing.content.signer, numer_posiedzenia: editing.content.meetingNumberFormat === "arabic" ? "12" : "XII" }} recipient={null} logoUrl={logoUrl} />
               </div>
             </div>
           </div>

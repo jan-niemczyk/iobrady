@@ -164,7 +164,7 @@ function LetterCard({ v, l, canAct, reload }: { v: InquiryView; l: Letter; canAc
           {LETTER_KIND_LABEL[l.kind]}{addressee ? ` - ${l.kind === "ANSWER" ? "od" : "do"}: ${addressee.name}` : ""}
           {l.state === "DRAFT" && <span className="pt-badge pt-badge-warn" style={{ marginLeft: 8 }}>Projekt</span>}
         </h3>
-        <div className="pt-label">{[l.authorName && `Autor: ${l.authorName}`, l.letterDate && `pismo z ${fmt(l.letterDate)}`, refIdx > 0 && `w odniesieniu do pisma ${refIdx}`].filter(Boolean).join(" - ")}</div>
+        <div className="pt-label">{[l.authorName && `Autor: ${l.authorName.replace(/\n+/g, ", ")}`, l.letterDate && `pismo z ${fmt(l.letterDate)}`, refIdx > 0 && `w odniesieniu do pisma ${refIdx}`].filter(Boolean).join(" - ")}</div>
         {editable ? (
           <>
             <div style={{ marginTop: 8 }}><RichEditor id={`lb-${l.id}`} label="Treść pisma" value={body} onChange={setBody} minHeight={180} variant="app" /></div>

@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReportData, ReportMark, ReportPerson } from "@/lib/reportTypes";
 import { readUserError } from "@/lib/feedback";
+import { ParticipantPdfButton } from "@/components/participant/ParticipantPdfButton";
 
 // Etykiety neutralne - bez zgadywania formy gramatycznej z imienia.
 const MARK_LABEL: Record<ReportMark, string> = {
-  "za": "Za", "pr.": "Przeciw", "ws.": "Wstrzymanie się", "ng.": "Brak głosu",
+  "za": "Za", "pr.": "Przeciw", "ws.": "Wstrzymał/a się", "ng.": "Brak głosu",
   "ob.": "Obecność", "nb.": "Nieobecność", "nieob.": "Nieobecność", "wykl.": "Wyłączenie",
 };
 const MARK_COLOR: Record<ReportMark, string> = {
@@ -213,7 +214,7 @@ export function VoteResultsView({ voteId, onClose }: { voteId: string; onClose: 
         <div className="pt-panel-head pt-modal-head">
           <h2 id="vr-title" className="pt-panel-title">Wyniki głosowania{data ? ` nr ${data.voteNumber}` : ""}</h2>
           <div className="pt-btn-group">
-            {data && <a className="pt-btn pt-btn-sm" href={`/session/glosowanie/${voteId}`}>Pełne szczegóły</a>}
+            {data && <ParticipantPdfButton data={data} />}
             <button ref={closeRef} className="pt-btn pt-btn-sm" onClick={onClose}>Zamknij</button>
           </div>
         </div>

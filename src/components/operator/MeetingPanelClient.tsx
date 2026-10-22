@@ -80,6 +80,8 @@ export interface MeetingClientState {
   status: MeetingStatus;
   scheduledAt: string;
   location?: string | null;
+  nameInflected?: string | null;
+  locationInflected?: string | null;
   /** Adres instalacji z konfiguracji (link widoku publicznego); null - bieżąca domena. */
   publicOrigin?: string | null;
   openedAt: string | null;
@@ -1353,6 +1355,8 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
           initialNumber={state.number}
           initialScheduledAt={state.scheduledAt}
           initialLocation={state.location ?? ""}
+          initialNameInflected={state.nameInflected ?? ""}
+          initialLocationInflected={state.locationInflected ?? ""}
           settings={state.settings}
           onClose={() => setEditingMeeting(false)}
           onSaved={() => { setEditingMeeting(false); refetch(); }}
@@ -2783,13 +2787,15 @@ function MessagesPanel({
 // ─────────────────────────────────────────────────────────────────────────
 
 function EditMeetingModal({
-  meetingId, initialName, initialNumber, initialScheduledAt, initialLocation, settings, onClose, onSaved,
+  meetingId, initialName, initialNumber, initialScheduledAt, initialLocation, initialNameInflected, initialLocationInflected, settings, onClose, onSaved,
 }: {
   meetingId: string;
   initialName: string;
   initialNumber: string;
   initialScheduledAt: string;
   initialLocation: string;
+  initialNameInflected: string;
+  initialLocationInflected: string;
   settings: MeetingClientState["settings"];
   onClose: () => void;
   onSaved: () => void;
@@ -2810,6 +2816,8 @@ function EditMeetingModal({
   const [number, setNumber] = useState(initialNumber);
   const [scheduledLocal, setScheduledLocal] = useState(toLocalInput(initialScheduledAt));
   const [location, setLocation] = useState(initialLocation);
+  const [nameInflected, setNameInflected] = useState(initialNameInflected);
+  const [locationInflected, setLocationInflected] = useState(initialLocationInflected);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -2824,6 +2832,8 @@ function EditMeetingModal({
         name, number,
         scheduledAt: localInputToWarsawISO(scheduledLocal),
         location: location.trim() || null,
+        nameInflected: nameInflected.trim() || null,
+        locationInflected: locationInflected.trim() || null,
       }),
     });
     if (!r.ok) {
@@ -2854,6 +2864,14 @@ function EditMeetingModal({
           <div className="col-12">
             <label className="form-label" htmlFor="em-location">Miejsce <span className="text-body-secondary fw-normal">(opcjonalnie)</span></label>
             <input id="em-location" className="form-control" value={location} maxLength={300} onChange={(e) => setLocation(e.target.value)} />
+          </div>
+          <div className="col-12 col-sm-6">
+            <label className="form-label" htmlFor="em-name-inf">Nazwa - forma odmieniona <span className="text-body-secondary fw-normal">(zwołuję kogo? co?)</span></label>
+            <input id="em-name-inf" className="form-control" value={nameInflected} maxLength={500} placeholder="np. XX Sesję Młodzieżowej Rady Powiatu" onChange={(e) => setNameInflected(e.target.value)} />
+          </div>
+          <div className="col-12 col-sm-6">
+            <label className="form-label" htmlFor="em-loc-inf">Miejsce - forma odmieniona <span className="text-body-secondary fw-normal">(w czym?)</span></label>
+            <input id="em-loc-inf" className="form-control" value={locationInflected} maxLength={300} placeholder="np. Sali obrad Starostwa Powiatowego" onChange={(e) => setLocationInflected(e.target.value)} />
           </div>
         </div>
         {error && <div className="alert alert-danger py-2 mb-0">{error}</div>}

@@ -18,6 +18,8 @@ const schema = z.object({
   scheduledAt: z.string().datetime().optional(),
   meetingType: z.string().max(100).nullable().optional(),
   location: z.string().max(300).nullable().optional(),
+  nameInflected: z.string().max(500).nullable().optional(),
+  locationInflected: z.string().max(300).nullable().optional(),
   quorumRule: z.enum(["MORE_THAN_HALF", "AT_LEAST_HALF", "PERCENTAGE", "COUNT", "CUSTOM"]).optional(),
   quorumValue: z.number().nullable().optional(),
   autoOpenSpeakerList: z.boolean().optional(),
@@ -50,6 +52,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   if (parsed.data.scheduledAt !== undefined) data.scheduledAt = new Date(parsed.data.scheduledAt);
   if (parsed.data.meetingType !== undefined) data.meetingType = parsed.data.meetingType;
   if (parsed.data.location !== undefined) data.location = parsed.data.location?.trim() || null;
+  if (parsed.data.nameInflected !== undefined) data.nameInflected = parsed.data.nameInflected?.trim() || null;
+  if (parsed.data.locationInflected !== undefined) data.locationInflected = parsed.data.locationInflected?.trim() || null;
   if (parsed.data.quorumRule !== undefined) data.quorumRule = parsed.data.quorumRule;
   if (parsed.data.quorumValue !== undefined) data.quorumValue = parsed.data.quorumValue;
   if (parsed.data.autoOpenSpeakerList !== undefined) data.autoOpenSpeakerList = parsed.data.autoOpenSpeakerList;

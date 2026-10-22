@@ -1655,3 +1655,31 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
       dokumentu - w PDF i DOCX (`footer` = wysokość stopki papieru). Podgląd: pełna strona A4 z przerywanymi
       granicami stref; pola nazywają się „Nagłówek papieru” / „Stopka papieru”.
 
+## ABK. Uwagi po przeglądzie: zawiadomienia, wydruki, interpelacje, panel radnego
+
+- [x] **Wyniki głosowania u radnego**: jeden przycisk „Wyniki” (okno z pełnym wykazem i PDF) zamiast osobnych
+      „Wyniki” i „Szczegóły” - obie pokazywały ten sam `VoteResultsBody`. Strona `/session/glosowanie/[id]` zostaje
+      dla dotychczasowych odnośników.
+- [x] **Numer posiedzenia rzymski/arabski**: zapis działał w DOCX/PDF, ale podgląd edytora brał wartości z serwera
+      z chwili wczytania - zmiana wyboru była widoczna dopiero po zapisie i odświeżeniu. Podgląd przelicza numer od razu.
+- [x] **Szarości w PDF**: wbudowany układ pdfmake `lightHorizontalLines` rysował szare linie (raport listy kandydatów,
+      rejestr interpelacji, raporty obecności - 6 miejsc). Zastąpiony czarnym `BW_HORIZONTAL_LINES` (`lib/pdfLayouts.ts`).
+      Przegląd wszystkich generatorów PDF: pozostałe kolory wyłącznie czarne.
+- [x] **Szablon zawiadomienia**: nazwa organu domyślnie `{{organ}}`, „Pod nazwą” domyślnie nazwa i termin posiedzenia,
+      przełączniki „W dokumencie” dla obu pól (`showUnitName`, `showUnitDetails`); tytuł domyślnie pusty; nagłówek
+      porządku domyślnie „Porządek obrad:”; usunięte pole „Osoba podpisująca” (znacznik `{{podpisujacy}}` nadal
+      obsługiwany w starszych szablonach, ukryty w wyborze).
+- [x] **Formy odmienione**: w edycji posiedzenia pola „Nazwa - forma odmieniona” (zwołuję kogo? co?) i „Miejsce -
+      forma odmieniona” (w czym?); znaczniki `{{nazwa_posiedzenia_odmieniona}}` i `{{miejsce_odmienione}}` (bez wpisu -
+      forma podstawowa). Schemat: `Meeting.nameInflected`, `Meeting.locationInflected` (opcjonalne).
+- [x] **Autor odpowiedzi**: odpowiedź z konta odpowiadającego zapisuje imię i nazwisko z konta, pod nim funkcję
+      (albo adresata) i instytucję; przy odpowiedzi wprowadzanej przez operatora pole „Podpisał (imię i nazwisko)”,
+      adresat dopisywany w kolejnym wierszu.
+- [x] **Rejestr publiczny interpelacji**: przycisk „Rejestr publiczny” w module operatora i w „Moich sprawach” radnego
+      (gdy rejestr jest włączony).
+- [x] **Widok publiczny i wyniki radnego**: „Wstrzymał/a się” zamiast „Wstrzymanie się”.
+- [x] **PDF interpelacji**: bez dopisku „(pismo N w sprawie)” przy rodzaju pisma.
+- [x] **Next.js 16.4.2**: 16.4.0 miał krytyczne podatności (GHSA-2464-fhr4-w9xw, GHSA-673q-mjm6-r5xr - RCE,
+      GHSA-p3m5-59mp-jv5r - DoS); build zatrzymywał się na ostrzeżeniu. `npm audit`: 0 podatności.
+- Testy: e2e 41/41, sondy 45/45, `tsc`, build.
+

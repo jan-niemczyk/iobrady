@@ -112,7 +112,7 @@ export async function buildNoticeDocx(input: NoticeRenderInput): Promise<Buffer>
   const body: (Paragraph | Table)[] = [];
 
   // 1. Logo + nazwa organu i dane (np. nazwa posiedzenia, termin).
-  const unit = [...lines(c.unitName, values, { bold: true }), ...lines(c.unitDetails, values)];
+  const unit = [...(c.showUnitName ? lines(c.unitName, values, { bold: true }) : []), ...(c.showUnitDetails ? lines(c.unitDetails, values) : [])];
   if (logo || unit.length) {
     if (logo) {
       const logoW = 2400;

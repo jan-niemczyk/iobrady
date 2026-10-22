@@ -66,7 +66,7 @@ function letterBlock(c: PdfCase, l: PdfLetter, org: string, inlineDraftMark = fa
   const sender = isAnswer ? (l.authorName ?? (ad ? addrText(ad) : "")) : isSub ? confirmed(c).join("\n") : (l.authorName ?? confirmed(c).join("\n"));
   // Odbiorca: pismo radnych - adresat(ci); odpowiedź - autorzy sprawy.
   const to = isAnswer ? confirmed(c).join("\n") : ad ? addrText(ad) : c.addressees.map(addrText).join("\n\n");
-  const kindLine = `${isSub ? INQUIRY_KIND_LABEL[c.kind] : LETTER_KIND_LABEL[l.kind]}${l.seq ? ` (pismo ${l.seq} w sprawie)` : ""}`;
+  const kindLine = isSub ? INQUIRY_KIND_LABEL[c.kind] : LETTER_KIND_LABEL[l.kind];
 
   return [
     inlineDraftMark && l.state === "DRAFT" ? { text: "PROJEKT - PISMO NIEZŁOŻONE", bold: true, alignment: "center", margin: [0, 0, 0, 12] } : null,

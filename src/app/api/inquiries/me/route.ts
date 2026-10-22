@@ -11,5 +11,6 @@ export async function GET() {
   const grants = session.user.role === "PARTICIPANT"
     ? await prisma.inquiryGrant.findMany({ where: { userId: session.user.id }, include: { orgUnit: { select: { id: true, name: true } } } })
     : [];
-  return NextResponse.json({ enabled, canSubmit: enabled && grants.length > 0, scopes: grants.map((g) => g.orgUnit ?? { id: null, name: "Cała jednostka" }) });
+  const s = await prisma.settings.findUnique({ where: { id: "singleton" }, select: { inquiriesPublicArchive: true } });
+  return NextResponse.json({ enabled, canSubmit: enabled && grants.length > 0, publicArchive: s?.inquiriesPublicArchive === true, scopes: grants.map((g) => g.orgUnit ?? { id: null, name: "Cała jednostka" }) });
 }

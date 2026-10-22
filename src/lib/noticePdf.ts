@@ -48,8 +48,8 @@ export async function buildNoticePdf(input: { content: NoticeContent; agenda: No
 
   const content: unknown[] = [];
   const unit = [
-    ...nonEmpty(fill(c.unitName, v)).map((l) => ({ text: l, bold: true })),
-    ...nonEmpty(fill(c.unitDetails, v)).map((l) => ({ text: l })),
+    ...(c.showUnitName ? nonEmpty(fill(c.unitName, v)) : []).map((l) => ({ text: l, bold: true })),
+    ...(c.showUnitDetails ? nonEmpty(fill(c.unitDetails, v)) : []).map((l) => ({ text: l })),
   ];
   if (logo) content.push({ columns: [{ image: dataUrl(logo), fit: [96, 56], width: 110 }, { stack: unit, width: "*", margin: [0, Math.max(0, (56 - unit.length * 13) / 2), 0, 0] }], columnGap: 0 });
   else if (unit.length) content.push({ stack: unit });

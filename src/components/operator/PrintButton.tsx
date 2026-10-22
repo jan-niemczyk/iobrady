@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BW_HORIZONTAL_LINES } from "@/lib/pdfLayouts";
 
 // Znacznik głosu w tabeli imiennej - krótkie oznaczenia (legenda pod wykazem).
 export type PdfMark = "za" | "pr." | "ws." | "ng." | "ob.";
@@ -120,7 +121,7 @@ export function PrintButton({ fileName = "raport-glosowania", data }: { fileName
             ]);
             content.push({
               table: { headerRows: 1, widths: ["auto", "*", ...Array.from({ length: nCand }, () => "auto")], body: [header, ...rows] },
-              layout: "lightHorizontalLines",
+              layout: BW_HORIZONTAL_LINES,
               margin: [0, 0, 0, 4],
             });
           } else {

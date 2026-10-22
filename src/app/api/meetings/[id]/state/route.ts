@@ -55,6 +55,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     id: meeting.id, displayToken: await ensureDisplayToken(meeting.id), number: meeting.number, name: meeting.name, status: meeting.status,
     scheduledAt: meeting.scheduledAt.toISOString(),
     location: meeting.location ?? null,
+    nameInflected: meeting.nameInflected ?? null,
+    locationInflected: meeting.locationInflected ?? null,
     publicOrigin: configuredOrigin(),
     openedAt: meeting.openedAt?.toISOString() ?? null,
     attendanceMode: meeting.attendanceMode,

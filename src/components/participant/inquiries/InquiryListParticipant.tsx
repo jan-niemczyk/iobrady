@@ -10,7 +10,7 @@ const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("pl-
 /** Sprawy radnego (własne i współautorskie, w tym szkice i zaproszenia do współautorstwa). */
 export function InquiryListParticipant() {
   const [rows, setRows] = useState<Row[] | null>(null);
-  const [me, setMe] = useState<{ enabled: boolean; canSubmit: boolean } | null>(null);
+  const [me, setMe] = useState<{ enabled: boolean; canSubmit: boolean; publicArchive?: boolean } | null>(null);
   const [error, setError] = useState(false);
   useEffect(() => {
     Promise.all([fetch("/api/inquiries", { cache: "no-store" }), fetch("/api/inquiries/me", { cache: "no-store" })])
@@ -42,6 +42,11 @@ export function InquiryListParticipant() {
         <div className="pt-kicker">Interpelacje i zapytania</div>
         <h1 className="pt-h1">Moje sprawy</h1>
       </header>
+      {me?.publicArchive && (
+        <div className="pt-btn-group" style={{ marginBottom: 12 }}>
+          <a className="pt-btn" href="/public/interpelacje" target="_blank" rel="noopener">Rejestr publiczny</a>
+        </div>
+      )}
       {me?.canSubmit ? (
         <div className="pt-btn-group" style={{ marginBottom: 12 }}>
           <Link className="pt-btn pt-btn-primary" href="/session/interpelacje/nowa">Nowa interpelacja</Link>

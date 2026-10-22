@@ -5,6 +5,7 @@ import { buildXlsx } from "@/lib/xlsx";
 import { fileResponse, MIME, renderPdf } from "@/lib/serverPdf";
 import { INQUIRY_KIND_LABEL, INQUIRY_STATUS_LABEL } from "@/lib/inquiryLabels";
 import { serverError } from "@/lib/http";
+import { BW_HORIZONTAL_LINES } from "@/lib/pdfLayouts";
 
 const d = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("pl-PL", { timeZone: "Europe/Warsaw" }) : "");
 
@@ -36,7 +37,7 @@ export async function GET(req: Request) {
         content: [
           { text: "Rejestr interpelacji i zapytań", fontSize: 14, bold: true },
           { text: `${filterText(f)}. Liczba spraw: ${rows.length}. Stan na ${d(new Date().toISOString())}.`, fontSize: 9, margin: [0, 2, 0, 8] },
-          { table: { headerRows: 1, widths: [50, 40, "*", 80, 90, 50, 50, 60, 35, 50, 30, 35], body: [head.map((h) => ({ text: h, bold: true })), ...data.map((r) => r.map((x) => String(x)))] }, fontSize: 7.5, layout: "lightHorizontalLines" },
+          { table: { headerRows: 1, widths: [50, 40, "*", 80, 90, 50, 50, 60, 35, 50, 30, 35], body: [head.map((h) => ({ text: h, bold: true })), ...data.map((r) => r.map((x) => String(x)))] }, fontSize: 7.5, layout: BW_HORIZONTAL_LINES },
         ],
       });
       return fileResponse(buf, `rejestr-interpelacji-${stamp}.pdf`, MIME.pdf);
