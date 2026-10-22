@@ -11,7 +11,7 @@ export async function GET(req: Request) {
   if (!session || session.user.role !== "OPERATOR") return new NextResponse("Unauthorized", { status: 401 });
   const meetingId = new URL(req.url).searchParams.get("meeting");
   const [users, guests, units, contacts, participants] = await Promise.all([
-    prisma.user.findMany({ where: { active: true }, select: { id: true, firstName: true, lastName: true, functionTitle: true, group: { select: { shortName: true } } }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }),
+    prisma.user.findMany({ where: { active: true, role: { not: "RESPONDER" } }, select: { id: true, firstName: true, lastName: true, functionTitle: true, group: { select: { shortName: true } } }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }),
     prisma.guest.findMany({ select: { id: true, firstName: true, lastName: true, role: true }, orderBy: { lastName: "asc" } }),
     prisma.orgUnit.findMany({ where: { active: true }, select: { id: true, name: true, members: { select: { userId: true, functionName: true, validTo: true } } }, orderBy: { name: "asc" } }),
     prisma.contact.findMany({ where: { active: true }, orderBy: { name: "asc" } }),

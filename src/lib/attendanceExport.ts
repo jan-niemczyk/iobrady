@@ -69,7 +69,7 @@ export async function meetingAttendancePdf(r: MeetingAttendance, org: string, wi
       { text: h[1], fontSize: 14, bold: true, margin: [0, 4, 0, 2] },
       { text: h[2], fontSize: 10 },
       { text: h[3], fontSize: 9, margin: [0, 4, 0, 0] },
-      { text: h[4], fontSize: 8, color: "#444444" },
+      { text: h[4], fontSize: 8, color: "#000000" },
       { text: h[5], fontSize: 9, bold: true, margin: [0, 6, 0, 6] },
       ...r.basisNotes.map((n) => ({ text: n, fontSize: 8, italics: true })),
       { table: { headerRows: 1, widths: rows[0].map((_, i) => (i === 1 ? "*" : "auto")), body: rows.map((row, ri) => row.map((c) => ({ text: String(c ?? ""), fontSize: 8, bold: ri === 0 }))) }, layout: "lightHorizontalLines", margin: [0, 6, 0, 8] },
@@ -90,7 +90,7 @@ function docxTable(rows: Cell[][]): Table {
       tableHeader: ri === 0,
       children: r.map((c) => new TableCell({
         children: [new Paragraph({ children: [new TextRun({ text: String(c ?? ""), bold: ri === 0, size: 16, font: "Arial" })] })],
-        borders: { top: { style: BorderStyle.SINGLE, size: 2, color: "999999" }, bottom: { style: BorderStyle.SINGLE, size: 2, color: "999999" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } },
+        borders: { top: { style: BorderStyle.SINGLE, size: 2, color: "000000" }, bottom: { style: BorderStyle.SINGLE, size: 2, color: "000000" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } },
       })),
     })),
   });

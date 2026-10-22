@@ -73,11 +73,11 @@ export function NoticeEditorClient({ meetingId, noticeId, logoUrl }: { meetingId
     await load();
     return true;
   }
-  async function generate(mode: "ogolny" | "imienny") {
+  async function generate(mode: "ogolny" | "imienny", format: "docx" | "pdf" = "docx") {
     if (dirty && !(await save())) return;
     if (unresolved.length && !(await ask({ title: "Nierozwiązane znaczniki", message: `W dokumencie są znaczniki bez wartości: ${unresolved.map((u) => `{{${u}}}`).join(", ")}. Zostaną w dokumencie jako tekst. Kontynuować?`, confirmLabel: "Generuj mimo to" }))) return;
     if (mode === "imienny" && recipients.length === 0) { notify.warning("Dodaj adresatów, aby wygenerować dokumenty imienne."); return; }
-    window.location.href = `/api/notices/${noticeId}/docx?tryb=${mode}`;
+    window.location.href = `/api/notices/${noticeId}/docx?tryb=${mode}${format === "pdf" ? "&format=pdf" : ""}`;
   }
   async function reimport() {
     const confirmOverwrite = d!.agendaEdited || dirty;
@@ -96,15 +96,23 @@ export function NoticeEditorClient({ meetingId, noticeId, logoUrl }: { meetingId
       <PageHeader
         kicker={<Link href={`/meetings/${meetingId}/notices`} className="d-inline-flex align-items-center gap-1"><IconArrowLeft size={14} /> Zawiadomienia - posiedzenie nr {d.meeting.number}</Link>}
         title={name || "Zawiadomienie"}
-        description={d.templateName ? `Utworzone z szablonu „${d.templateName}” (wersja ${d.templateVersion}). Późniejsze zmiany szablonu nie zmieniają tego dokumentu.` : "Dokument bez szablonu."}
+        description={d.templateName ? `Szablon: ${d.templateName}` : undefined}
         actions={<>
           <span className={`small ${dirty ? "text-warning-emphasis" : "text-body-secondary"}`} aria-live="polite">{saving ? "Zapisywanie…" : dirty ? "Niezapisane zmiany" : "Zapisano"}</span>
           <button className="btn btn-primary" disabled={!dirty || saving} onClick={save}>Zapisz wersję roboczą</button>
-          <button className="btn btn-outline-secondary" onClick={() => generate("ogolny")}><IconDownload /> DOCX ogólny</button>
-          <button className="btn btn-outline-secondary" onClick={() => generate("imienny")} disabled={recipients.length === 0}><IconDownload /> DOCX imienne ({recipients.length}){recipients.length > 1 ? " - ZIP" : ""}</button>
+          <div className="dropdown">
+            <button className="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><IconDownload /> Pobierz</button>
+            <ul className="dropdown-menu dropdown-menu-end">
+              <li><button type="button" className="dropdown-item" onClick={() => generate("ogolny", "docx")}>DOCX - dokument ogólny</button></li>
+              <li><button type="button" className="dropdown-item" onClick={() => generate("ogolny", "pdf")}>PDF - dokument ogólny</button></li>
+              <li><hr className="dropdown-divider" /></li>
+              <li><button type="button" className="dropdown-item" disabled={recipients.length === 0} onClick={() => generate("imienny", "docx")}>DOCX - imienne ({recipients.length}){recipients.length > 1 ? ", ZIP" : ""}</button></li>
+              <li><button type="button" className="dropdown-item" disabled={recipients.length === 0} onClick={() => generate("imienny", "pdf")}>PDF - imienne ({recipients.length}){recipients.length > 1 ? ", ZIP" : ""}</button></li>
+            </ul>
+          </div>
         </>}
       />
-      {unresolved.length > 0 && <div className="alert alert-warning py-2">Nierozwiązane znaczniki: {unresolved.map((u) => <code key={u} className="me-2">{`{{${u}}}`}</code>)} - uzupełnij dane (np. miejsce posiedzenia, osoba podpisująca) albo popraw znacznik.</div>}
+      {unresolved.length > 0 && <div className="alert alert-warning py-2">Nierozwiązane znaczniki: {unresolved.map((u) => <code key={u} className="me-2">{`{{${u}}}`}</code>)} </div>}
 
       <div className="row g-3 align-items-start">
         <div className="col-12 col-xxl-7">
@@ -140,7 +148,7 @@ export function NoticeEditorClient({ meetingId, noticeId, logoUrl }: { meetingId
         </div>
         <div className="col-12 col-xxl-5">
           <div className="card">
-            <CardHeader title="Podgląd układu" sub="Ten sam model co plik DOCX. Nagłówek i stopka strony powtarzają się w dokumencie na każdej stronie." right={
+            <CardHeader title="Podgląd" right={
               <select className="form-select form-select-sm" aria-label="Podgląd dla adresata" value={previewFor} onChange={(e) => setPreviewFor(e.target.value)}>
                 <option value="">Dokument ogólny</option>
                 {recipients.map((r) => <option key={r.key} value={r.key}>{r.name}</option>)}

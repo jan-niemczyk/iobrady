@@ -20,19 +20,17 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     where: { id },
     include: {
       attachments: { orderBy: { createdAt: "asc" }, select: { id: true, fileName: true, mimeType: true, sizeBytes: true } },
-      versions: { orderBy: { version: "desc" }, select: { version: true, title: true, createdAt: true, editorId: true } },
       reads: { where: { userId: session.user.id }, select: { version: true } },
     },
   });
   if (!p) return new NextResponse("Nie znaleziono", { status: 404 });
-  const people = await prisma.user.findMany({ where: { id: { in: [p.authorId, p.editorId, ...p.versions.map((v) => v.editorId)].filter((x): x is string => !!x) } }, select: { id: true, firstName: true, lastName: true } });
+  const people = await prisma.user.findMany({ where: { id: { in: [p.authorId, p.editorId].filter((x): x is string => !!x) } }, select: { id: true, firstName: true, lastName: true } });
   const byId = new Map(people.map((u) => [u.id, u]));
   const base = {
     id: p.id, title: p.title, body: p.body, category: p.category, kind: p.kind, status: p.status, pinned: p.pinned, important: p.important,
     publishedAt: p.publishedAt, eventAt: p.eventAt, expiresAt: p.expiresAt, version: p.version, updatedAt: p.updatedAt,
     links: normalizeLinks(p.links), attachments: p.attachments,
     author: nameOf(byId.get(p.authorId ?? "")), editor: nameOf(byId.get(p.editorId ?? "")),
-    versions: p.versions.map((v) => ({ version: v.version, title: v.title, createdAt: v.createdAt, editor: nameOf(byId.get(v.editorId ?? "")) })),
   };
   if (session.user.role === "OPERATOR") {
     return NextResponse.json({ ...base, audienceAll: p.audienceAll, audienceOrgUnitIds: p.audienceOrgUnitIds, audienceUserIds: p.audienceUserIds });
@@ -43,14 +41,15 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 
 const patchSchema = infoSchema.extend({
   action: z.enum(["save", "publish", "archive", "restore"]).optional(),
-  /** Istotna zmiana opublikowanego komunikatu - nowa wersja, ponowne oznaczenie jako nieprzeczytane. */
+  /** Istotna zmiana opublikowanego komunikatu - odbiorcy zobaczą ją jako nieprzeczytaną (bez kopii poprzedniej treści). */
   significant: z.boolean().optional(),
 });
 
 /**
  * Zmiana komunikatu (operator). action: save | publish | archive | restore.
- * Opublikowanie zapisuje migawkę wersji i powiadamia bieżących odbiorców w aplikacji.
- * Istotna zmiana opublikowanego komunikatu tworzy nową wersję (historia odczytów zostaje).
+ * Opublikowanie powiadamia bieżących odbiorców w aplikacji. Edycja nadpisuje bieżącą treść - poprzednie
+ * treści nie są przechowywane (ani w bazie, ani w rejestrze czynności). Istotna zmiana podnosi licznik
+ * zmian, więc odbiorcy widzą informację jako nieprzeczytaną; rejestr otwarć zostaje.
  */
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -96,37 +95,30 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       where: { id },
       data: { ...data, status, version, editorId: session.user.id, ...(action === "publish" && !cur.publishedAt ? { publishedAt: new Date() } : {}) },
     });
-    // Migawka bieżącej wersji (dla opublikowanych): nowa wersja albo poprawka bez zmiany numeru.
-    if (p.status !== "DRAFT") {
-      await tx.infoPostVersion.upsert({
-        where: { postId_version: { postId: id, version } },
-        create: { postId: id, version, title: p.title, body: p.body, links: p.links as never, editorId: session.user.id },
-        update: { title: p.title, body: p.body, links: p.links as never, editorId: session.user.id },
-      });
-    }
     if (action === "publish") notify = { kind: "INFO", title: `Nowa informacja: ${p.title}` };
-    if (newVersion) notify = { kind: "INFO", title: `Zmieniona informacja (wersja ${version}): ${p.title}` };
+    if (newVersion) notify = { kind: "INFO", title: `Zmieniona informacja: ${p.title}` };
     if (notify) {
       const audience = await resolveAudience(p);
       await notifyAudience(tx, audience.map((u) => u.id), { ...notify, link: `/session/informacje/${id}` });
     }
-    const what = action === "publish" ? "Opublikowano" : action === "archive" ? "Zarchiwizowano" : action === "restore" ? "Przywrócono" : newVersion ? `Nowa wersja ${version}` : "Zmieniono";
-    await audit({ action: "INFO_POST_CHANGED", description: `${what}: informacja „${p.title}”`, userId: session.user.id, metadata: { postId: id, action, version, fields: Object.keys(data) } }, tx);
+    const what = action === "publish" ? "Opublikowano" : action === "archive" ? "Zarchiwizowano" : action === "restore" ? "Przywrócono" : newVersion ? "Zmieniono istotnie" : "Zmieniono";
+    // Rejestr czynności bez treści i tytułu informacji - tylko identyfikator i nazwy zmienionych pól.
+    await audit({ action: "INFO_POST_CHANGED", description: `${what} informację`, userId: session.user.id, metadata: { postId: id, action, fields: Object.keys(data) } }, tx);
   });
   return NextResponse.json({ ok: true, version });
 }
 
-/** Usunięcie - tylko szkicu (opublikowane się archiwizuje, żeby zachować historię odczytów). */
+/** Trwałe usunięcie informacji (każdy status) z załącznikami, ewidencją otwarć i powiadomieniami. */
 export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session || session.user.role !== "OPERATOR") return new NextResponse("Unauthorized", { status: 401 });
   const { id } = await ctx.params;
   const cur = await prisma.infoPost.findUnique({ where: { id }, include: { attachments: { select: { storedName: true } } } });
   if (!cur) return new NextResponse("Nie znaleziono", { status: 404 });
-  if (cur.status !== "DRAFT") return NextResponse.json({ error: "Opublikowany komunikat można tylko zarchiwizować." }, { status: 409 });
   await prisma.$transaction(async (tx) => {
     await tx.infoPost.delete({ where: { id } });
-    await audit({ action: "INFO_POST_CHANGED", description: `Usunięto szkic informacji „${cur.title}”`, userId: session.user.id, metadata: { postId: id } }, tx);
+    await tx.notification.deleteMany({ where: { link: `/session/informacje/${id}` } });
+    await audit({ action: "INFO_POST_CHANGED", description: "Usunięto trwale informację", userId: session.user.id, metadata: { postId: id } }, tx);
   });
   for (const a of cur.attachments) await deleteAttachmentFile(a.storedName);
   return NextResponse.json({ ok: true });

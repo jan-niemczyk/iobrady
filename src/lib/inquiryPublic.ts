@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import type { PdfCase } from "@/lib/inquiryPdf";
+import { bySeq } from "@/lib/inquiries";
 
 /**
  * Publiczny rejestr: wyłącznie sprawy opublikowane i opublikowane pisma utrwalone, w wersji
@@ -25,9 +26,9 @@ export async function loadPublicCase(id: string) {
   });
   if (!c) return null;
   const letters = c.letters
-    .sort((a, b) => (a.receivedAt ?? a.finalizedAt ?? a.createdAt).getTime() - (b.receivedAt ?? b.finalizedAt ?? b.createdAt).getTime())
+    .sort(bySeq)
     .map((l) => ({
-      id: l.id, kind: l.kind, state: l.state, addresseeId: l.addresseeId,
+      id: l.id, seq: l.seq, kind: l.kind, state: l.state, addresseeId: l.addresseeId,
       // Odniesienie tylko do pisma, które też jest publiczne.
       refLetterId: l.refLetterId && c.letters.some((x) => x.id === l.refLetterId) ? l.refLetterId : null,
       authorName: l.authorName, title: l.title, body: l.publicBody ?? "",

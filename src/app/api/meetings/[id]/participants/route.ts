@@ -22,8 +22,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const parsed = addSchema.safeParse(body);
   if (!parsed.success) return validationError(parsed.error);
 
+  // Konta odpowiadających (RESPONDER) nie mogą być uczestnikami posiedzeń.
+  const allowed = new Set((await prisma.user.findMany({ where: { id: { in: parsed.data.userIds }, role: { not: "RESPONDER" } }, select: { id: true } })).map((u) => u.id));
   let added = 0;
-  for (const userId of parsed.data.userIds) {
+  for (const userId of parsed.data.userIds.filter((u) => allowed.has(u))) {
     const existing = await prisma.meetingParticipant.findUnique({
       where: { meetingId_userId: { meetingId, userId } },
     });

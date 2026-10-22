@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { CardHeader, PageContainer, PageHeader } from "../ui";
 import { ask, notify, notifyFailure } from "@/lib/feedback";
 import { INQUIRY_KIND_LABEL, INQUIRY_STATUS_LABEL } from "@/lib/inquiryLabels";
-import { RichTextField } from "../notices/RichTextField";
+import { RichEditor } from "@/components/RichEditor";
 import { IconDownload, IconTrash } from "@/components/ui/Icon";
 
 type Person = { id: string; name: string; sortName: string };
@@ -16,7 +16,7 @@ type Row = {
   authors: string[]; addressees: string[]; overdue: boolean; newAnswer: boolean; nearestDue: string | null; answers: number;
 };
 type Grant = { id: string; userId: string; name: string; active: boolean; orgUnit: { id: string; name: string } | null; createdAt: string; grantedBy: string | null };
-type Tab = "registry" | "external" | "grants";
+type Tab = "registry" | "external" | "grants" | "responders";
 
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("pl-PL", { timeZone: "Europe/Warsaw" }) : "-");
 const FILTER_KEYS = ["rodzaj", "status", "numer", "okres", "autor", "adresat", "q", "od", "do", "oczekujace", "po_terminie", "nowe_odpowiedzi"] as const;
@@ -36,13 +36,14 @@ export function InquiriesRegistryClient({ enabled, publicArchive, units, users }
           : "Moduł jest wyłączony w Ustawieniach - nowe sprawy i czynności są zablokowane. Odczyt i eksport archiwum pozostają dostępne."} />
       {!enabled && <div className="alert alert-warning">Moduł wyłączony. Włączysz go w <Link href="/settings">Ustawieniach</Link>.</div>}
       <ul className="nav nav-tabs mb-3">
-        {([["registry", "Rejestr"], ["external", "Wprowadź pismo otrzymane poza aplikacją"], ["grants", "Prawo składania"]] as [Tab, string][]).map(([k, l]) => (
+        {([["registry", "Rejestr"], ["external", "Wprowadź pismo"], ["grants", "Prawo składania"], ["responders", "Konta odpowiadających"]] as [Tab, string][]).map(([k, l]) => (
           <li key={k} className="nav-item"><button type="button" className={`nav-link${tab === k ? " active" : ""}`} aria-current={tab === k ? "page" : undefined} onClick={() => setTab(k)}>{l}</button></li>
         ))}
       </ul>
       {tab === "registry" && <Registry />}
       {tab === "external" && <ExternalForm enabled={enabled} units={units} users={users} />}
       {tab === "grants" && <Grants units={units} users={users} />}
+      {tab === "responders" && <Responders />}
     </PageContainer>
   );
 }
@@ -179,7 +180,7 @@ function ExternalForm({ enabled, units, users }: { enabled: boolean; units: { id
         <div className="col-12 col-lg-6">
           <AddresseesEditor value={addressees} onChange={setAddressees} />
         </div>
-        <div className="col-12"><RichTextField id="ex-body" label="Treść pisma (opcjonalnie - można dołączyć skan po zapisaniu)" value={body} onChange={setBody} rows={8} placeholders={false} maxLength={200000} /></div>
+        <div className="col-12"><RichEditor id="ex-body" label="Treść pisma" value={body} onChange={setBody} minHeight={200} /></div>
         <div className="col-12 d-flex flex-wrap align-items-center gap-3">
           <div className="form-check"><input className="form-check-input" type="checkbox" id="ex-reg" checked={registerNow} onChange={(e) => setRegisterNow(e.target.checked)} /><label className="form-check-label" htmlFor="ex-reg">Od razu zarejestruj (nadaj kolejny numer)</label></div>
           <button type="button" className="btn btn-primary" disabled={busy || !enabled} onClick={submit}>Wprowadź pismo</button>
@@ -246,6 +247,77 @@ function Grants({ units, users }: { units: { id: string; name: string }[]; users
                 <div><span className="fw-medium">{g.name}</span>{!g.active && <span className="badge text-bg-secondary ms-1">konto nieaktywne</span>}
                   <div className="small text-body-secondary">Zakres: {g.orgUnit?.name ?? "cała jednostka"} - nadano {fmt(g.createdAt)}{g.grantedBy ? ` (${g.grantedBy})` : ""}</div></div>
                 <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => revoke(g)}>Odbierz</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type Responder = { id: string; email: string; firstName: string; lastName: string; functionTitle: string | null; active: boolean; cases: number };
+
+/**
+ * Konta odpowiadających: logowanie wyłącznie do spraw przekazanych przypisanemu adresatowi
+ * i składania odpowiedzi. Przypisanie - przy adresacie w karcie sprawy.
+ */
+function Responders() {
+  const [list, setList] = useState<Responder[] | null>(null);
+  const [f, setF] = useState({ firstName: "", lastName: "", email: "", functionTitle: "" });
+  const [created, setCreated] = useState<{ name: string; email: string; password: string } | null>(null);
+  const load = useCallback(async () => {
+    const r = await fetch("/api/inquiries/responders", { cache: "no-store" });
+    if (!r.ok) { await notifyFailure(r); return; }
+    setList(await r.json());
+  }, []);
+  useEffect(() => { void load(); }, [load]);
+  async function create() {
+    const r = await fetch("/api/inquiries/responders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) });
+    if (!r.ok) { await notifyFailure(r); return; }
+    const d = await r.json();
+    setCreated({ name: `${f.firstName} ${f.lastName}`, email: f.email, password: d.password });
+    setF({ firstName: "", lastName: "", email: "", functionTitle: "" });
+    await load();
+  }
+  async function patch(u: Responder, body: Record<string, unknown>, ok: string) {
+    const r = await fetch(`/api/inquiries/responders/${u.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!r.ok) { await notifyFailure(r); return; }
+    const d = await r.json();
+    if (d.password) setCreated({ name: `${u.firstName} ${u.lastName}`, email: u.email, password: d.password });
+    notify.success(ok);
+    await load();
+  }
+  return (
+    <div className="card">
+      <CardHeader title="Konta odpowiadających" />
+      <div className="card-body">
+        <div className="row g-2 align-items-end mb-3">
+          <div className="col-6 col-md-2"><label className="form-label" htmlFor="rp-fn">Imię</label><input id="rp-fn" className="form-control" value={f.firstName} onChange={(e) => setF({ ...f, firstName: e.target.value })} /></div>
+          <div className="col-6 col-md-3"><label className="form-label" htmlFor="rp-ln">Nazwisko</label><input id="rp-ln" className="form-control" value={f.lastName} onChange={(e) => setF({ ...f, lastName: e.target.value })} /></div>
+          <div className="col-12 col-md-3"><label className="form-label" htmlFor="rp-em">E-mail (login)</label><input id="rp-em" type="email" className="form-control" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></div>
+          <div className="col-12 col-md-2"><label className="form-label" htmlFor="rp-fu">Stanowisko / jednostka</label><input id="rp-fu" className="form-control" value={f.functionTitle} onChange={(e) => setF({ ...f, functionTitle: e.target.value })} /></div>
+          <div className="col-12 col-md-2"><button type="button" className="btn btn-primary w-100" onClick={create}>Utwórz konto</button></div>
+        </div>
+        {created && (
+          <div className="alert alert-success d-flex flex-wrap justify-content-between gap-2" role="status">
+            <span>{created.name} - login: <strong>{created.email}</strong>, hasło startowe: <strong className="font-monospace">{created.password}</strong>. Hasło jest pokazywane tylko teraz.</span>
+            <button type="button" className="btn-close" aria-label="Zamknij" onClick={() => setCreated(null)} />
+          </div>
+        )}
+        {list === null ? <div className="text-body-secondary">Wczytywanie…</div> : list.length === 0 ? <div className="text-body-secondary">Brak kont odpowiadających.</div> : (
+          <ul className="list-group">
+            {list.map((u) => (
+              <li key={u.id} className="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div><span className="fw-medium">{u.lastName} {u.firstName}</span>{!u.active && <span className="badge text-bg-secondary ms-1">nieaktywne</span>}
+                  <div className="small text-body-secondary">{u.email}{u.functionTitle ? ` - ${u.functionTitle}` : ""} - przypisani adresaci: {u.cases}</div></div>
+                <div className="dropdown">
+                  <button className="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Więcej</button>
+                  <ul className="dropdown-menu dropdown-menu-end">
+                    <li><button type="button" className="dropdown-item" onClick={() => patch(u, { resetPassword: true }, "Nadano nowe hasło startowe.")}>Nowe hasło startowe</button></li>
+                    <li><button type="button" className="dropdown-item" onClick={() => patch(u, { active: !u.active }, u.active ? "Dezaktywowano konto." : "Aktywowano konto.")}>{u.active ? "Dezaktywuj" : "Aktywuj"}</button></li>
+                  </ul>
+                </div>
               </li>
             ))}
           </ul>

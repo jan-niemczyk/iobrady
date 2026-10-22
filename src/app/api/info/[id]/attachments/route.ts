@@ -23,7 +23,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const fileName = (file.name || "plik").replace(/[\\/\0]/g, "_").slice(0, 200);
   const a = await prisma.$transaction(async (tx) => {
     const a = await tx.infoAttachment.create({ data: { postId: id, fileName, storedName, mimeType: mime, sizeBytes: buffer.length, uploadedById: session.user.id } });
-    await audit({ action: "INFO_POST_CHANGED", description: `Dodano załącznik „${fileName}” do informacji „${post.title}”`, userId: session.user.id, metadata: { postId: id, attachmentId: a.id } }, tx);
+    await audit({ action: "INFO_POST_CHANGED", description: "Dodano załącznik do informacji", userId: session.user.id, metadata: { postId: id, attachmentId: a.id } }, tx);
     return a;
   });
   return NextResponse.json({ ok: true, id: a.id });

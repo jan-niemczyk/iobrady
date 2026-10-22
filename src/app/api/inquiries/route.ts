@@ -64,7 +64,7 @@ export async function POST(req: Request) {
             createdById: session.user.id, enteredById: session.user.id, receivedAt, status: "SUBMITTED",
             authors: { create: d.authors!.map((a, i) => ({ userId: a.userId || null, name: a.name, isPrimary: i === 0, confirmation: "OPERATOR", confirmedAt: new Date() })) },
             addressees: { create: d.addressees.map((a, i) => ({ name: a.name, institution: a.institution || null, order: i })) },
-            letters: { create: { kind: "SUBMISSION", authorName: d.authors!.map((a) => a.name).join(", "), title: d.title, body: d.body, letterDate: d.letterDate ? new Date(d.letterDate) : null, receivedAt, state: "FINAL", finalizedAt: new Date(), createdById: session.user.id } },
+            letters: { create: { seq: 1, kind: "SUBMISSION", authorName: d.authors!.map((a) => a.name).join(", "), title: d.title, body: d.body, letterDate: d.letterDate ? new Date(d.letterDate) : null, receivedAt, state: "FINAL", finalizedAt: new Date(), createdById: session.user.id } },
           },
         });
         if (d.registerNow) {
@@ -93,7 +93,7 @@ export async function POST(req: Request) {
             ...coUsers.map((u) => ({ userId: u.id, name: `${u.firstName} ${u.lastName}`, confirmation: "PENDING" })),
           ] },
           addressees: { create: d.addressees.map((a, i) => ({ name: a.name, institution: a.institution || null, order: i })) },
-          letters: { create: { kind: "SUBMISSION", title: d.title, body: d.body, state: "DRAFT", createdById: session.user.id } },
+          letters: { create: { seq: 1, kind: "SUBMISSION", title: d.title, body: d.body, state: "DRAFT", createdById: session.user.id } },
         },
       });
       await audit({ action: "INQUIRY_CHANGED", description: `Utworzono szkic: „${d.title}”`, userId: session.user.id, metadata: { caseId: c.id, kind: d.kind } }, tx);

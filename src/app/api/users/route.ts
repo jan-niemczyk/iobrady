@@ -32,6 +32,7 @@ export async function GET() {
   if (!session || session.user.role !== "OPERATOR")
     return new NextResponse("Unauthorized", { status: 401 });
   const users = await prisma.user.findMany({
+    where: { role: { not: "RESPONDER" } },
     include: { group: true },
     orderBy: [{ role: "asc" }, { lastName: "asc" }],
   });

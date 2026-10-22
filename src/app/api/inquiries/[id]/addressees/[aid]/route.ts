@@ -7,7 +7,7 @@ import { audit } from "@/lib/audit";
 import { guarded } from "@/lib/routeGuard";
 import { HttpError } from "@/lib/booth";
 import { requireModuleEnabled } from "@/lib/inquiryAccess";
-import { dueFromRule, refreshStatus } from "@/lib/inquiries";
+import { dueFromRule, notify, refreshStatus } from "@/lib/inquiries";
 
 const date = z.string().max(40).refine((s) => !Number.isNaN(Date.parse(s)), "Nieprawidłowa data.");
 const schema = z.object({
@@ -16,6 +16,8 @@ const schema = z.object({
   forwardNote: z.string().trim().max(1000).nullable().optional(),
   /** Termin ręczny; "rule" = z reguły jednostki (jeśli jest); null = nieustalony. */
   dueDate: z.union([date, z.literal("rule")]).nullable().optional(),
+  /** Konto odpowiadającego (rola RESPONDER) przypisane temu adresatowi; null = brak. */
+  responderUserId: z.string().max(64).nullable().optional(),
 });
 
 /** PATCH - przekazanie adresatowi i termin odpowiedzi (operator). */
@@ -31,12 +33,20 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string; a
     const a = await prisma.inquiryAddressee.findFirst({ where: { id: aid, caseId: id }, include: { case: { select: { title: true, kind: true, receivedAt: true, registeredAt: true } } } });
     if (!a) throw new HttpError(404, "Nie znaleziono");
     if (d.forwardedAt && !a.case.registeredAt) throw new HttpError(409, "Przekazanie odnotowuje się po rejestracji sprawy.");
+    if (d.responderUserId) {
+      const r = await prisma.user.findUnique({ where: { id: d.responderUserId }, select: { role: true, active: true } });
+      if (r?.role !== "RESPONDER" || !r.active) throw new HttpError(400, "Wybierz aktywne konto odpowiadającego.");
+    }
+    const responderUserId = d.responderUserId !== undefined ? (d.responderUserId || null) : a.responderUserId;
     const forwardedAt = d.forwardedAt !== undefined ? (d.forwardedAt ? new Date(d.forwardedAt) : null) : a.forwardedAt;
     let dueDate = a.dueDate;
     if (d.dueDate === "rule") dueDate = forwardedAt ? await dueFromRule(a.case.kind, forwardedAt, a.case.receivedAt) : null;
     else if (d.dueDate !== undefined) dueDate = d.dueDate ? new Date(d.dueDate) : null;
     await prisma.$transaction(async (tx) => {
-      await tx.inquiryAddressee.update({ where: { id: aid }, data: { forwardedAt, dueDate, ...(d.forwardNote !== undefined ? { forwardNote: d.forwardNote || null } : {}) } });
+      await tx.inquiryAddressee.update({ where: { id: aid }, data: { forwardedAt, dueDate, responderUserId, ...(d.forwardNote !== undefined ? { forwardNote: d.forwardNote || null } : {}) } });
+      // Powiadomienie konta odpowiadającego, gdy sprawa staje się dla niego widoczna.
+      if (responderUserId && forwardedAt && (responderUserId !== a.responderUserId || !a.forwardedAt))
+        await notify(tx, [responderUserId], `Przekazano do odpowiedzi: ${a.case.title}`, `/odpowiedzi/${id}`);
       await refreshStatus(tx, id);
       await audit({ action: "INQUIRY_CHANGED", description: `${forwardedAt && !a.forwardedAt ? "Odnotowano przekazanie" : "Zmieniono przekazanie/termin"}: ${a.name} - sprawa „${a.case.title}”`, userId: session.user.id, metadata: { caseId: id, addresseeId: aid, forwardedAt, dueDate } }, tx);
     });

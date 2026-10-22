@@ -11,6 +11,7 @@ const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 // Ścieżki dostępne mimo wymaganej zmiany hasła startowego.
 const PASSWORD_CHANGE_ALLOWED = ["/account", "/api/account/password", "/api/auth", "/api/session/activity"];
+const RESPONDER_ALLOWED = ["/odpowiedzi", "/api/responder", "/account", "/api/account/password", "/api/auth", "/api/session", "/api/notifications"];
 
 type AuthedRequest = Parameters<Parameters<typeof auth>[0]>[0];
 
@@ -49,8 +50,9 @@ function route(req: AuthedRequest, next: () => NextResponse): NextResponse | Res
   // tylko na trasach wgrywania, reszta to krótkie dane JSON.
   if (path.startsWith("/api/") && MUTATING.has(req.method)) {
     const len = Number(req.headers.get("content-length") ?? "0");
-    const limit = /^\/api\/(meetings\/[^/]+|info\/[^/]+|inquiries\/letters\/[^/]+)\/attachments$/.test(path) ? 21 * 1024 * 1024
+    const limit = /^\/api\/(meetings\/[^/]+|info\/[^/]+|inquiries\/letters\/[^/]+|responder\/letters\/[^/]+)\/attachments$/.test(path) ? 21 * 1024 * 1024
       : path === "/api/settings/board-image" ? 9 * 1024 * 1024
+      : path === "/api/notice-templates/letterhead" ? 6 * 1024 * 1024
       : path === "/api/settings/logo" || path === "/api/setup/logo" ? 3 * 1024 * 1024
       : 1024 * 1024;
     if (Number.isFinite(len) && len > limit)
@@ -106,7 +108,7 @@ function route(req: AuthedRequest, next: () => NextResponse): NextResponse | Res
 
   if (path === "/login" || path.startsWith("/api/auth") || path.startsWith("/display") || path.startsWith("/api/display") || path.startsWith("/overlay") || path.startsWith("/public") || path.startsWith("/api/uploads/")) {
     if (isLoggedIn && path === "/login") {
-      const target = role === "OPERATOR" ? "/dashboard" : "/session";
+      const target = role === "OPERATOR" ? "/dashboard" : role === "RESPONDER" ? "/odpowiedzi" : "/session";
       return NextResponse.redirect(new URL(target, nextUrl));
     }
     return next();
@@ -123,6 +125,18 @@ function route(req: AuthedRequest, next: () => NextResponse): NextResponse | Res
   if (req.auth?.user?.mustChangePassword && !PASSWORD_CHANGE_ALLOWED.some((p) => path === p || path.startsWith(p + "/"))) {
     if (path.startsWith("/api/")) return NextResponse.json({ error: "Najpierw zmień hasło startowe." }, { status: 403 });
     return NextResponse.redirect(new URL("/account?wymagana=1", nextUrl));
+  }
+
+  // Konto odpowiadającego (RESPONDER): wyłącznie odpowiedzi na przekazane sprawy, własne konto i sesja.
+  // Pozostałe strony i całe API są niedostępne - bez względu na to, co pokazuje interfejs.
+  if (role === "RESPONDER") {
+    if (RESPONDER_ALLOWED.some((p) => path === p || path.startsWith(p + "/"))) return next();
+    if (path.startsWith("/api/")) return NextResponse.json({ error: "Brak dostępu." }, { status: 403 });
+    return NextResponse.redirect(new URL("/odpowiedzi", nextUrl));
+  }
+  if (path.startsWith("/odpowiedzi") || path.startsWith("/api/responder")) {
+    if (path.startsWith("/api/")) return NextResponse.json({ error: "Brak dostępu." }, { status: 403 });
+    return NextResponse.redirect(new URL("/", nextUrl));
   }
 
   // ochrona zakresów po roli

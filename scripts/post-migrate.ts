@@ -86,6 +86,26 @@ async function main() {
     movedUnits++; movedMembers += t.members.length;
   }
   if (movedUnits) console.log(`[migrate] Szablony składu przeniesione do grup organizacyjnych: ${movedUnits} (osób: ${movedMembers})`);
+
+  // Numer porządkowy pism w sprawach (dawniej kolejność wynikała z dat): pismo wnoszące pierwsze,
+  // pozostałe utrwalone w kolejności dodania. Szkice bez numeru (dostaną go przy złożeniu).
+  const casesToNumber = await prisma.inquiryCase.findMany({ where: { letters: { some: { seq: null, OR: [{ state: "FINAL" }, { kind: "SUBMISSION" }] } } }, select: { id: true } });
+  for (const c of casesToNumber) {
+    await prisma.$transaction(async (tx) => {
+      const letters = await tx.inquiryLetter.findMany({ where: { caseId: c.id }, orderBy: { createdAt: "asc" }, select: { id: true, seq: true, kind: true, state: true } });
+      let next = Math.max(0, ...letters.map((l) => l.seq ?? 0));
+      const pending = letters.filter((l) => l.seq == null && (l.state === "FINAL" || l.kind === "SUBMISSION"))
+        .sort((a, b) => (a.kind === "SUBMISSION" ? -1 : 0) - (b.kind === "SUBMISSION" ? -1 : 0));
+      for (const l of pending) await tx.inquiryLetter.update({ where: { id: l.id }, data: { seq: ++next } });
+    });
+  }
+  if (casesToNumber.length) console.log(`[migrate] Numery porządkowe pism nadane w sprawach: ${casesToNumber.length}`);
+
+  // Rejestr czynności bez treści informacji: dawne wpisy zawierały tytuł w cudzysłowie - usuwamy go.
+  const infoScrubbed = await prisma.$executeRaw`
+    UPDATE "AuditLog" SET description = regexp_replace(description, '\s*„[^”]*”', '', 'g')
+    WHERE action = 'INFO_POST_CHANGED' AND description LIKE '%„%'`;
+  if (infoScrubbed) console.log(`[migrate] Rejestr czynności: usunięte tytuły informacji z ${infoScrubbed} wpisów`);
 }
 
 main()

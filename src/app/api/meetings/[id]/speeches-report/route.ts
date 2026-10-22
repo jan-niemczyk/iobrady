@@ -29,11 +29,13 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
 
   const nameByUser = new Map<string, string>();
-  for (const p of mtg.participants) nameByUser.set(p.userId, `${p.user.firstName} ${p.user.lastName}`);
+  // Kolejność jak w nagłówku raportu: nazwisko i imię.
+  for (const p of mtg.participants) nameByUser.set(p.userId, `${p.user.lastName} ${p.user.firstName}`);
 
   type Row = { name: string; type: string; start: string | null; end: string | null; durationSec: number | null; limitSec: number | null };
   function toRow(e: (typeof mtg.speakerLists)[number]["entries"][number]): Row | null {
-    const name = e.speakerName ?? (e.userId ? nameByUser.get(e.userId) ?? "" : "");
+    // Uczestnik - z konta (nazwisko i imię); osoba spoza listy - nazwa wpisana przy zgłoszeniu.
+    const name = (e.userId ? nameByUser.get(e.userId) : undefined) ?? e.speakerName ?? "";
     if (!name) return null;
     const duration = e.consumedSec ?? (e.startedAt && e.endedAt ? Math.round((e.endedAt.getTime() - e.startedAt.getTime()) / 1000) : null);
     return {

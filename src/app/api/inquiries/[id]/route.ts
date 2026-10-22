@@ -84,19 +84,37 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   });
 }
 
-/** DELETE - usunięcie szkicu przez autora głównego (sprawa niezłożona nie ma numeru ani historii). */
+/**
+ * DELETE - trwałe usunięcie sprawy z korespondencją i plikami.
+ *  - Operator: dowolna sprawa widoczna w rejestrze.
+ *  - Autor główny: wyłącznie niezłożony szkic.
+ * Numeracja: kolejny numer to „największy zajęty + 1” w rodzaju i okresie - usunięcie ostatniej
+ * sprawy zwalnia jej numer, usunięcie wcześniejszej nie zmienia numerów pozostałych (luka zostaje).
+ */
 export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session) return new NextResponse("Unauthorized", { status: 401 });
   const { id } = await ctx.params;
   return guarded("inquiry DELETE", async () => {
     const c = await prisma.inquiryCase.findUnique({ where: { id }, include: { authors: true } });
-    if (!c || c.status !== "DRAFT") throw new HttpError(409, "Usunąć można tylko niezłożony szkic.");
-    if (c.authors.find((a) => a.isPrimary)?.userId !== session.user.id) throw new HttpError(403, "Szkic może usunąć autor główny.");
+    if (!c) throw new HttpError(404, "Nie znaleziono");
+    const isOperator = session.user.role === "OPERATOR";
+    if (isOperator) {
+      if (c.status === "DRAFT" && !c.enteredById) throw new HttpError(404, "Nie znaleziono");
+    } else {
+      if (c.status !== "DRAFT") throw new HttpError(409, "Usunąć można tylko niezłożony szkic.");
+      if (c.authors.find((a) => a.isPrimary)?.userId !== session.user.id) throw new HttpError(403, "Szkic może usunąć autor główny.");
+    }
     const files = await prisma.inquiryAttachment.findMany({ where: { letter: { caseId: id } }, select: { storedName: true } });
     await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "InquiryCase" WHERE id = ${id} FOR UPDATE`;
       await tx.inquiryCase.delete({ where: { id } });
-      await audit({ action: "INQUIRY_CHANGED", description: `Usunięto szkic „${c.title}”`, userId: session.user.id, metadata: { caseId: id } }, tx);
+      await tx.notification.deleteMany({ where: { link: { in: [`/inquiries/${id}`, `/session/interpelacje/${id}`, `/odpowiedzi/${id}`] } } });
+      await audit({
+        action: "INQUIRY_CHANGED",
+        description: c.status === "DRAFT" ? "Usunięto szkic sprawy" : `Usunięto trwale sprawę${c.number ? ` nr ${c.number}` : ""}`,
+        userId: session.user.id, metadata: { caseId: id, number: c.number, kind: c.kind },
+      }, tx);
     });
     for (const f of files) await deleteAttachmentFile(f.storedName);
     return NextResponse.json({ ok: true });

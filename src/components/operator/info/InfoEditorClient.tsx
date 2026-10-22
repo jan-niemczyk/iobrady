@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { CardHeader, PageContainer, PageHeader } from "../ui";
 import { ask, notify, notifyFailure } from "@/lib/feedback";
 import { INFO_CATEGORIES, INFO_STATUS_LABEL } from "@/lib/infoLabels";
-import { RichTextField } from "../notices/RichTextField";
+import { RichEditor } from "@/components/RichEditor";
 import { RichTextView } from "@/components/RichTextView";
 import { IconArrowLeft, IconDownload, IconTrash } from "@/components/ui/Icon";
 
@@ -20,7 +20,6 @@ type Form = {
 type Loaded = Form & {
   id: string; status: string; version: number; publishedAt: string | null; author: string | null; editor: string | null;
   attachments: { id: string; fileName: string; mimeType: string; sizeBytes: number }[];
-  versions: { version: number; createdAt: string; editor: string | null }[];
 };
 type ReadRow = { userId: string; name: string; club: string | null; current: boolean; readCurrent: boolean; firstOpenedAt: string | null; lastOpenedAt: string | null; openCount: number; earlierVersions: number[] };
 
@@ -46,7 +45,7 @@ export function InfoEditorClient({ id, units, users }: { id: string | null; unit
   const [form, setForm] = useState<Form>(EMPTY);
   const [state, setState] = useState<"loading" | "ok" | "error">(id ? "loading" : "ok");
   const [busy, setBusy] = useState(false);
-  const [significant, setSignificant] = useState(true);
+  const [significant, setSignificant] = useState(false);
   const [tab, setTab] = useState<"content" | "reads">("content");
   const [userQuery, setUserQuery] = useState("");
   const [reads, setReads] = useState<{ rows: ReadRow[]; summary: { recipients: number; readCurrent: number } } | null>(null);
@@ -110,10 +109,10 @@ export function InfoEditorClient({ id, units, users }: { id: string | null; unit
   }
 
   async function remove() {
-    if (!id || !(await ask({ title: "Usunąć szkic?", message: "Szkic i jego załączniki zostaną usunięte.", confirmLabel: "Usuń", danger: true }))) return;
+    if (!id || !(await ask({ title: "Usunąć trwale?", message: "Informacja, jej załączniki i lista otwarć zostaną usunięte. Tej operacji nie można cofnąć.", confirmLabel: "Usuń trwale", danger: true }))) return;
     const r = await fetch(`/api/info/${id}`, { method: "DELETE" });
     if (!r.ok) { await notifyFailure(r); return; }
-    notify.success("Usunięto szkic.");
+    notify.success("Usunięto informację.");
     router.push("/info");
   }
 
@@ -165,20 +164,19 @@ export function InfoEditorClient({ id, units, users }: { id: string | null; unit
 
       {tab === "reads" && id ? (
         <div className="card">
-          <CardHeader title={reads ? <>Otwarcia bieżącej wersji: {reads.summary.readCurrent} z {reads.summary.recipients}</> : "Otwarcia"}
-            right={<a className="btn btn-sm btn-outline-secondary" href={`/api/info/${id}/reads?format=xlsx`}><IconDownload size={14} /> Eksport XLSX</a>} />
-          <div className="card-body small text-body-secondary pb-0">Zestawienie pokazuje otwarcia treści w aplikacji. Nie jest dowodem zapoznania się ani formalnego doręczenia. Pobranie listy przez radnego nie jest liczone jako otwarcie.</div>
+          <CardHeader title={reads ? <>Otwarte: {reads.summary.readCurrent} z {reads.summary.recipients}</> : "Otwarcia"}
+            right={<div className="d-flex gap-1"><a className="btn btn-sm btn-outline-secondary" href={`/api/info/${id}/reads?format=pdf`}><IconDownload size={14} /> PDF</a><a className="btn btn-sm btn-outline-secondary" href={`/api/info/${id}/reads?format=xlsx`}><IconDownload size={14} /> XLSX</a></div>} />
           {!reads ? <div className="card-body text-body-secondary">Wczytywanie…</div> : reads.rows.length === 0 ? <div className="card-body text-body-secondary">Brak odbiorców.</div> : (
             <div className="table-responsive">
               <table className="table table-sm align-middle mb-0">
-                <thead><tr><th scope="col">Osoba</th><th scope="col">Bieżąca wersja</th><th scope="col">Pierwsze otwarcie</th><th scope="col">Ostatnie otwarcie</th><th scope="col">Otwarć</th><th scope="col">Wcześniejsze wersje</th></tr></thead>
+                <thead><tr><th scope="col">Nazwisko i imię</th><th scope="col">Po ostatniej zmianie</th><th scope="col">Pierwsze otwarcie</th><th scope="col">Ostatnie otwarcie</th><th scope="col">Otwarć</th><th scope="col">Przed zmianą</th></tr></thead>
                 <tbody>
                   {reads.rows.map((r) => (
                     <tr key={r.userId}>
                       <td>{r.name}{r.club ? <span className="text-body-secondary"> ({r.club})</span> : null}{!r.current && <span className="badge text-bg-light border ms-1">poza odbiorcami</span>}</td>
                       <td>{r.readCurrent ? <span className="badge text-bg-success">otwarta</span> : <span className="badge text-bg-secondary">nieotwarta</span>}</td>
                       <td>{dt(r.firstOpenedAt)}</td><td>{dt(r.lastOpenedAt)}</td><td>{r.openCount || "-"}</td>
-                      <td>{r.earlierVersions.length ? r.earlierVersions.join(", ") : "-"}</td>
+                      <td>{r.earlierVersions.length ? "tak" : "-"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -202,7 +200,7 @@ export function InfoEditorClient({ id, units, users }: { id: string | null; unit
                   <div className="form-check"><input className="form-check-input" type="checkbox" id="if-pin" checked={form.pinned} onChange={(e) => set({ pinned: e.target.checked })} /><label className="form-check-label" htmlFor="if-pin">Przypięta na górze</label></div>
                   <div className="form-check"><input className="form-check-input" type="checkbox" id="if-imp" checked={form.important} onChange={(e) => set({ important: e.target.checked })} /><label className="form-check-label" htmlFor="if-imp">Ważna</label></div>
                 </div>
-                <div className="col-12"><RichTextField id="if-body" label="Treść" value={form.body} onChange={(v) => set({ body: v })} rows={10} placeholders={false} maxLength={100000} /></div>
+                <div className="col-12"><RichEditor id="if-body" label="Treść" value={form.body} onChange={(v) => set({ body: v })} minHeight={260} /></div>
                 <div className="col-6"><label className="form-label" htmlFor="if-event">Termin wydarzenia <span className="text-body-secondary fw-normal">(opcjonalnie)</span></label><input id="if-event" type="datetime-local" className="form-control" value={form.eventAt} onChange={(e) => set({ eventAt: e.target.value })} /></div>
                 <div className="col-6"><label className="form-label" htmlFor="if-exp">Widoczna do <span className="text-body-secondary fw-normal">(opcjonalnie)</span></label><input id="if-exp" type="datetime-local" className="form-control" value={form.expiresAt} onChange={(e) => set({ expiresAt: e.target.value })} />
                   <div className="form-text">{form.kind === "DOCUMENT" ? "Dokument stały może pozostać bez terminu końcowego." : "Po tym terminie komunikat znika z listy radnego."}</div></div>
@@ -283,7 +281,7 @@ export function InfoEditorClient({ id, units, users }: { id: string | null; unit
               <div className="card-body d-flex flex-column gap-2">
                 {status === "PUBLISHED" && dirtyContent && (
                   <div className="form-check"><input className="form-check-input" type="checkbox" id="if-sig" checked={significant} onChange={(e) => setSignificant(e.target.checked)} />
-                    <label className="form-check-label" htmlFor="if-sig">Istotna zmiana treści - nowa wersja (odbiorcy zobaczą ją jako nieprzeczytaną; historia otwarć zostaje)</label></div>
+                    <label className="form-check-label" htmlFor="if-sig">Oznacz u odbiorców jako nieprzeczytaną</label></div>
                 )}
                 <div className="d-flex flex-wrap gap-2">
                   {status === "DRAFT" && <button className="btn btn-outline-primary" disabled={busy} onClick={() => save("save")}>Zapisz szkic</button>}
@@ -291,14 +289,8 @@ export function InfoEditorClient({ id, units, users }: { id: string | null; unit
                   {status === "PUBLISHED" && <button className="btn btn-primary" disabled={busy} onClick={() => save("save")}>Zapisz zmiany</button>}
                   {status === "PUBLISHED" && <button className="btn btn-outline-secondary" disabled={busy} onClick={() => save("archive")}>Do archiwum</button>}
                   {status === "ARCHIVED" && <button className="btn btn-outline-primary" disabled={busy} onClick={() => save("restore")}>Przywróć</button>}
-                  {id && status === "DRAFT" && <button className="btn btn-outline-danger" disabled={busy} onClick={remove}>Usuń szkic</button>}
+                  {id && <button className="btn btn-link text-danger ms-auto px-0" disabled={busy} onClick={remove}>Usuń trwale</button>}
                 </div>
-                <div className="form-text">Powiadomienie w aplikacji otrzymują odbiorcy przy publikacji i przy nowej wersji. Informacje nie są publikowane w widoku publicznym.</div>
-                {loaded && loaded.versions.length > 0 && (
-                  <details><summary className="small">Historia wersji ({loaded.versions.length})</summary>
-                    <ul className="small mb-0 mt-1">{loaded.versions.map((v) => <li key={v.version}>Wersja {v.version} - {dt(v.createdAt)}{v.editor ? ` - ${v.editor}` : ""}</li>)}</ul>
-                  </details>
-                )}
               </div>
             </div>
 

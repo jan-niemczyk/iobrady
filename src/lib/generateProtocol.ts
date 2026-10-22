@@ -83,7 +83,7 @@ function pdfVoteBlock(v: VoteBlock): Record<string, unknown> {
 
 function pdfMotionLine(m: { name: string; time: string | null }): Record<string, unknown> {
   return {
-    text: [{ text: "Wniosek formalny: ", bold: true }, { text: m.name }, ...(m.time ? [{ text: ` (${m.time})`, color: "#555555" }] : [])],
+    text: [{ text: "Wniosek formalny: ", bold: true }, { text: m.name }, ...(m.time ? [{ text: ` (${m.time})`, color: "#000000" }] : [])],
     fontSize: FS - 1, margin: [30, 2, 0, 2],
   };
 }
@@ -104,7 +104,7 @@ function pdfPointHeader(p: Point): Record<string, unknown> {
       { width: "*", stack: [
         { text: p.title, fontSize: FS + 1 },
         ...(meta.length ? [{ text: meta.join(",   "), fontSize: FS - 1, margin: [0, 2, 0, 0] }] : []),
-        ...(times ? [{ text: times, fontSize: FS - 2, margin: [0, 1, 0, 0], color: "#555555" }] : []),
+        ...(times ? [{ text: times, fontSize: FS - 2, margin: [0, 1, 0, 0], color: "#000000" }] : []),
       ] },
     ],
     margin: [0, 8, 0, 2],
@@ -213,7 +213,7 @@ async function buildDocx(data: ProtocolData, withVotes: boolean) {
     if (p.committee) meta.push(`opinia: ${p.committee}`);
     if (meta.length) children.push(new Paragraph({ indent: { left: 720 + indent }, children: [run(meta.join(",   "), { italics: true, size: 18 })] }));
     if (withVotes && p.openTime) {
-      children.push(new Paragraph({ indent: { left: 720 + indent }, children: [run(`${p.openTime}${p.closeTime ? ` - ${p.closeTime}` : ""}`, { size: 16, color: "555555" })] }));
+      children.push(new Paragraph({ indent: { left: 720 + indent }, children: [run(`${p.openTime}${p.closeTime ? ` - ${p.closeTime}` : ""}`, { size: 16, color: "000000" })] }));
     }
   };
 
@@ -263,7 +263,7 @@ function docxEntry(
   if (e.kind === "motion") {
     (children as InstanceType<typeof Paragraph>[]).push(new Paragraph({
       indent: { left: 720 },
-      children: [run("Wniosek formalny: ", { bold: true, size: 18 }), run(e.name, { size: 18 }), ...(e.time ? [run(` (${e.time})`, { size: 16, color: "555555" })] : [])],
+      children: [run("Wniosek formalny: ", { bold: true, size: 18 }), run(e.name, { size: 18 }), ...(e.time ? [run(` (${e.time})`, { size: 16, color: "000000" })] : [])],
     }));
     return;
   }

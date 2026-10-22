@@ -66,7 +66,8 @@ function pdfContent(data: SpeechesReportData): Record<string, unknown>[] {
     { text: data.organization, fontSize: FS + 1, bold: true, alignment: "center" },
     { text: "Raport wystąpień", fontSize: FS + 5, bold: true, alignment: "center", margin: [0, 2, 0, 2] },
     { text: withDateText(`Posiedzenie nr ${data.meetingNumber} - ${data.meetingName}`, data.dateText), fontSize: FS, alignment: "center", margin: [0, 0, 0, 4] },
-    { canvas: [{ type: "line", x1: 0, y1: 0, x2: 495, y2: 0, lineWidth: 1, lineColor: "#000000" }], margin: [0, 0, 0, 14] },
+    // Kreska na pełną szerokość treści strony poziomej (A4: 842 pt - marginesy 2 x 40 pt).
+    { canvas: [{ type: "line", x1: 0, y1: 0, x2: 762, y2: 0, lineWidth: 1, lineColor: "#000000" }], margin: [0, 0, 0, 14] },
   ];
   for (const block of data.blocks) {
     if (block.kind === "point") {
@@ -131,8 +132,8 @@ export async function downloadSpeechesReportDocx(data: SpeechesReportData, fileN
       bottom: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
       left: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
       right: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
-      insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "999999" },
-      insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "999999" },
+      insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+      insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
     },
     rows: [
       new TableRow({ children: COLS.map((t) => cell(t, true)) }),

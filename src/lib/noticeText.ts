@@ -51,7 +51,9 @@ export function parseBlocks(src: string): Block[] {
 export const PLACEHOLDERS: { key: string; label: string }[] = [
   { key: "organ", label: "Nazwa organu (jednostki lub grupy posiedzenia)" },
   { key: "nazwa_posiedzenia", label: "Nazwa posiedzenia" },
-  { key: "numer_posiedzenia", label: "Numer posiedzenia" },
+  { key: "numer_posiedzenia", label: "Numer posiedzenia (zapis wybrany w treści: rzymski lub arabski)" },
+  { key: "numer_posiedzenia_rzymski", label: "Numer posiedzenia cyframi rzymskimi (np. XXI)" },
+  { key: "numer_posiedzenia_arabski", label: "Numer posiedzenia cyframi arabskimi (np. 21)" },
   { key: "data_posiedzenia", label: "Data posiedzenia (np. 7 sierpnia 2026 r.)" },
   { key: "godzina", label: "Godzina rozpoczęcia" },
   { key: "miejsce", label: "Miejsce posiedzenia" },
@@ -92,13 +94,47 @@ export interface NoticeContent {
   footer: string;
   footerPageNumbers: boolean;
   letterhead: string;
+  /** Papier firmowy: obraz całej strony A4 (PNG/JPG/SVG) w tle każdej strony; "" - bez. */
+  letterheadImage: string;
+  /** Marginesy treści (mm) - przy papierze firmowym tak, by treść nie nachodziła na jego nagłówek i stopkę. */
+  marginTopMm: number;
+  marginBottomMm: number;
+  marginLeftMm: number;
+  marginRightMm: number;
+  /** Zapis {{numer_posiedzenia}}: jak w posiedzeniu, cyframi rzymskimi albo arabskimi. */
+  meetingNumberFormat: "asis" | "roman" | "arabic";
 }
 
 export const EMPTY_CONTENT: NoticeContent = {
   unitName: "", unitDetails: "", useLogo: false, place: "", letterDate: "", caseRef: "",
   title: "ZAWIADOMIENIE", intro: "", agendaLabel: "Proponowany porządek obrad:", agendaPosition: "after-intro",
   outro: "", signature: "", signer: "", footer: "", footerPageNumbers: true, letterhead: "",
+  letterheadImage: "", marginTopMm: 20, marginBottomMm: 20, marginLeftMm: 25, marginRightMm: 20, meetingNumberFormat: "asis",
 };
+
+const mm = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) ? Math.min(80, Math.max(5, Math.round(v))) : d);
+
+/** Liczba z numeru posiedzenia („XXI/2026”, „21”, „XXI sesja”) - pierwszy człon rzymski albo arabski. */
+export function meetingNumberValue(raw: string): number | null {
+  const first = (raw ?? "").trim().split(/[\s/.-]+/)[0] ?? "";
+  if (/^\d{1,4}$/.test(first)) return Number(first);
+  const r = first.toUpperCase();
+  if (!/^[MDCLXVI]+$/.test(r)) return null;
+  const val: Record<string, number> = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+  let total = 0;
+  for (let i = 0; i < r.length; i++) {
+    const v = val[r[i]], n = val[r[i + 1]] ?? 0;
+    total += v < n ? -v : v;
+  }
+  return total > 0 && toRoman(total) === r ? total : null;
+}
+
+export function toRoman(n: number): string {
+  const map: [number, string][] = [[1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"], [50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
+  let out = "";
+  for (const [v, s] of map) while (n >= v) { out += s; n -= v; }
+  return out;
+}
 
 export function normalizeContent(raw: unknown): NoticeContent {
   const o = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
@@ -109,6 +145,10 @@ export function normalizeContent(raw: unknown): NoticeContent {
     intro: s("intro"), agendaLabel: s("agendaLabel", 300), agendaPosition: o.agendaPosition === "none" ? "none" : "after-intro",
     outro: s("outro"), signature: s("signature", 2000), signer: s("signer", 300), footer: s("footer", 2000),
     footerPageNumbers: o.footerPageNumbers !== false, letterhead: s("letterhead", 2000),
+    letterheadImage: typeof o.letterheadImage === "string" && /^\/api\/uploads\/[A-Za-z0-9._-]{1,200}$/.test(o.letterheadImage) ? o.letterheadImage : "",
+    marginTopMm: mm(o.marginTopMm, EMPTY_CONTENT.marginTopMm), marginBottomMm: mm(o.marginBottomMm, EMPTY_CONTENT.marginBottomMm),
+    marginLeftMm: mm(o.marginLeftMm, EMPTY_CONTENT.marginLeftMm), marginRightMm: mm(o.marginRightMm, EMPTY_CONTENT.marginRightMm),
+    meetingNumberFormat: o.meetingNumberFormat === "roman" || o.meetingNumberFormat === "arabic" ? o.meetingNumberFormat : "asis",
   };
 }
 

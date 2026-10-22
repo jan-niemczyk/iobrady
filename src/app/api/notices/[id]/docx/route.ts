@@ -6,6 +6,7 @@ import { audit } from "@/lib/audit";
 import { normalizeAgenda, normalizeContent, normalizeRecipients } from "@/lib/noticeText";
 import { noticeValues } from "@/lib/notices";
 import { buildNoticeDocx, logoFilePath } from "@/lib/noticeDocx";
+import { buildNoticePdf } from "@/lib/noticePdf";
 import { fileResponse, MIME } from "@/lib/serverPdf";
 import { serverError } from "@/lib/http";
 
@@ -20,7 +21,12 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   const session = await auth();
   if (!session || session.user.role !== "OPERATOR") return new NextResponse("Unauthorized", { status: 401 });
   const { id } = await ctx.params;
-  const mode = new URL(req.url).searchParams.get("tryb") === "imienny" ? "personal" : "general";
+  const sp = new URL(req.url).searchParams;
+  const mode = sp.get("tryb") === "imienny" ? "personal" : "general";
+  // ?format=pdf - ten sam dokument jako PDF (ten sam układ i treść co DOCX).
+  const pdf = sp.get("format") === "pdf";
+  const ext = pdf ? "pdf" : "docx";
+  const build = (recipient: Parameters<typeof buildNoticeDocx>[0]["recipient"]) => (pdf ? buildNoticePdf : buildNoticeDocx)({ content, agenda, recipient, values, logoPath });
   const n = await prisma.notice.findUnique({ where: { id }, include: { meeting: { select: { number: true } } } });
   if (!n) return new NextResponse("Nie znaleziono zawiadomienia", { status: 404 });
   const content = normalizeContent(n.content);
@@ -34,22 +40,22 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   try {
     let res: Response;
     if (mode === "general") {
-      res = fileResponse(await buildNoticeDocx({ content, agenda, recipient: null, values, logoPath }), `${base}.docx`, MIME.docx);
+      res = fileResponse(await build(null), `${base}.${ext}`, MIME[ext]);
     } else if (recipients.length === 1) {
-      res = fileResponse(await buildNoticeDocx({ content, agenda, recipient: recipients[0], values, logoPath }), `${base}-${slug(recipients[0].name)}.docx`, MIME.docx);
+      res = fileResponse(await build(recipients[0]), `${base}-${slug(recipients[0].name)}.${ext}`, MIME[ext]);
     } else {
       const zip = new JSZip();
       const used = new Set<string>();
       for (const [i, r] of recipients.entries()) {
-        let name = `${String(i + 1).padStart(2, "0")}-${slug(r.name)}.docx`;
-        while (used.has(name)) name = name.replace(/\.docx$/, "-1.docx");
+        let name = `${String(i + 1).padStart(2, "0")}-${slug(r.name)}.${ext}`;
+        while (used.has(name)) name = name.replace(/(\.\w+)$/, "-1$1");
         used.add(name);
-        zip.file(name, await buildNoticeDocx({ content, agenda, recipient: r, values, logoPath }));
+        zip.file(name, await build(r));
       }
       res = fileResponse(await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }), `${base}-imienne.zip`, MIME.zip);
     }
     await prisma.notice.update({ where: { id }, data: { lastGeneratedAt: new Date() } });
-    await audit({ action: "NOTICE_GENERATED", description: `Wygenerowano zawiadomienie DOCX (${mode === "general" ? "ogólne" : `imienne: ${recipients.length}`})`, meetingId: n.meetingId, userId: session.user.id, metadata: { noticeId: id, mode, recipients: mode === "general" ? 0 : recipients.length } });
+    await audit({ action: "NOTICE_GENERATED", description: `Wygenerowano zawiadomienie ${ext.toUpperCase()} (${mode === "general" ? "ogólne" : `imienne: ${recipients.length}`})`, meetingId: n.meetingId, userId: session.user.id, metadata: { noticeId: id, mode, recipients: mode === "general" ? 0 : recipients.length } });
     return res;
   } catch (e) { return serverError("notice-docx", e); }
 }

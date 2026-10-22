@@ -15,7 +15,7 @@ export async function caseDocx(c: PdfCase, org: string): Promise<Buffer> {
   const ref = `${INQUIRY_KIND_LABEL[c.kind]}${c.number ? ` nr ${c.number}` : " (bez numeru)"}`;
   const authors = c.authors.filter((a) => a.confirmation !== "PENDING").map((a) => a.name).join(", ");
   const body: Paragraph[] = [
-    p(org, { size: 18, color: "555555" }),
+    p(org, { size: 18, color: "000000" }),
     p(ref, { size: 20 }),
     p(c.title, { bold: true, size: 30, after: 160 }),
     p(`Autorzy: ${authors}`),

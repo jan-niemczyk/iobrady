@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CardHeader, PageContainer, PageHeader } from "../ui";
 import { ask, notify, notifyFailure } from "@/lib/feedback";
 import { INQUIRY_KIND_LABEL, INQUIRY_STATUS_LABEL, LETTER_KIND_LABEL } from "@/lib/inquiryLabels";
 import type { InquiryView } from "@/lib/inquiryDetail";
-import { RichTextField } from "../notices/RichTextField";
+import { RichEditor } from "@/components/RichEditor";
 import { RichTextView } from "@/components/RichTextView";
 import { IconArrowLeft, IconDownload, IconTrash } from "@/components/ui/Icon";
 
@@ -22,6 +23,7 @@ const json = (method: string, body: unknown) => ({ method, headers: { "Content-T
  * wersji publicznej i PDF/DOCX.
  */
 export function InquiryCaseOperatorClient({ id }: { id: string }) {
+  const router = useRouter();
   const [v, setV] = useState<InquiryView | null>(null);
   const [state, setState] = useState<"loading" | "ok" | "missing">("loading");
   const [busy, setBusy] = useState(false);
@@ -44,6 +46,13 @@ export function InquiryCaseOperatorClient({ id }: { id: string }) {
     await load();
     return true;
   }
+  async function remove() {
+    if (!(await ask({ title: "Usunąć sprawę trwale?", message: "Sprawa, wszystkie pisma i pliki zostaną usunięte. Numer usuniętej sprawy zostanie ponownie użyty tylko, jeśli była ostatnia w numeracji. Tej operacji nie można cofnąć.", confirmLabel: "Usuń trwale", danger: true }))) return;
+    const r = await fetch(`/api/inquiries/${id}`, { method: "DELETE" });
+    if (!r.ok) { await notifyFailure(r); return; }
+    notify.success("Usunięto sprawę.");
+    router.push("/inquiries");
+  }
   const action = (a: string, extra: Record<string, unknown> = {}) => call(`/api/inquiries/${id}/actions`, json("POST", { action: a, ...extra }), "Zapisano.");
 
   if (state === "loading") return <PageContainer size="lg"><div className="text-body-secondary py-4">Wczytywanie…</div></PageContainer>;
@@ -60,13 +69,25 @@ export function InquiryCaseOperatorClient({ id }: { id: string }) {
         description={`${ref} - ${INQUIRY_STATUS_LABEL[v.status]}${v.published ? " - opublikowana" : ""}`}
       />
       {ro && <div className="alert alert-warning">Moduł jest wyłączony - karta jest tylko do odczytu.</div>}
-      <div className="d-flex flex-wrap gap-2 mb-3">
-        <a className="btn btn-outline-secondary" href={`/api/inquiries/${id}/pdf`}><IconDownload size={14} /> PDF korespondencji</a>
-        <a className="btn btn-outline-secondary" href={`/api/inquiries/${id}/docx`}><IconDownload size={14} /> DOCX (edytowalny)</a>
+      <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
         {!ro && !v.registeredAt && !v.withdrawnAt && <RegisterButton busy={busy} onRegister={(extra) => action("register", extra)} />}
-        {!ro && v.registeredAt && !v.closedAt && !v.withdrawnAt && <button className="btn btn-outline-secondary" disabled={busy} onClick={async () => { if (await ask({ title: "Zakończyć sprawę?", message: "Zakończenie jest jawną czynnością - nie wynika automatycznie z otrzymania odpowiedzi. Można je cofnąć.", confirmLabel: "Zakończ" })) void action("close"); }}>Zakończ sprawę</button>}
-        {!ro && v.closedAt && <button className="btn btn-outline-secondary" disabled={busy} onClick={() => action("reopen")}>Wznów sprawę</button>}
-        {!ro && !v.withdrawnAt && <button className="btn btn-outline-danger" disabled={busy} onClick={async () => { if (await ask({ title: "Odnotować wycofanie?", message: "Wpisz wycofanie zgłoszone przez autora poza aplikacją.", confirmLabel: "Odnotuj wycofanie", danger: true })) void action("withdraw"); }}>Odnotuj wycofanie</button>}
+        {!ro && v.registeredAt && !v.closedAt && !v.withdrawnAt && <button className="btn btn-outline-primary" disabled={busy} onClick={async () => { if (await ask({ title: "Zakończyć sprawę?", message: "Zakończenie można później cofnąć.", confirmLabel: "Zakończ" })) void action("close"); }}>Zakończ sprawę</button>}
+        <div className="dropdown">
+          <button className="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><IconDownload size={14} /> Pobierz</button>
+          <ul className="dropdown-menu">
+            <li><a className="dropdown-item" href={`/api/inquiries/${id}/pdf`}>PDF korespondencji</a></li>
+            <li><a className="dropdown-item" href={`/api/inquiries/${id}/docx`}>DOCX korespondencji</a></li>
+          </ul>
+        </div>
+        <div className="dropdown">
+          <button className="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Więcej</button>
+          <ul className="dropdown-menu">
+            {!ro && v.closedAt && <li><button type="button" className="dropdown-item" disabled={busy} onClick={() => action("reopen")}>Wznów sprawę</button></li>}
+            {!ro && !v.withdrawnAt && <li><button type="button" className="dropdown-item" disabled={busy} onClick={async () => { if (await ask({ title: "Odnotować wycofanie?", message: "Wycofanie zgłoszone przez autora poza aplikacją.", confirmLabel: "Odnotuj wycofanie", danger: true })) void action("withdraw"); }}>Odnotuj wycofanie</button></li>}
+            <li><hr className="dropdown-divider" /></li>
+            <li><button type="button" className="dropdown-item text-danger" disabled={busy} onClick={remove}>Usuń trwale</button></li>
+          </ul>
+        </div>
       </div>
 
       <div className="row g-3">
@@ -94,8 +115,8 @@ export function InquiryCaseOperatorClient({ id }: { id: string }) {
         <div className="col-12 col-xxl-8 d-flex flex-column gap-3">
           <div className="card">
             <CardHeader title={`Korespondencja (${v.letters.length})`} />
-            <ol className="list-group list-group-flush list-group-numbered">
-              {v.letters.map((l, i) => <LetterItem key={l.id} v={v} l={l} idx={i + 1} ro={ro} reload={load} />)}
+            <ol className="list-group list-group-flush">
+              {v.letters.map((l) => <LetterItem key={l.id} v={v} l={l} ro={ro} reload={load} />)}
             </ol>
           </div>
           {!ro && v.status !== "DRAFT" && !v.withdrawnAt && <NewLetter v={v} reload={load} />}
@@ -126,15 +147,17 @@ function RegisterButton({ busy, onRegister }: { busy: boolean; onRegister: (extr
 }
 
 function Addressees({ v, ro, busy, call }: { v: InquiryView; ro: boolean; busy: boolean; call: (url: string, init: RequestInit, ok: string) => Promise<boolean> }) {
-  const [edit, setEdit] = useState<Record<string, { forwardedAt: string; note: string; due: string }>>({});
+  const [edit, setEdit] = useState<Record<string, { forwardedAt: string; note: string; due: string; responder: string }>>({});
   const [add, setAdd] = useState({ name: "", institution: "" });
+  const [responders, setResponders] = useState<{ id: string; firstName: string; lastName: string; functionTitle: string | null; active: boolean }[]>([]);
+  useEffect(() => { fetch("/api/inquiries/responders", { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])).then(setResponders).catch(() => {}); }, []);
   const reset = (aid: string) => setEdit((x) => { const n = { ...x }; delete n[aid]; return n; });
   return (
     <div className="card">
       <CardHeader title="Adresaci, przekazania i terminy" />
       <ul className="list-group list-group-flush">
         {v.addressees.map((a) => {
-          const e = edit[a.id] ?? { forwardedAt: dateInput(a.forwardedAt), note: a.forwardNote ?? "", due: dateInput(a.dueDate) };
+          const e = edit[a.id] ?? { forwardedAt: dateInput(a.forwardedAt), note: a.forwardNote ?? "", due: dateInput(a.dueDate), responder: a.responderUserId ?? "" };
           const set = (p: Partial<typeof e>) => setEdit((x) => ({ ...x, [a.id]: { ...e, ...p } }));
           return (
             <li key={a.id} className="list-group-item small">
@@ -148,10 +171,17 @@ function Addressees({ v, ro, busy, call }: { v: InquiryView; ro: boolean; busy: 
                 <div className="row g-1 align-items-end">
                   <div className="col-6"><label className="form-label mb-0" htmlFor={`fw-${a.id}`}>Data przekazania</label><input id={`fw-${a.id}`} type="date" className="form-control form-control-sm" value={e.forwardedAt} onChange={(x) => set({ forwardedAt: x.target.value })} /></div>
                   <div className="col-6"><label className="form-label mb-0" htmlFor={`due-${a.id}`}>Termin odpowiedzi</label><input id={`due-${a.id}`} type="date" className="form-control form-control-sm" value={e.due} onChange={(x) => set({ due: x.target.value })} /></div>
+                  {responders.length > 0 && (
+                    <div className="col-12"><label className="form-label mb-0" htmlFor={`rs-${a.id}`}>Konto odpowiadającego</label>
+                      <select id={`rs-${a.id}`} className="form-select form-select-sm" value={e.responder} onChange={(x) => set({ responder: x.target.value })}>
+                        <option value="">Brak (odpowiedź wpisuje biuro)</option>
+                        {responders.filter((r) => r.active || r.id === e.responder).map((r) => <option key={r.id} value={r.id}>{r.lastName} {r.firstName}{r.functionTitle ? ` - ${r.functionTitle}` : ""}</option>)}
+                      </select></div>
+                  )}
                   <div className="col-12"><label className="visually-hidden" htmlFor={`nt-${a.id}`}>Uwaga do przekazania</label><input id={`nt-${a.id}`} className="form-control form-control-sm" placeholder="Uwaga wewnętrzna (np. sposób przekazania)" value={e.note} onChange={(x) => set({ note: x.target.value })} /></div>
                   <div className="col-12 d-flex flex-wrap gap-1 mt-1">
-                    <button className="btn btn-sm btn-outline-primary" disabled={busy} onClick={async () => { if (await call(`/api/inquiries/${v.id}/addressees/${a.id}`, json("PATCH", { forwardedAt: toIso(e.forwardedAt), forwardNote: e.note, dueDate: e.due || null }), "Zapisano przekazanie.")) reset(a.id); }}>Zapisz</button>
-                    <button className="btn btn-sm btn-outline-secondary" disabled={busy || !e.forwardedAt} title="Termin z reguły jednostki (Ustawienia); bez reguły - nieustalony" onClick={async () => { if (await call(`/api/inquiries/${v.id}/addressees/${a.id}`, json("PATCH", { forwardedAt: toIso(e.forwardedAt), forwardNote: e.note, dueDate: "rule" }), "Zapisano przekazanie z terminem według reguły.")) reset(a.id); }}>Zapisz z terminem z reguły</button>
+                    <button className="btn btn-sm btn-outline-primary" disabled={busy} onClick={async () => { if (await call(`/api/inquiries/${v.id}/addressees/${a.id}`, json("PATCH", { forwardedAt: toIso(e.forwardedAt), forwardNote: e.note, dueDate: e.due || null, responderUserId: e.responder || null }), "Zapisano przekazanie.")) reset(a.id); }}>Zapisz</button>
+                    <button className="btn btn-sm btn-outline-secondary" disabled={busy || !e.forwardedAt} title="Termin z reguły jednostki (Ustawienia); bez reguły - nieustalony" onClick={async () => { if (await call(`/api/inquiries/${v.id}/addressees/${a.id}`, json("PATCH", { forwardedAt: toIso(e.forwardedAt), forwardNote: e.note, dueDate: "rule", responderUserId: e.responder || null }), "Zapisano przekazanie z terminem według reguły.")) reset(a.id); }}>Zapisz z terminem z reguły</button>
                   </div>
                 </div>
               )}
@@ -193,11 +223,11 @@ function Publication({ v, call, busy }: { v: InquiryView; call: (url: string, in
   );
 }
 
-function LetterItem({ v, l, idx, ro, reload }: { v: InquiryView; l: Letter; idx: number; ro: boolean; reload: () => Promise<void> }) {
+function LetterItem({ v, l, ro, reload }: { v: InquiryView; l: Letter; ro: boolean; reload: () => Promise<void> }) {
   const [pub, setPub] = useState(false);
   const [publicBody, setPublicBody] = useState(l.publicBody ?? "");
   const addressee = v.addressees.find((a) => a.id === l.addresseeId);
-  const refIdx = l.refLetterId ? v.letters.findIndex((x) => x.id === l.refLetterId) + 1 : 0;
+  const refIdx = l.refLetterId ? (v.letters.find((x) => x.id === l.refLetterId)?.seq ?? 0) : 0;
 
   async function upload(files: FileList | null, isPublic: boolean) {
     if (!files?.length) return;
@@ -227,7 +257,7 @@ function LetterItem({ v, l, idx, ro, reload }: { v: InquiryView; l: Letter; idx:
     <li className="list-group-item">
       <div className="d-flex flex-wrap justify-content-between gap-2">
         <div>
-          <span className="fw-semibold">{LETTER_KIND_LABEL[l.kind]}</span>
+          <span className="fw-semibold">{l.seq ? `${l.seq}. ` : ""}{LETTER_KIND_LABEL[l.kind]}</span>
           {addressee && <span> - {l.kind === "ANSWER" ? "od" : "do"}: {addressee.name}</span>}
           {l.state === "DRAFT" && <span className="badge text-bg-warning ms-1">projekt</span>}
           {l.published && <span className="badge text-bg-success ms-1">opublikowane</span>}
@@ -258,7 +288,7 @@ function LetterItem({ v, l, idx, ro, reload }: { v: InquiryView; l: Letter; idx:
       )}
       {pub && (
         <div className="border rounded p-2 mt-2">
-          <RichTextField id={`pb-${l.id}`} label="Treść publiczna (zanonimizowana - bez adresów prywatnych, e-maili i uwag wewnętrznych)" value={publicBody} onChange={setPublicBody} rows={6} placeholders={false} maxLength={200000} />
+          <RichEditor id={`pb-${l.id}`} label="Treść publiczna (bez danych prywatnych i uwag wewnętrznych)" value={publicBody} onChange={setPublicBody} minHeight={160} />
           <div className="d-flex flex-wrap gap-2">
             <button className="btn btn-sm btn-outline-secondary" onClick={() => setPublicBody(l.body)}>Skopiuj treść oryginału do edycji</button>
             <label className="btn btn-sm btn-outline-secondary mb-0">Dodaj plik wersji publicznej<input type="file" className="visually-hidden" accept=".pdf,.docx,.png,.jpg,.jpeg,.webp" onChange={(e) => upload(e.target.files, true)} /></label>
@@ -267,7 +297,6 @@ function LetterItem({ v, l, idx, ro, reload }: { v: InquiryView; l: Letter; idx:
           </div>
         </div>
       )}
-      <span className="visually-hidden">Pismo {idx}</span>
     </li>
   );
 }
@@ -298,12 +327,12 @@ function NewLetter({ v, reload }: { v: InquiryView; reload: () => Promise<void> 
       <div className="card-body row g-2">
         <div className="col-6 col-md-3"><label className="form-label" htmlFor="nl-kind">Rodzaj</label><select id="nl-kind" className="form-select" value={f.kind} onChange={(e) => set({ kind: e.target.value })}>{["ANSWER", "SUPPLEMENT", "FOLLOWUP", "CORRECTION", "OTHER"].map((k) => <option key={k} value={k}>{LETTER_KIND_LABEL[k]}</option>)}</select></div>
         <div className="col-6 col-md-3"><label className="form-label" htmlFor="nl-ad">{f.kind === "ANSWER" ? "Odpowiedź od adresata" : "Adresat (opcjonalnie)"}</label><select id="nl-ad" className="form-select" value={f.addresseeId} onChange={(e) => set({ addresseeId: e.target.value })}><option value="">-</option>{v.addressees.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
-        <div className="col-6 col-md-3"><label className="form-label" htmlFor="nl-ref">W odniesieniu do pisma</label><select id="nl-ref" className="form-select" value={f.refLetterId} onChange={(e) => set({ refLetterId: e.target.value })}><option value="">-</option>{v.letters.map((l, i) => <option key={l.id} value={l.id}>{i + 1}. {LETTER_KIND_LABEL[l.kind]}</option>)}</select></div>
+        <div className="col-6 col-md-3"><label className="form-label" htmlFor="nl-ref">W odniesieniu do pisma</label><select id="nl-ref" className="form-select" value={f.refLetterId} onChange={(e) => set({ refLetterId: e.target.value })}><option value="">-</option>{v.letters.filter((l) => l.seq).map((l) => <option key={l.id} value={l.id}>{l.seq}. {LETTER_KIND_LABEL[l.kind]}</option>)}</select></div>
         <div className="col-6 col-md-3"><label className="form-label" htmlFor="nl-auth">Autor / podmiot</label><input id="nl-auth" className="form-control" placeholder={f.kind === "ANSWER" ? "domyślnie adresat" : ""} value={f.authorName} onChange={(e) => set({ authorName: e.target.value })} /></div>
         <div className="col-6 col-md-3"><label className="form-label" htmlFor="nl-ld">Data pisma</label><input id="nl-ld" type="date" className="form-control" value={f.letterDate} onChange={(e) => set({ letterDate: e.target.value })} /></div>
         <div className="col-6 col-md-3"><label className="form-label" htmlFor="nl-rd">Data wpływu</label><input id="nl-rd" type="date" className="form-control" value={f.receivedAt} onChange={(e) => set({ receivedAt: e.target.value })} /></div>
         <div className="col-12 col-md-6"><label className="form-label" htmlFor="nl-title">Tytuł / znak pisma (opcjonalnie)</label><input id="nl-title" className="form-control" value={f.title} onChange={(e) => set({ title: e.target.value })} /></div>
-        <div className="col-12"><RichTextField id="nl-body" label="Treść (może pozostać pusta, gdy pismo istnieje wyłącznie jako plik)" value={f.body} onChange={(b) => set({ body: b })} rows={6} placeholders={false} maxLength={200000} /></div>
+        <div className="col-12"><RichEditor id="nl-body" label="Treść (pusta, gdy pismo jest tylko plikiem)" value={f.body} onChange={(b) => set({ body: b })} minHeight={160} /></div>
         <div className="col-12 d-flex gap-2"><button className="btn btn-primary" disabled={busy} onClick={save}>Dodaj pismo</button><button className="btn btn-outline-secondary" onClick={() => setOpen(false)}>Anuluj</button></div>
       </div>
     </div>

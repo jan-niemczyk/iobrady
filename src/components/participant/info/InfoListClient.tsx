@@ -73,12 +73,12 @@ export function InfoListClient({ initialView }: { initialView: View }) {
         <label className="pt-info-search">
           <span className="sr-only">Szukaj w informacjach</span>
           <IconSearch size={16} />
-          <input type="search" className="pt-input" placeholder="Szukaj" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input type="search" className="pt-field-input" placeholder="Szukaj" value={q} onChange={(e) => setQ(e.target.value)} />
         </label>
         {categories.length > 1 && (
           <label>
             <span className="sr-only">Kategoria</span>
-            <select className="pt-input" value={cat} onChange={(e) => setCat(e.target.value)}>
+            <select className="pt-field-input" value={cat} onChange={(e) => setCat(e.target.value)}>
               <option value="">Wszystkie kategorie</option>
               {categories.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -98,7 +98,7 @@ export function InfoListClient({ initialView }: { initialView: View }) {
                     <span className="pt-grow">
                       <span className="pt-row-title">
                         {i.pinned && <IconPin size={14} />} {i.title}
-                        {i.unread && <span className="pt-badge pt-badge-warn" style={{ marginLeft: 8 }}>{i.changed ? `Zmieniono (wersja ${i.version})` : "Nowe"}</span>}
+                        {i.unread && <span className="pt-badge pt-badge-warn" style={{ marginLeft: 8 }}>{i.changed ? "Zmieniono" : "Nowe"}</span>}
                         {i.important && <span className="pt-badge pt-badge-no" style={{ marginLeft: 8 }}>Ważne</span>}
                       </span>
                       <span className="pt-label">

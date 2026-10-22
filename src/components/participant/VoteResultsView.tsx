@@ -134,12 +134,12 @@ export function VoteResultsBody({ data, headingLevel = 3 }: { data: ReportData; 
           <div className="pt-results-filters" style={{ marginBottom: 8 }}>
             <label className="flex flex-col gap-1 pt-text-sm">
               <span>Szukaj osoby</span>
-              <input type="search" className="pt-input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nazwisko lub imię" />
+              <input type="search" className="pt-field-input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nazwisko lub imię" />
             </label>
             {marks.length > 1 && (
               <label className="flex flex-col gap-1 pt-text-sm">
                 <span>{data.isQuorum ? "Obecność" : "Głos / status"}</span>
-                <select className="pt-input" value={mark} onChange={(e) => setMark(e.target.value)}>
+                <select className="pt-field-input" value={mark} onChange={(e) => setMark(e.target.value)}>
                   <option value="">Wszystkie</option>
                   {marks.map((m) => <option key={m} value={m}>{data.isQuorum ? (m === "ob." ? "Obecność potwierdzona" : "Brak potwierdzenia") : MARK_LABEL[m]}</option>)}
                 </select>

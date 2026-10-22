@@ -1,12 +1,10 @@
 import { prisma } from "@/lib/db";
-import { addresseeAnswered } from "@/lib/inquiries";
+import { addresseeAnswered, bySeq } from "@/lib/inquiries";
 import { hasSubmitRight, moduleEnabled } from "@/lib/inquiryAccess";
 
 export type Viewer = { id: string; role: string };
 
 const iso = (d: Date | null | undefined) => (d ? d.toISOString() : null);
-const letterSort = (l: { receivedAt: Date | null; finalizedAt: Date | null; letterDate: Date | null; createdAt: Date }) =>
-  (l.receivedAt ?? l.finalizedAt ?? l.letterDate ?? l.createdAt).getTime();
 
 /**
  * Karta sprawy dla operatora albo autora. Szkice pism autora (i szkic całej sprawy) widzą
@@ -39,7 +37,7 @@ export async function loadInquiry(id: string, viewer: Viewer) {
   const now = Date.now();
   const letters = c.letters
     .filter((l) => l.state === "FINAL" || (!!me && (l.createdById === viewer.id || l.kind === "SUBMISSION")) || (isOperator && !!c.enteredById && l.kind === "SUBMISSION"))
-    .sort((a, b) => letterSort(a) - letterSort(b));
+    .sort(bySeq);
 
   return {
     id: c.id, kind: c.kind, status: c.status, number: c.number, period: c.period, title: c.title, orgUnitId: c.orgUnitId,
@@ -48,12 +46,13 @@ export async function loadInquiry(id: string, viewer: Viewer) {
     published: c.published, publishedAt: iso(c.publishedAt), publicTitle: c.publicTitle, createdAt: iso(c.createdAt),
     authors: c.authors.map((a) => ({ id: a.id, userId: a.userId, name: a.name, isPrimary: a.isPrimary, confirmation: a.confirmation, confirmedAt: iso(a.confirmedAt) })),
     addressees: c.addressees.map((a) => ({
-      id: a.id, name: a.name, institution: a.institution, forwardedAt: iso(a.forwardedAt), forwardNote: a.forwardNote, dueDate: iso(a.dueDate),
+      id: a.id, name: a.name, institution: a.institution, forwardedAt: iso(a.forwardedAt), forwardNote: isOperator ? a.forwardNote : null, dueDate: iso(a.dueDate),
+      responderUserId: isOperator ? a.responderUserId : null,
       answered: addresseeAnswered(c, a.id),
       overdue: !!a.forwardedAt && !!a.dueDate && a.dueDate.getTime() < now && !addresseeAnswered(c, a.id),
     })),
     letters: letters.map((l) => ({
-      id: l.id, kind: l.kind, state: l.state, addresseeId: l.addresseeId, refLetterId: l.refLetterId, authorName: l.authorName,
+      id: l.id, seq: l.seq, kind: l.kind, state: l.state, addresseeId: l.addresseeId, refLetterId: l.refLetterId, authorName: l.authorName,
       title: l.title, body: l.body, letterDate: iso(l.letterDate), receivedAt: iso(l.receivedAt), finalizedAt: iso(l.finalizedAt),
       createdAt: iso(l.createdAt), createdBy: nameOf(l.createdById), mine: l.createdById === viewer.id,
       published: l.published, publicBody: isOperator ? l.publicBody : null,

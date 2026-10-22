@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { EMPTY_CONTENT, normalizeContent, plDate, plTime, type NoticeAgendaItem, type NoticeContent } from "@/lib/noticeText";
+import { EMPTY_CONTENT, meetingNumberValue, normalizeContent, plDate, plTime, toRoman, type NoticeAgendaItem, type NoticeContent } from "@/lib/noticeText";
 
 /** Zawiadomienia - funkcje serwera wspólne dla API i stron. */
 
@@ -30,11 +30,14 @@ export async function noticeValues(meetingId: string, content: NoticeContent): P
     prisma.settings.findUnique({ where: { id: "singleton" }, select: { organizationName: true } }),
   ]);
   if (!m) return {};
+  const num = meetingNumberValue(m.number);
   const letter = content.letterDate && /^\d{4}-\d{2}-\d{2}$/.test(content.letterDate) ? new Date(`${content.letterDate}T12:00:00Z`) : null;
   return {
     organ: m.orgUnits.length ? m.orgUnits.map((o) => o.orgUnit.name).join(", ") : (s?.organizationName ?? ""),
     nazwa_posiedzenia: m.name,
-    numer_posiedzenia: m.number,
+    numer_posiedzenia: content.meetingNumberFormat === "roman" && num ? toRoman(num) : content.meetingNumberFormat === "arabic" && num ? String(num) : m.number,
+    numer_posiedzenia_rzymski: num ? toRoman(num) : "",
+    numer_posiedzenia_arabski: num ? String(num) : "",
     data_posiedzenia: plDate(m.scheduledAt),
     godzina: plTime(m.scheduledAt),
     miejsce: m.location ?? "",

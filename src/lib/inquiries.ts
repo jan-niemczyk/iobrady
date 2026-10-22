@@ -13,18 +13,21 @@ import type { InquiryStatus, Prisma } from "@prisma/client";
 type CaseForStatus = {
   submittedAt: Date | null; receivedAt: Date | null; registeredAt: Date | null; closedAt: Date | null; withdrawnAt: Date | null;
   addressees: { id: string; forwardedAt: Date | null }[];
-  letters: { kind: string; state: string; addresseeId: string | null; receivedAt: Date | null; letterDate: Date | null; finalizedAt: Date | null; createdAt: Date }[];
+  letters: { kind: string; state: string; addresseeId: string | null; seq?: number | null; createdAt: Date }[];
 };
 
-const letterTime = (l: CaseForStatus["letters"][number]) => (l.receivedAt ?? l.finalizedAt ?? l.letterDate ?? l.createdAt).getTime();
+/** Kolejność pism w sprawie: numer porządkowy nadany przy dodaniu (daty pism mogą być wpisane wstecz). */
+const letterOrder = (l: CaseForStatus["letters"][number]) => l.seq ?? l.createdAt.getTime() / 1e13;
+export const bySeq = <T extends { seq?: number | null; createdAt: Date }>(a: T, b: T) =>
+  (a.seq ?? Number.MAX_SAFE_INTEGER) - (b.seq ?? Number.MAX_SAFE_INTEGER) || a.createdAt.getTime() - b.createdAt.getTime();
 
 /** Czy adresat odpowiedział na ostatnie skierowane do niego pytanie. */
 export function addresseeAnswered(c: CaseForStatus, addresseeId: string): boolean {
   const final = c.letters.filter((l) => l.state === "FINAL" && l.addresseeId === addresseeId);
   const answers = final.filter((l) => l.kind === "ANSWER");
   if (answers.length === 0) return false;
-  const lastAnswer = Math.max(...answers.map(letterTime));
-  const lastFollowup = Math.max(0, ...final.filter((l) => l.kind === "FOLLOWUP").map(letterTime));
+  const lastAnswer = Math.max(...answers.map(letterOrder));
+  const lastFollowup = Math.max(0, ...final.filter((l) => l.kind === "FOLLOWUP").map(letterOrder));
   return lastAnswer >= lastFollowup;
 }
 
@@ -48,7 +51,7 @@ export async function refreshStatus(tx: Prisma.TransactionClient, caseId: string
     select: {
       submittedAt: true, receivedAt: true, registeredAt: true, closedAt: true, withdrawnAt: true,
       addressees: { select: { id: true, forwardedAt: true } },
-      letters: { select: { kind: true, state: true, addresseeId: true, receivedAt: true, letterDate: true, finalizedAt: true, createdAt: true } },
+      letters: { select: { kind: true, state: true, addresseeId: true, seq: true, createdAt: true } },
     },
   });
   const status = deriveStatus(c);
@@ -105,4 +108,11 @@ export async function confirmedAuthorIds(tx: Prisma.TransactionClient, caseId: s
 export async function notify(tx: Prisma.TransactionClient, userIds: string[], title: string, link: string) {
   const ids = [...new Set(userIds)];
   if (ids.length) await tx.notification.createMany({ data: ids.map((userId) => ({ userId, kind: "INQUIRY", title: title.slice(0, 300), link })) });
+}
+
+/** Kolejny numer porządkowy pisma w sprawie - wywoływać w transakcji z blokadą wiersza sprawy. */
+export async function nextLetterSeq(tx: Prisma.TransactionClient, caseId: string): Promise<number> {
+  await tx.$queryRaw`SELECT id FROM "InquiryCase" WHERE id = ${caseId} FOR UPDATE`;
+  const agg = await tx.inquiryLetter.aggregate({ where: { caseId }, _max: { seq: true } });
+  return (agg._max.seq ?? 0) + 1;
 }

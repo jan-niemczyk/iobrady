@@ -1,16 +1,19 @@
 import {
-  AlignmentType, Document, Footer, Header, ImageRun, LevelFormat, Packer, PageNumber, Paragraph, TabStopType, TextRun,
+  AlignmentType, BorderStyle, Document, Footer, Header, HorizontalPositionRelativeFrom, ImageRun, LevelFormat, Packer, PageNumber,
+  Paragraph, Table, TableCell, TableRow, TabStopType, TextRun, TextWrappingType, VerticalAlignTable, VerticalPositionRelativeFrom, WidthType,
 } from "docx";
-import { readFile } from "fs/promises";
-import path from "path";
 import { fillPlaceholders, parseBlocks, type Align, type NoticeAgendaItem, type NoticeContent, type NoticeRecipient } from "@/lib/noticeText";
-import { sniffImage } from "@/lib/imageSniff";
+import { loadRaster, uploadedFilePath, type RasterImage } from "@/lib/rasterImage";
 
 /**
- * Generator DOCX zawiadomienia: edytowalny dokument Word ze stylami, prawdziwą stopką strony
- * (dane kontaktowe i numeracja stron na każdej stronie), opcjonalnym nagłówkiem papieru firmowego
- * (osobno od wstępu z podstawą prawną, który jest treścią dokumentu), porządkiem obrad
- * z numeracją i wcięciami podpunktów oraz blokiem podpisu w treści. Czcionka Arial.
+ * Generator DOCX zawiadomienia (układ jak we wzorze jednostki):
+ *  - nagłówek treści: logo/herb po lewej, obok nazwa organu (pogrubiona) i dane (np. nazwa posiedzenia, termin);
+ *  - wiersz: znak sprawy po lewej, miejscowość i data po prawej;
+ *  - adresat (tylko dokument imienny) w prawej części strony, z odstępem przed treścią;
+ *  - tytuł, zwrot, wstęp z podstawą prawną (treść dokumentu), porządek obrad, treść po porządku;
+ *  - podpis w treści, w prawej części strony; prawdziwa stopka z numeracją stron;
+ *  - papier firmowy: obraz całej strony za tekstem na każdej stronie, treść w marginesach z ustawień.
+ * Czcionka Arial, wyłącznie czerń.
  */
 
 const FONT = "Arial";
@@ -18,6 +21,10 @@ const SIZE = 22; // 11 pt
 const ALIGN: Record<Align, (typeof AlignmentType)[keyof typeof AlignmentType]> = {
   left: AlignmentType.LEFT, center: AlignmentType.CENTER, right: AlignmentType.RIGHT, justify: AlignmentType.JUSTIFIED,
 };
+const A4_W = 11906, A4_H = 16838; // twipy
+const MM = 56.7; // twipy na milimetr
+const NONE = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
+const NO_BORDERS = { top: NONE, bottom: NONE, left: NONE, right: NONE, insideHorizontal: NONE, insideVertical: NONE };
 
 export interface NoticeRenderInput {
   content: NoticeContent;
@@ -42,65 +49,101 @@ export function unresolvedIn(c: NoticeContent, agenda: NoticeAgendaItem[], value
   return [...new Set(all.flatMap((t) => fillPlaceholders(t, values).unresolved))];
 }
 
+const fill = (t: string, v: Record<string, string>) => fillPlaceholders(t, v).text;
+
+function run(text: string, o: { bold?: boolean; italics?: boolean; size?: number } = {}) {
+  return new TextRun({ text, bold: o.bold, italics: o.italics, font: FONT, size: o.size ?? SIZE, color: "000000" });
+}
+
 function runsFor(text: string, values: Record<string, string>, base: { bold?: boolean; size?: number } = {}): TextRun[] {
-  const filled = fillPlaceholders(text, values).text;
-  return parseBlocks(filled)[0]?.runs.map((r) => new TextRun({ text: r.text, bold: r.bold || base.bold, italics: r.italic, font: FONT, size: base.size ?? SIZE })) ?? [];
+  return parseBlocks(fill(text, values))[0]?.runs.map((r) => run(r.text, { bold: r.bold || base.bold, italics: r.italic, size: base.size })) ?? [];
 }
 
 function richParagraphs(text: string, values: Record<string, string>, ref: string): Paragraph[] {
-  const filled = fillPlaceholders(text, values).text;
+  const filled = fill(text, values);
   if (!filled.trim()) return [];
   return parseBlocks(filled).map((b) => new Paragraph({
     alignment: ALIGN[b.align],
     spacing: { after: 100, line: 300 },
     ...(b.type === "ul" ? { numbering: { reference: "bullets", level: 0 } } : {}),
     ...(b.type === "ol" ? { numbering: { reference: ref, level: 0 } } : {}),
-    children: b.runs.map((r) => new TextRun({ text: r.text, bold: r.bold, italics: r.italic, font: FONT, size: SIZE })),
+    children: b.runs.map((r) => run(r.text, { bold: r.bold, italics: r.italic })),
   }));
 }
 
-function lines(text: string, values: Record<string, string>, opts: { align?: Align; size?: number; bold?: boolean } = {}): Paragraph[] {
-  const filled = fillPlaceholders(text, values).text;
-  return filled.split(/\r?\n/).filter((l, i, arr) => l.trim() || (i > 0 && i < arr.length - 1)).map((l) => new Paragraph({
+function lines(text: string, values: Record<string, string>, opts: { align?: Align; size?: number; bold?: boolean; firstBold?: boolean } = {}): Paragraph[] {
+  return fill(text, values).split(/\r?\n/).filter((l) => l.trim()).map((l, i) => new Paragraph({
     alignment: ALIGN[opts.align ?? "left"],
     spacing: { after: 0 },
-    children: [new TextRun({ text: l, font: FONT, size: opts.size ?? SIZE, bold: opts.bold })],
+    children: [run(l, { size: opts.size, bold: opts.bold || (opts.firstBold && i === 0) })],
   }));
+}
+
+function cell(children: Paragraph[], width: number, valign: "top" | "center" = "top") {
+  return new TableCell({
+    width: { size: width, type: WidthType.DXA }, borders: NO_BORDERS,
+    verticalAlign: valign === "center" ? VerticalAlignTable.CENTER : VerticalAlignTable.TOP,
+    margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    children: children.length ? children : [new Paragraph({ children: [] })],
+  });
+}
+
+function twoCols(left: Paragraph[], right: Paragraph[], leftW: number, total: number, valign: "top" | "center" = "top") {
+  return new Table({
+    width: { size: total, type: WidthType.DXA }, columnWidths: [leftW, total - leftW], borders: NO_BORDERS,
+    rows: [new TableRow({ children: [cell(left, leftW, valign), cell(right, total - leftW, valign)] })],
+  });
+}
+
+/** Logo w nagłówku treści: wysokość ok. 2 cm, szerokość wg proporcji (maks. 3,5 cm). */
+function logoRun(img: RasterImage) {
+  const h = 76, w = Math.max(20, Math.min(132, Math.round((img.width / img.height) * h)));
+  return new ImageRun({ type: img.kind, data: img.data, transformation: { width: w, height: h } });
 }
 
 export async function buildNoticeDocx(input: NoticeRenderInput): Promise<Buffer> {
   const { content: c, agenda, recipient } = input;
   const values = placeholderValues(input.values, recipient);
-  const body: Paragraph[] = [];
+  const left = Math.round(c.marginLeftMm * MM), right = Math.round(c.marginRightMm * MM);
+  const top = Math.round(c.marginTopMm * MM), bottom = Math.round(c.marginBottomMm * MM);
+  const W = A4_W - left - right; // szerokość treści
+  const logo = c.useLogo ? await loadRaster(input.logoPath, 800) : null;
+  const paper = c.letterheadImage ? await loadRaster(uploadedFilePath(c.letterheadImage), 2480) : null;
+  const body: (Paragraph | Table)[] = [];
 
-  // Nagłówek treści: logo/herb, dane jednostki (lewa), miejscowość i data (prawa).
-  if (c.useLogo && input.logoPath) {
-    try {
-      const data = await readFile(input.logoPath);
-      const kind = sniffImage(data, false);
-      if (kind === "png" || kind === "jpg") {
-        const dim = imageSize(data) ?? { w: 1, h: 1 };
-        const h = 64, w = Math.max(16, Math.min(240, Math.round((dim.w / dim.h) * h)));
-        body.push(new Paragraph({ spacing: { after: 120 }, children: [new ImageRun({ type: kind, data, transformation: { width: w, height: h } })] }));
-      }
-    } catch { /* brak pliku logo - dokument bez logo */ }
+  // 1. Logo + nazwa organu i dane (np. nazwa posiedzenia, termin).
+  const unit = [...lines(c.unitName, values, { bold: true }), ...lines(c.unitDetails, values)];
+  if (logo || unit.length) {
+    if (logo) {
+      const logoW = 2400;
+      body.push(twoCols([new Paragraph({ children: [logoRun(logo)] })], unit, logoW, W, "center"));
+    } else body.push(...unit);
   }
-  if (c.unitName.trim()) body.push(...lines(c.unitName, values, { bold: true }));
-  if (c.unitDetails.trim()) body.push(...lines(c.unitDetails, values, { size: 20 }));
-  const placeDate = [fillPlaceholders(c.place, values).text, c.letterDate ? values.data_pisma : ""].filter(Boolean).join(", ");
-  if (placeDate) body.push(new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { before: 120, after: 120 }, children: [new TextRun({ text: placeDate, font: FONT, size: SIZE })] }));
-  if (c.caseRef.trim()) body.push(new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: `Znak sprawy: ${fillPlaceholders(c.caseRef, values).text}`, font: FONT, size: 20 })] }));
 
-  // Adresat - wyłącznie w dokumencie spersonalizowanym (bez danych innych odbiorców).
+  // 2. Znak sprawy (lewa) i miejscowość z datą (prawa) w jednym wierszu.
+  const placeDate = [fill(c.place, values), c.letterDate ? values.data_pisma : ""].filter(Boolean).join(", ");
+  const ref = fill(c.caseRef, values).trim();
+  if (placeDate || ref) {
+    body.push(new Paragraph({ spacing: { before: 240 }, children: [] }));
+    body.push(twoCols(
+      ref ? [new Paragraph({ children: [run(ref)] })] : [],
+      placeDate ? [new Paragraph({ alignment: AlignmentType.RIGHT, children: [run(placeDate)] })] : [],
+      Math.round(W / 2), W,
+    ));
+  }
+
+  // 3. Adresat - wyłącznie w dokumencie spersonalizowanym, w prawej części strony.
   if (recipient) {
     const addr = [recipient.name, recipient.functionTitle, recipient.institution, ...recipient.address.split(/\r?\n/)].map((x) => x.trim()).filter(Boolean);
+    const indent = Math.round(W * 0.55);
     body.push(new Paragraph({ spacing: { before: 240 }, children: [] }));
-    for (const [i, l] of addr.entries()) body.push(new Paragraph({ indent: { left: 5103 }, spacing: { after: 0 }, children: [new TextRun({ text: l, font: FONT, size: SIZE, bold: i === 0 })] }));
+    for (const [i, l] of addr.entries()) body.push(new Paragraph({ indent: { left: indent }, spacing: { after: 0 }, children: [run(l, { bold: i === 0 })] }));
   }
+  body.push(new Paragraph({ spacing: { after: 360 }, children: [] }));
 
-  if (c.title.trim()) body.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 360, after: 240 }, children: runsFor(c.title, values, { bold: true, size: 26 }) }));
-  if (recipient?.salutation.trim()) body.push(new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: recipient.salutation.trim(), font: FONT, size: SIZE })] }));
-
+  // 4. Treść.
+  if (c.title.trim()) body.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 240 }, children: runsFor(c.title, values, { bold: true, size: 26 }) }));
+  if (recipient?.salutation.trim()) body.push(new Paragraph({ spacing: { after: 120 }, children: [run(recipient.salutation.trim())] }));
   body.push(...richParagraphs(c.intro, values, "intro-ol"));
 
   if (c.agendaPosition !== "none" && agenda.length) {
@@ -112,33 +155,43 @@ export async function buildNoticeDocx(input: NoticeRenderInput): Promise<Buffer>
         indent: num ? indent : { left: indent.left },
         tabStops: [{ type: TabStopType.LEFT, position: indent.left }],
         spacing: { after: 80, line: 276 },
-        children: [
-          ...(num ? [new TextRun({ text: num, font: FONT, size: SIZE }), new TextRun({ text: "\t", font: FONT, size: SIZE })] : []),
-          ...runsFor(a.title, values),
-        ],
+        children: [...(num ? [run(num), run("\t")] : []), ...runsFor(a.title, values)],
       }));
     }
   }
-
   body.push(...richParagraphs(c.outro, values, "outro-ol"));
 
-  // Blok podpisu - w treści dokumentu (nie w stopce), wyrównany do prawej części strony.
+  // 5. Podpis - w treści, w prawej części strony (wyśrodkowany w niej).
   if (c.signature.trim()) {
     body.push(new Paragraph({ spacing: { before: 480 }, keepNext: true, children: [] }));
-    for (const l of fillPlaceholders(c.signature, values).text.split(/\r?\n/)) {
-      body.push(new Paragraph({ indent: { left: 5103 }, alignment: AlignmentType.CENTER, keepNext: true, spacing: { after: 0 }, children: [new TextRun({ text: l, font: FONT, size: SIZE })] }));
-    }
+    const sig = fill(c.signature, values).split(/\r?\n/);
+    sig.forEach((l, i) => body.push(new Paragraph({
+      indent: { left: Math.round(W / 2) }, alignment: AlignmentType.CENTER, keepNext: i < sig.length - 1,
+      spacing: { after: i === 0 && sig.length > 1 ? 240 : 0 }, children: [run(l)],
+    })));
   }
 
   const footerChildren: Paragraph[] = [
     ...lines(c.footer, values, { align: "center", size: 16 }),
-    ...(c.footerPageNumbers ? [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ children: ["Strona ", PageNumber.CURRENT, " z ", PageNumber.TOTAL_PAGES], font: FONT, size: 16 })] })] : []),
+    ...(c.footerPageNumbers ? [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ children: ["Strona ", PageNumber.CURRENT, " z ", PageNumber.TOTAL_PAGES], font: FONT, size: 16, color: "000000" })] })] : []),
+  ];
+  // Papier firmowy: obraz całej strony za tekstem (zakotwiczony w nagłówku - na każdej stronie).
+  const headerChildren: Paragraph[] = [
+    ...(paper ? [new Paragraph({ children: [new ImageRun({
+      type: paper.kind, data: paper.data, transformation: { width: 794, height: 1123 },
+      floating: {
+        horizontalPosition: { relative: HorizontalPositionRelativeFrom.PAGE, offset: 0 },
+        verticalPosition: { relative: VerticalPositionRelativeFrom.PAGE, offset: 0 },
+        behindDocument: true, allowOverlap: true, wrap: { type: TextWrappingType.NONE },
+      },
+    })] })] : []),
+    ...lines(c.letterhead, values, { align: "center", size: 18 }),
   ];
 
   const doc = new Document({
     creator: "iOBRADY",
-    title: fillPlaceholders(c.title, values).text || "Zawiadomienie",
-    styles: { default: { document: { run: { font: FONT, size: SIZE } } } },
+    title: fill(c.title, values) || "Zawiadomienie",
+    styles: { default: { document: { run: { font: FONT, size: SIZE, color: "000000" } } } },
     numbering: {
       config: [
         { reference: "bullets", levels: [{ level: 0, format: LevelFormat.BULLET, text: "-", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 567, hanging: 283 } } } }] },
@@ -146,8 +199,8 @@ export async function buildNoticeDocx(input: NoticeRenderInput): Promise<Buffer>
       ],
     },
     sections: [{
-      properties: { page: { margin: { top: 1134, bottom: 1134, left: 1418, right: 1134, footer: 567, header: 567 } } },
-      headers: c.letterhead.trim() ? { default: new Header({ children: lines(c.letterhead, values, { align: "center", size: 18 }) }) } : undefined,
+      properties: { page: { size: { width: A4_W, height: A4_H }, margin: { top, bottom, left, right, header: Math.min(567, Math.round(top / 2)), footer: paper ? Math.max(200, bottom - 340 - footerChildren.length * 200) : Math.min(567, Math.round(bottom / 2)) } } },
+      headers: headerChildren.length ? { default: new Header({ children: headerChildren }) } : undefined,
       footers: footerChildren.length ? { default: new Footer({ children: footerChildren }) } : undefined,
       children: body,
     }],
@@ -156,24 +209,4 @@ export async function buildNoticeDocx(input: NoticeRenderInput): Promise<Buffer>
 }
 
 /** Ścieżka pliku logo z ustawień (tylko wgrane pliki w public/uploads). */
-export function logoFilePath(url: string | null | undefined): string | null {
-  if (!url) return null;
-  const m = /^\/(?:api\/)?uploads\/([A-Za-z0-9._-]{1,200})$/.exec(url);
-  return m ? path.join(process.cwd(), "public", "uploads", m[1]) : null;
-}
-
-/** Wymiary PNG/JPEG z nagłówka pliku (proporcje logo w dokumencie). */
-function imageSize(b: Buffer): { w: number; h: number } | null {
-  if (b.length > 24 && b.readUInt32BE(0) === 0x89504e47) return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
-  if (b[0] === 0xff && b[1] === 0xd8) {
-    let i = 2;
-    while (i + 9 < b.length) {
-      if (b[i] !== 0xff) { i++; continue; }
-      const marker = b[i + 1];
-      const len = b.readUInt16BE(i + 2);
-      if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) return { h: b.readUInt16BE(i + 5), w: b.readUInt16BE(i + 7) };
-      i += 2 + len;
-    }
-  }
-  return null;
-}
+export const logoFilePath = uploadedFilePath;

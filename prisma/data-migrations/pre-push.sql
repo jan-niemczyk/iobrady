@@ -84,4 +84,7 @@ BEGIN
     END LOOP;
     DROP TYPE "Role_old";
   END IF;
+
+  -- ── Informacje bez historii wersji: migawki treści nie są przechowywane (tabela usuwana). ──────────
+  DROP TABLE IF EXISTS "InfoPostVersion";
 END $$;

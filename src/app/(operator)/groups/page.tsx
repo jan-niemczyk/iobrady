@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export default async function OrgUnitsPage({ searchParams }: { searchParams: Promise<{ g?: string }> }) {
   const { g } = await searchParams;
   const users = await prisma.user.findMany({
-    where: { active: true },
+    where: { active: true, role: { not: "RESPONDER" } },
     select: { id: true, firstName: true, lastName: true, email: true, group: { select: { shortName: true, name: true } } },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
   });

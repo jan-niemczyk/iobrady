@@ -43,7 +43,7 @@ export async function listInquiries(viewer: { id: string; role: string }, f: Inq
     include: {
       authors: { where: { confirmation: { not: "PENDING" } }, select: { name: true, isPrimary: true } },
       addressees: { select: { id: true, name: true, institution: true, forwardedAt: true, dueDate: true } },
-      letters: { select: { kind: true, state: true, addresseeId: true, receivedAt: true, letterDate: true, finalizedAt: true, createdAt: true } },
+      letters: { select: { kind: true, state: true, addresseeId: true, seq: true, receivedAt: true, createdAt: true } },
     },
   });
   const now = Date.now();

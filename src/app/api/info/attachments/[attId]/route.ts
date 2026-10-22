@@ -39,7 +39,7 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ attId: stri
   if (!a) return new NextResponse("Not found", { status: 404 });
   await prisma.$transaction(async (tx) => {
     await tx.infoAttachment.delete({ where: { id: attId } });
-    await audit({ action: "INFO_POST_CHANGED", description: `Usunięto załącznik „${a.fileName}” z informacji „${a.post.title}”`, userId: session.user.id, metadata: { postId: a.postId, attachmentId: attId } }, tx);
+    await audit({ action: "INFO_POST_CHANGED", description: "Usunięto załącznik informacji", userId: session.user.id, metadata: { postId: a.postId, attachmentId: attId } }, tx);
   });
   await deleteAttachmentFile(a.storedName);
   return NextResponse.json({ ok: true });

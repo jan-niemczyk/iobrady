@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ParticipantsPage() {
   const [users, groups] = await Promise.all([
-    prisma.user.findMany({ include: { group: true }, orderBy: [{ role: "asc" }, { lastName: "asc" }] }),
+    prisma.user.findMany({ where: { role: { not: "RESPONDER" } }, include: { group: true }, orderBy: [{ role: "asc" }, { lastName: "asc" }] }),
     prisma.group.findMany({
       include: { _count: { select: { users: true } } },
       orderBy: { name: "asc" },

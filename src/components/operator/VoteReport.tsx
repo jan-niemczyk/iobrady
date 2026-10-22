@@ -278,7 +278,7 @@ export function VoteReport(p: VoteReportProps) {
                 {[...p.candidatesSummary]
                   .sort((a, b) => b.yesCount - a.yesCount)
                   .map((c, i) => (
-                    <tr key={i} style={{ borderBottom: "1px solid #ccc" }}>
+                    <tr key={i} style={{ borderBottom: "1px solid #000" }}>
                       <td style={{ padding: "6px 0", width: 30 }}>
                         <span className="mono">{i + 1}.</span>
                       </td>
@@ -451,7 +451,7 @@ function GroupBlock({
           </thead>
           <tbody>
             {sortedPeople.map((person, i) => (
-              <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
+              <tr key={i} style={{ borderBottom: "1px solid #000" }}>
                 <td style={{ padding: "3px 0" }}>{person.firstName} {person.lastName.toUpperCase()}</td>
                 {person.perCandidate
                   ? person.perCandidate.map((m, idx) => (

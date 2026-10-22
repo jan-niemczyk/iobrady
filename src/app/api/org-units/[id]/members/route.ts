@@ -25,7 +25,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (!unit) return new NextResponse("Nie znaleziono grupy", { status: 404 });
   const d = parsed.data;
   const open = new Set((await prisma.orgUnitMember.findMany({ where: { orgUnitId: id, userId: { in: d.userIds }, validTo: null }, select: { userId: true } })).map((m) => m.userId));
-  const users = await prisma.user.findMany({ where: { id: { in: d.userIds } }, select: { id: true } });
+  const users = await prisma.user.findMany({ where: { id: { in: d.userIds }, role: { not: "RESPONDER" } }, select: { id: true } });
   const toAdd = users.map((u) => u.id).filter((uid) => !open.has(uid));
   await prisma.$transaction(async (tx) => {
     if (toAdd.length) {

@@ -72,7 +72,7 @@ export async function POST(req: Request) {
         authorId: session.user.id, editorId: session.user.id,
       },
     });
-    await audit({ action: "INFO_POST_CHANGED", description: `Utworzono szkic informacji „${p.title}”`, userId: session.user.id, metadata: { postId: p.id } }, tx);
+    await audit({ action: "INFO_POST_CHANGED", description: "Utworzono szkic informacji", userId: session.user.id, metadata: { postId: p.id } }, tx);
     return p;
   });
   return NextResponse.json({ ok: true, id: p.id });

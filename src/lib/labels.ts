@@ -3,6 +3,7 @@ import { MeetingStatus, VoteStatus, AttendanceStatus, AgendaItemStatus, SpeakerS
 export const ROLE_LABEL: Record<Role, string> = {
   OPERATOR: "Operator",
   PARTICIPANT: "Radny",
+  RESPONDER: "Odpowiadający",
 };
 
 export const MEETING_STATUS_LABEL: Record<MeetingStatus, string> = {

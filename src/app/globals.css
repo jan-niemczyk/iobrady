@@ -295,3 +295,9 @@
 [data-theme="dark"] .btn-abstain {
   background: #FFC107 !important; color: #000000 !important; border-color: #FFC107 !important;
 }
+
+/* Edytor WYSIWYG (RichEditor): listy widoczne mimo resetu stylów, akapity bez odstępów przeglądarki. */
+.rich-editor { white-space: pre-wrap; overflow-wrap: anywhere; }
+.rich-editor ul { list-style: disc; padding-left: 1.5em; margin: 0 0 .4em; }
+.rich-editor ol { list-style: decimal; padding-left: 1.8em; margin: 0 0 .4em; }
+.rich-editor:focus { outline: 2px solid currentColor; outline-offset: -1px; }

@@ -7,7 +7,7 @@ import { audit } from "@/lib/audit";
 import { guarded } from "@/lib/routeGuard";
 import { HttpError } from "@/lib/booth";
 import { requireModuleEnabled, requireSubmitRight } from "@/lib/inquiryAccess";
-import { confirmedAuthorIds, notify, operatorIds, refreshStatus } from "@/lib/inquiries";
+import { confirmedAuthorIds, nextLetterSeq, notify, operatorIds, refreshStatus } from "@/lib/inquiries";
 import { AUTHOR_LETTER_KINDS, LETTER_KIND_LABEL, OPERATOR_LETTER_KINDS } from "@/lib/inquiryLabels";
 
 const date = z.string().max(40).refine((s) => !Number.isNaN(Date.parse(s)), "Nieprawidłowa data.");
@@ -63,9 +63,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     const addresseeName = c.addressees.find((a) => a.id === d.addresseeId)?.name;
     const authorName = isOperator ? (d.authorName || (d.kind === "ANSWER" ? addresseeName : null) || null) : c.authors.filter((a) => a.confirmation !== "PENDING").map((a) => a.name).join(", ");
     const letter = await prisma.$transaction(async (tx) => {
+      // Numer porządkowy tylko dla pisma utrwalonego (szkic dostaje go przy złożeniu).
+      const seq = final ? await nextLetterSeq(tx, id) : null;
       const l = await tx.inquiryLetter.create({
         data: {
-          caseId: id, kind: d.kind, addresseeId: d.addresseeId || null, refLetterId: d.refLetterId || null, authorName,
+          caseId: id, seq, kind: d.kind, addresseeId: d.addresseeId || null, refLetterId: d.refLetterId || null, authorName,
           authorUserId: isOperator ? null : session.user.id, title: d.title || null, body: d.body,
           letterDate: d.letterDate ? new Date(d.letterDate) : final ? (isOperator ? null : now) : null,
           receivedAt: d.receivedAt ? new Date(d.receivedAt) : !isOperator && final ? now : null,

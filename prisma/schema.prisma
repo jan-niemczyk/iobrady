@@ -20,6 +20,8 @@ datasource db {
 enum Role {
   OPERATOR
   PARTICIPANT
+  /// Konto wyłącznie do udzielania odpowiedzi na przekazane interpelacje i zapytania.
+  RESPONDER
 }
 
 enum MeetingStatus {
@@ -1347,49 +1349,33 @@ model Notice {
 // ─────────────────────────────────────────────────────────────────
 
 model InfoPost {
-  id                 String    @id @default(cuid())
+  id                 String           @id @default(cuid())
   title              String
   body               String
-  category           String    @default("Komunikat")
+  category           String           @default("Komunikat")
   /// NEWS - komunikat; DOCUMENT - dokument stały (bez terminu końcowego).
-  kind               String    @default("NEWS")
+  kind               String           @default("NEWS")
   /// DRAFT | PUBLISHED | ARCHIVED
-  status             String    @default("DRAFT")
-  pinned             Boolean   @default(false)
-  important          Boolean   @default(false)
+  status             String           @default("DRAFT")
+  pinned             Boolean          @default(false)
+  important          Boolean          @default(false)
   eventAt            DateTime?
   expiresAt          DateTime?
   publishedAt        DateTime?
   /// Bieżąca wersja treści (zwiększana przy istotnej zmianie).
-  version            Int       @default(1)
-  links              Json      @default("[]")
-  audienceAll        Boolean   @default(false)
-  audienceOrgUnitIds String[]  @default([])
-  audienceUserIds    String[]  @default([])
+  version            Int              @default(1)
+  links              Json             @default("[]")
+  audienceAll        Boolean          @default(false)
+  audienceOrgUnitIds String[]         @default([])
+  audienceUserIds    String[]         @default([])
   authorId           String?
   editorId           String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-
-  versions    InfoPostVersion[]
-  attachments InfoAttachment[]
-  reads       InfoRead[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  attachments        InfoAttachment[]
+  reads              InfoRead[]
 
   @@index([status])
-}
-
-model InfoPostVersion {
-  id        String   @id @default(cuid())
-  postId    String
-  post      InfoPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  version   Int
-  title     String
-  body      String
-  links     Json     @default("[]")
-  editorId  String?
-  createdAt DateTime @default(now())
-
-  @@unique([postId, version])
 }
 
 model InfoAttachment {
@@ -1525,17 +1511,19 @@ model InquiryAuthor {
 }
 
 model InquiryAddressee {
-  id          String      @id @default(cuid())
-  caseId      String
-  case        InquiryCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  name        String
-  institution String?
-  order       Int         @default(0)
+  id              String      @id @default(cuid())
+  caseId          String
+  case            InquiryCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  name            String
+  institution     String?
+  order           Int         @default(0)
   /// Przekazanie (zewnętrzne) - jawny wpis z datą.
-  forwardedAt DateTime?
-  forwardNote String?
-  dueDate     DateTime?
-  createdAt   DateTime    @default(now())
+  forwardedAt     DateTime?
+  forwardNote     String?
+  dueDate         DateTime?
+  /// Konto odpowiadającego (rola RESPONDER) - widzi sprawę po przekazaniu i składa odpowiedź tego adresata.
+  responderUserId String?
+  createdAt       DateTime    @default(now())
 
   @@index([caseId])
 }
@@ -1544,6 +1532,9 @@ model InquiryLetter {
   id           String      @id @default(cuid())
   caseId       String
   case         InquiryCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  /// Numer porządkowy pisma w sprawie (1, 2, 3...) nadawany przy dodaniu - kolejność na osi sprawy
+  /// nie zależy od wpisanych dat. Usunięcie szkicu pisma nie przenumerowuje pozostałych.
+  seq          Int?
   /// SUBMISSION (pismo wnoszące), ANSWER (odpowiedź), SUPPLEMENT (uzupełnienie), FOLLOWUP (ponowienie),
   /// CORRECTION (jawna korekta), OTHER (inne pismo)
   kind         String

@@ -10,7 +10,7 @@ type Post = {
   id: string; title: string; body: string; category: string; kind: string; pinned: boolean; important: boolean;
   publishedAt: string | null; eventAt: string | null; expiresAt: string | null; version: number; updatedAt: string;
   links: { label: string; url: string }[]; attachments: { id: string; fileName: string; mimeType: string; sizeBytes: number }[];
-  author: string | null; editor: string | null; versions: { version: number; createdAt: string; editor: string | null }[];
+  author: string | null; editor: string | null;
   unread: boolean; changed: boolean;
 };
 
@@ -62,7 +62,7 @@ export function InfoDetailClient({ id }: { id: string }) {
         <h1 className="pt-h1">{post.title}</h1>
         <div className="pt-btn-group" style={{ marginTop: 6 }}>
           {post.important && <span className="pt-badge pt-badge-no">Ważne</span>}
-          {post.changed && <span className="pt-badge pt-badge-warn">Zmieniono od Twojego poprzedniego otwarcia (wersja {post.version})</span>}
+          {post.changed && <span className="pt-badge pt-badge-warn">Zmieniono od Twojego poprzedniego otwarcia</span>}
         </div>
       </header>
       <section className="pt-panel">
@@ -70,7 +70,6 @@ export function InfoDetailClient({ id }: { id: string }) {
           <dl className="pt-info-meta">
             {post.publishedAt && <div><dt>Opublikowano</dt><dd>{fmtDateTime(post.publishedAt)}</dd></div>}
             {post.author && <div><dt>Autor</dt><dd>{post.author}{post.editor && post.editor !== post.author ? ` (ostatnia zmiana: ${post.editor})` : ""}</dd></div>}
-            {post.version > 1 && <div><dt>Wersja</dt><dd>{post.version}, z {fmtDateTime(post.versions[0]?.createdAt ?? post.updatedAt)}</dd></div>}
             {post.eventAt && <div><dt>Termin wydarzenia</dt><dd>{fmtDateTime(post.eventAt)}</dd></div>}
             {post.expiresAt && <div><dt>Dostępne do</dt><dd>{fmtDate(post.expiresAt)}</dd></div>}
           </dl>

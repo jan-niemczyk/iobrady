@@ -9,6 +9,7 @@ import type { InquiryView } from "@/lib/inquiryDetail";
 import { RichTextView } from "@/components/RichTextView";
 import { FileList } from "@/components/participant/FileList";
 import { InquiryDraftForm } from "./InquiryDraftForm";
+import { RichEditor } from "@/components/RichEditor";
 import { IconArrowLeft, IconDownload } from "@/components/ui/Icon";
 
 type Letter = InquiryView["letters"][number];
@@ -105,7 +106,7 @@ export function InquiryCaseParticipant({ id }: { id: string }) {
 
           <h2 className="pt-h2">Korespondencja ({v.letters.length})</h2>
           <ol className="pt-inq-timeline">
-            {v.letters.map((l, i) => <LetterCard key={l.id} v={v} l={l} idx={i + 1} canAct={canAct} reload={load} />)}
+            {v.letters.map((l) => <LetterCard key={l.id} v={v} l={l} canAct={canAct} reload={load} />)}
           </ol>
 
           {canAct && me && me.confirmation !== "PENDING" && !v.withdrawnAt && <NewAuthorLetter v={v} reload={load} />}
@@ -120,10 +121,11 @@ export function InquiryCaseParticipant({ id }: { id: string }) {
   );
 }
 
-function LetterCard({ v, l, idx, canAct, reload }: { v: InquiryView; l: Letter; idx: number; canAct: boolean; reload: () => Promise<void> }) {
+function LetterCard({ v, l, canAct, reload }: { v: InquiryView; l: Letter; canAct: boolean; reload: () => Promise<void> }) {
+  const idx = l.seq ?? "projekt";
   const [body, setBody] = useState(l.body);
   const addressee = v.addressees.find((a) => a.id === l.addresseeId);
-  const refIdx = l.refLetterId ? v.letters.findIndex((x) => x.id === l.refLetterId) + 1 : 0;
+  const refIdx = l.refLetterId ? (v.letters.find((x) => x.id === l.refLetterId)?.seq ?? 0) : 0;
   const editable = l.mine && l.state === "DRAFT" && l.kind !== "SUBMISSION" && canAct;
 
   async function save(finalize: boolean) {
@@ -157,7 +159,7 @@ function LetterCard({ v, l, idx, canAct, reload }: { v: InquiryView; l: Letter; 
   return (
     <li className="pt-panel pt-inq-letter">
       <div className="pt-panel-body">
-        <div className="pt-label">Pismo {idx}{l.receivedAt || l.letterDate ? ` - ${fmt(l.receivedAt ?? l.letterDate)}` : ""}</div>
+        <div className="pt-label">{l.seq ? `Pismo ${l.seq}` : "Projekt pisma"}{l.receivedAt || l.letterDate ? ` - ${fmt(l.receivedAt ?? l.letterDate)}` : ""}</div>
         <h3 className="pt-inq-letter-title">
           {LETTER_KIND_LABEL[l.kind]}{addressee ? ` - ${l.kind === "ANSWER" ? "od" : "do"}: ${addressee.name}` : ""}
           {l.state === "DRAFT" && <span className="pt-badge pt-badge-warn" style={{ marginLeft: 8 }}>Projekt</span>}
@@ -165,7 +167,7 @@ function LetterCard({ v, l, idx, canAct, reload }: { v: InquiryView; l: Letter; 
         <div className="pt-label">{[l.authorName && `Autor: ${l.authorName}`, l.letterDate && `pismo z ${fmt(l.letterDate)}`, refIdx > 0 && `w odniesieniu do pisma ${refIdx}`].filter(Boolean).join(" - ")}</div>
         {editable ? (
           <>
-            <label className="pt-field" style={{ marginTop: 8 }}><span className="sr-only">Treść pisma</span><textarea className="pt-input pt-textarea" rows={8} value={body} onChange={(e) => setBody(e.target.value)} /></label>
+            <div style={{ marginTop: 8 }}><RichEditor id={`lb-${l.id}`} label="Treść pisma" value={body} onChange={setBody} minHeight={180} variant="app" /></div>
             <div className="pt-btn-group">
               <button className="pt-btn pt-btn-sm" onClick={() => save(false)}>Zapisz szkic</button>
               <button className="pt-btn pt-btn-sm pt-btn-primary" onClick={() => save(true)}>Złóż</button>
@@ -215,15 +217,15 @@ function NewAuthorLetter({ v, reload }: { v: InquiryView; reload: () => Promise<
       <h2 className="pt-h2" style={{ marginTop: 0 }}>{LETTER_KIND_LABEL[open]}</h2>
       {v.addressees.length > 1 && (
         <label className="pt-field"><span className="pt-label">Do adresata</span>
-          <select className="pt-input" value={addresseeId} onChange={(e) => setAddresseeId(e.target.value)}><option value="">Wszyscy adresaci</option>{v.addressees.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+          <select className="pt-field-input" value={addresseeId} onChange={(e) => setAddresseeId(e.target.value)}><option value="">Wszyscy adresaci</option>{v.addressees.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
       )}
       {answers.length > 0 && (
         <label className="pt-field"><span className="pt-label">W odniesieniu do odpowiedzi</span>
-          <select className="pt-input" value={refLetterId} onChange={(e) => { setRefLetterId(e.target.value); const a = answers.find((x) => x.id === e.target.value); if (a?.addresseeId) setAddresseeId(a.addresseeId); }}>
-            <option value="">-</option>{answers.map((a) => <option key={a.id} value={a.id}>Pismo {v.letters.indexOf(a) + 1}: {LETTER_KIND_LABEL[a.kind]}{a.authorName ? ` - ${a.authorName}` : ""}</option>)}
+          <select className="pt-field-input" value={refLetterId} onChange={(e) => { setRefLetterId(e.target.value); const a = answers.find((x) => x.id === e.target.value); if (a?.addresseeId) setAddresseeId(a.addresseeId); }}>
+            <option value="">-</option>{answers.map((a) => <option key={a.id} value={a.id}>Pismo {a.seq}: {LETTER_KIND_LABEL[a.kind]}{a.authorName ? ` - ${a.authorName}` : ""}</option>)}
           </select></label>
       )}
-      <label className="pt-field"><span className="pt-label">Treść</span><textarea className="pt-input pt-textarea" rows={8} value={body} onChange={(e) => setBody(e.target.value)} /></label>
+      <RichEditor id="nal-body" label="Treść" value={body} onChange={setBody} minHeight={180} variant="app" />
       <div className="pt-btn-group">
         <button className="pt-btn" disabled={busy} onClick={() => save(false)}>Zapisz szkic</button>
         <button className="pt-btn pt-btn-primary" disabled={busy} onClick={() => save(true)}>Złóż</button>
