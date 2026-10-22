@@ -34,3 +34,4 @@ backups/
 # Pliki robocze
 .tmp-*
 src/app/ballot-bootstrap.css
+src/app/*.css.map
