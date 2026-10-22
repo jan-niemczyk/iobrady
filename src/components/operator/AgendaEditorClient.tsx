@@ -443,7 +443,7 @@ function ItemEditor({
           <input id={`ai-limit-${uid}`} className="form-control" type="number" min={0} step={10} value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="z ustawień" />
           <span className="input-group-text">s</span>
         </div>
-        <div className="form-text">Domyślny limit wystąpienia w liście mówców tego punktu. Puste = limit z ustawień.</div>
+        <div className="form-text">Puste = limit z ustawień.</div>
       </div>
       <div className="col-12">
         <div className="form-check">

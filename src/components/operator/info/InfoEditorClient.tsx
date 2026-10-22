@@ -251,7 +251,6 @@ export function InfoEditorClient({ id, units, users }: { id: string | null; unit
                 <div className="form-check mb-2"><input className="form-check-input" type="checkbox" id="if-all" checked={form.audienceAll} onChange={(e) => set({ audienceAll: e.target.checked })} /><label className="form-check-label" htmlFor="if-all">Wszyscy radni (wszystkie aktywne konta uczestników)</label></div>
                 <fieldset className="mb-3" disabled={form.audienceAll}>
                   <legend className="fs-6 fw-semibold mb-1">Grupy organizacyjne</legend>
-                  <div className="form-text mt-0 mb-1">Widoczność według bieżącego składu - nowy członek widzi aktualne informacje grupy. Osoba w kilku grupach dostaje informację raz.</div>
                   {units.length === 0 ? <div className="small text-body-secondary">Brak grup.</div> : units.map((u) => (
                     <div key={u.id} className="form-check"><input className="form-check-input" type="checkbox" id={`if-u-${u.id}`} checked={form.audienceOrgUnitIds.includes(u.id)} onChange={() => set({ audienceOrgUnitIds: toggle(form.audienceOrgUnitIds, u.id) })} /><label className="form-check-label" htmlFor={`if-u-${u.id}`}>{u.name} <span className="text-body-secondary">({u.members})</span></label></div>
                   ))}

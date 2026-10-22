@@ -55,6 +55,10 @@ W panelu posiedzenia → sekcja **Porządek obrad** → **Edytuj**. Otworzy się
 - **Pomiń** ukrywa punkt jako pominięty (z możliwością przywrócenia przez edycję).
 - **Usuń** możliwy tylko dla punktu o statusie *Oczekuje*.
 
+W panelu posiedzenia każdy punkt ma jedną czynność główną (**Rozpocznij**, **Wznów** albo **Otwórz ponownie**)
+i menu **Więcej**: zapisy do dyskusji, zaplanowanie głosowania, **Oznacz jako zakończony** (bez godzin,
+z możliwością cofnięcia) i usunięcie punktu.
+
 ---
 
 ## 2. Uruchomienie posiedzenia
@@ -242,6 +246,10 @@ Menu **Osoby i grupy**:
 - **Kluby i koła** - bez zmian, niezależne od grup.
 - **Kontakty** - adresaci bez konta (np. dyrektorzy jednostek) dla zawiadomień.
 
+**Funkcje w grupie** (np. przewodniczący, wiceprzewodniczący, sekretarz) obowiązują na posiedzeniach
+powiązanych z tą grupą: pokazują się przy nazwisku na liście mówców, ekranie sali i transmisji. Gdy grupa
+posiedzenia nie określa funkcji, używana jest **Funkcja domyślna** z konta osoby.
+
 Przy tworzeniu posiedzenia wybierz grupy - skład zostanie wczytany raz (osoba z kilku grup trafia raz,
 prawo głosu jest sumą domyślnych praw). Na stronie uczestników posiedzenia: **Porównaj ze składem grup**
 i **Dodaj brakujące osoby** (posiedzenia niezakończone). Zakończone posiedzenia nie są przepisywane.
@@ -262,8 +270,14 @@ i **Dodaj brakujące osoby** (posiedzenia niezakończone). Zakończone posiedzen
   strony), **Porządek obrad** (kopia porządku: zmiana tytułu, podpunkty, pozycje bez numeru, kolejność,
   usuwanie - bez wpływu na porządek posiedzenia; **Pobierz porządek ponownie z posiedzenia** pyta o nadpisanie),
   **Adresaci** (uczestnicy, goście, grupy, kontakty, wpis ręczny z możliwością zapisania w kontaktach).
-- **DOCX ogólny** - jeden dokument bez danych adresata. **DOCX imienne** - osobny plik dla każdego
-  adresata (ZIP); dokument jednej osoby nie zawiera danych pozostałych. Wygenerowanie nie oznacza wysłania.
+- **Pobierz**: DOCX albo PDF, ogólny (jeden dokument bez danych adresata) albo imienne (osobny plik dla
+  każdego adresata, ZIP); dokument jednej osoby nie zawiera danych pozostałych. Wygenerowanie nie oznacza wysłania.
+- Układ: logo i nazwa organu z nazwą i terminem posiedzenia, w jednym wierszu znak sprawy i miejscowość
+  z datą, adresat po prawej, treść, porządek obrad, podpis po prawej.
+- **Numer posiedzenia**: jak w posiedzeniu, cyframi rzymskimi albo arabskimi (zmienna `{{numer_posiedzenia}}`;
+  także `{{numer_posiedzenia_rzymski}}` i `{{numer_posiedzenia_arabski}}`).
+- **Stopka, papier firmowy i marginesy**: wgraj obraz strony A4 (PNG, JPG, WEBP, SVG) i ustaw marginesy tak,
+  aby treść nie nachodziła na nagłówek i stopkę papieru. Papieru w postaci pliku PDF nie można wgrać - użyj obrazu.
 - **Posiedzenia → Szablony dokumentów** - nazwane szablony (zakres: jednostka albo grupa), domyślny,
   powielanie, archiwum. Zmiana szablonu nie zmienia utworzonych wcześniej zawiadomień.
 
@@ -273,10 +287,12 @@ i **Dodaj brakujące osoby** (posiedzenia niezakończone). Zakończone posiedzen
   odnośniki, termin wydarzenia, data końca widoczności, przypięcie, oznaczenie „ważne”.
 - **Odbiorcy**: wszyscy radni, grupy (według bieżącego składu) lub wybrane osoby. Osoba w kilku grupach
   widzi informację raz. Informacje nie trafiają do widoku publicznego.
-- **Opublikuj** - odbiorcy dostają powiadomienie w aplikacji. Przy zmianie opublikowanej treści zaznacz
-  **Istotna zmiana**, aby utworzyć nową wersję (odbiorcy zobaczą ją jako nieprzeczytaną).
-- Zakładka **Odbiorcy i otwarcia** - kto otworzył treść bieżącej wersji (pierwsze i ostatnie otwarcie),
-  eksport XLSX. To ewidencja otwarć w aplikacji, nie dowód zapoznania się ani doręczenia.
+- **Opublikuj** - odbiorcy dostają powiadomienie w aplikacji. Przy zmianie opublikowanej treści można
+  zaznaczyć **Oznacz u odbiorców jako nieprzeczytaną**. Historia wersji nie jest przechowywana, a dziennik
+  czynności nie zawiera treści informacji.
+- Zakładka **Odbiorcy i otwarcia** - kto otworzył treść (pierwsze i ostatnie otwarcie), eksport XLSX i PDF.
+  To ewidencja otwarć w aplikacji, nie dowód zapoznania się ani doręczenia.
+- **Usuń trwale** - usuwa informację w każdym stanie razem z plikami i powiadomieniami.
 
 ## 14. Interpelacje i zapytania
 
@@ -294,4 +310,12 @@ roczna albo kadencyjna, terminy odpowiedzi według rodzaju - bez reguły termin 
   zanonimizowany) i **Opublikuj pismo**; potem **Opublikuj sprawę**. Rejestr publiczny: `/public/interpelacje`.
 - Rejestr: filtry (rodzaj, numer, autor, adresat, status, daty, treść), skróty **Oczekujące**, **Po terminie**,
   **Nowe odpowiedzi**; eksport XLSX i PDF z zastosowanymi filtrami.
+- **Pisma w sprawie** mają stały numer (1 - pismo wnoszące, kolejne w chwili złożenia), niezależny od
+  wpisanych dat. Projekty pism nie mają numeru.
+- **Usuń trwale** (karta sprawy → **Więcej**): usuwa sprawę z pismami i plikami. Usunięcie ostatniej sprawy
+  w numeracji zwalnia jej numer; usunięcie wcześniejszej zostawia lukę (bez przenumerowania i duplikatów).
+- **Konta odpowiadających** (zakładka w module): konto dla osoby udzielającej odpowiedzi (np. dyrektora
+  jednostki). Hasło startowe jest pokazywane raz. Przy adresacie sprawy wybierz **Konto odpowiadającego** -
+  osoba widzi wyłącznie przypisane sprawy (`/odpowiedzi`), może przygotować i złożyć odpowiedź z plikami.
+  Dostęp do pozostałych części aplikacji jest blokowany po stronie serwera. **Dezaktywuj** kończy sesje.
 

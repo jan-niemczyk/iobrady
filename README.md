@@ -37,15 +37,19 @@ Interfejs i dokumenty są w języku polskim.
   odcinki z danymi logowania (PDF z kodem QR). Wydruki czarno-białe.
 - **Raporty obecności** - historia obecności na posiedzeniu (spóźnienia, wyjścia, powroty, korekty
   z uzasadnieniem, usprawiedliwienia) i zestawienie zbiorcze za okres z filtrem grup i osób; PDF, DOCX, XLSX.
-- **Zawiadomienia** - dokument DOCX z edytowalną kopią porządku obrad (zmiany nie dotykają porządku
+- **Zawiadomienia** - dokument DOCX lub PDF z edytowalną kopią porządku obrad (zmiany nie dotykają porządku
   posiedzenia), adresatami z jednego słownika i prawdziwą stopką strony; wersja ogólna albo imienna
-  dla każdego adresata. Nazwane szablony tekstów (także osobne dla komisji).
+  dla każdego adresata. Nazwane szablony tekstów (także osobne dla komisji), papier firmowy (obraz strony)
+  z marginesami, logo także w SVG, numer posiedzenia cyframi rzymskimi albo arabskimi.
 - **Informacje** - komunikaty i dokumenty stałe dla wszystkich radnych, wybranych grup lub osób;
-  wersje, ewidencja otwarć treści, powiadomienia w aplikacji.
+  ewidencja otwarć treści (XLSX, PDF), powiadomienia w aplikacji, trwałe usuwanie.
 - **Interpelacje i zapytania** (moduł opcjonalny) - indywidualnie nadawane prawo składania, szkic
   i złożenie, współautorzy z potwierdzeniem, rejestracja z numeracją, przekazania i odpowiedzi osobno
-  dla każdego adresata, ponowienia, PDF każdego pisma, eksport rejestru, publiczny rejestr wersji
-  zanonimizowanych.
+  dla każdego adresata, ponowienia, stała numeracja pism w sprawie, PDF każdego pisma, eksport rejestru,
+  publiczny rejestr wersji zanonimizowanych, trwałe usuwanie (zwolnienie ostatniego numeru). Konta
+  odpowiadających - logowanie wyłącznie do przypisanych spraw i udzielania odpowiedzi.
+- **Edytor tekstu** - duże pola (treść pism, informacji, zawiadomień) z pogrubieniem, kursywą, listami
+  i wyrównaniem; ten sam zapis w podglądzie, DOCX i PDF.
 - **Konta** - logowanie e-mailem i hasłem, wymuszona zmiana hasła startowego, limit bezczynności,
   natychmiastowe unieważnienie sesji po zmianie roli, hasła lub dezaktywacji, rejestr logowań
   i dziennik czynności.

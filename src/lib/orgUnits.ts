@@ -94,3 +94,21 @@ export async function orgUnitDiff(meetingId: string) {
     .map((p) => ({ participantId: p.id, userId: p.userId, name: `${p.user.lastName} ${p.user.firstName}` }));
   return { status: meeting.status, units: meeting.orgUnits.map((o) => ({ id: o.orgUnit.id, name: o.orgUnit.name })), missing, extra };
 }
+
+/**
+ * Funkcja osoby na danym posiedzeniu: funkcja z członkostwa w grupie przypisanej do posiedzenia
+ * (obejmującego termin posiedzenia), a gdy jej brak - funkcja ogólna z konta (User.functionTitle).
+ * Przy posiedzeniu wspólnym kilku grup różne funkcje łączone są przecinkiem.
+ */
+export async function meetingFunctionTitle(tx: Tx, meetingId: string, userId: string): Promise<string | null> {
+  const [meeting, user] = await Promise.all([
+    tx.meeting.findUnique({
+      where: { id: meetingId },
+      select: { scheduledAt: true, orgUnits: { select: { orgUnit: { select: { members: { where: { userId, functionName: { not: null } }, select: { functionName: true, validFrom: true, validTo: true } } } } } } },
+    }),
+    tx.user.findUnique({ where: { id: userId }, select: { functionTitle: true } }),
+  ]);
+  const at = meeting?.scheduledAt ?? new Date();
+  const fromUnits = [...new Set((meeting?.orgUnits ?? []).flatMap((o) => o.orgUnit.members).filter((m) => memberActiveAt(m, at)).map((m) => m.functionName!.trim()).filter(Boolean))];
+  return fromUnits.length ? fromUnits.join(", ") : (user?.functionTitle?.trim() || null);
+}

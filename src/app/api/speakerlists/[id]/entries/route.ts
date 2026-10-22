@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { serverError } from "@/lib/http";
 import { canManageMeeting } from "@/lib/canManage";
+import { meetingFunctionTitle } from "@/lib/orgUnits";
 
 const schema = z.object({
   /** opcjonalne - operator może zapisać innego uczestnika; bez tego = zapisuje siebie */
@@ -168,7 +169,7 @@ async function handlePost(req: Request, ctx: { params: Promise<{ id: string }> }
       userId: targetUserId,
       speakerName: u ? `${u.firstName} ${u.lastName}` : null,
       speakerClubShort: u?.group?.shortName ?? null,
-      speakerRole: u?.functionTitle ?? null,
+      speakerRole: u ? await meetingFunctionTitle(prisma, list.meetingId, u.id) : null,
       order: nextOrder,
       entryType: parsed.data.entryType,
       priority: wantsPriority,

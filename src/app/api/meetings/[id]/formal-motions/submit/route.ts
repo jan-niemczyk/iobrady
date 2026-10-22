@@ -4,6 +4,7 @@ import { publishToMeeting } from "@/lib/events";
 import { listLimitEnabled, newEntryLimitFields } from "@/lib/speechLimit";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { meetingFunctionTitle } from "@/lib/orgUnits";
 
 const schema = z.object({
   userId: z.string().max(64).optional(), // operator może zgłosić w imieniu
@@ -63,7 +64,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       userId: targetUserId,
       speakerName: u ? `${u.firstName} ${u.lastName}` : null,
       speakerClubShort: u?.group?.shortName ?? null,
-      speakerRole: u?.functionTitle ?? null,
+      speakerRole: u ? await meetingFunctionTitle(prisma, meetingId, u.id) : null,
       order: nextOrder,
       entryType: "FORMAL_MOTION",
       ...newEntryLimitFields(await listLimitEnabled(queue), settings?.defaultFormalMotionLimitSec ?? null),

@@ -102,8 +102,10 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string 
     if (isOperator) {
       if (c.status === "DRAFT" && !c.enteredById) throw new HttpError(404, "Nie znaleziono");
     } else {
-      if (c.status !== "DRAFT") throw new HttpError(409, "Usunąć można tylko niezłożony szkic.");
+      // Spoza grona autorów - jak nieistniejąca sprawa (bez ujawniania jej stanu).
+      if (!c.authors.some((a) => a.userId === session.user.id)) throw new HttpError(404, "Nie znaleziono");
       if (c.authors.find((a) => a.isPrimary)?.userId !== session.user.id) throw new HttpError(403, "Szkic może usunąć autor główny.");
+      if (c.status !== "DRAFT") throw new HttpError(409, "Usunąć można tylko niezłożony szkic.");
     }
     const files = await prisma.inquiryAttachment.findMany({ where: { letter: { caseId: id } }, select: { storedName: true } });
     await prisma.$transaction(async (tx) => {

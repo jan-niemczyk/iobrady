@@ -872,116 +872,98 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                       <div className="d-flex align-items-start gap-2">
                         <div className="flex-grow-1 min-w-0" style={{ overflowWrap: "anywhere" }}>{a.title}</div>
                         <AgendaStatusPill status={a.status} manual={a.manuallyCompleted} />
-                        {a.status !== "CURRENT" && state.status !== "CLOSED" && (
-                          <button
-                            className="btn btn-sm btn-link text-body-secondary agenda-del p-0 lh-1" style={{ minWidth: 36, minHeight: 36 }}
-                            title="Usuń punkt z porządku obrad"
-                            aria-label={`Usuń punkt ${a.unnumbered ? a.title : a.number}`}
-                            onClick={() => act(`/api/agenda/${a.id}`, undefined, {
-                              title: "Usunąć punkt?",
-                              message: `Punkt „${a.title.length > 80 ? a.title.slice(0, 80) + "…" : a.title}” zostanie usunięty z porządku obrad. Głosowania tego punktu zostaną zachowane jako głosowania bez punktu.`,
-                              confirmLabel: "Usuń punkt",
-                              danger: true,
-                            }, "DELETE", "Punkt został usunięty.")}
-                          >
-                            <IconTrash size={16} />
-                          </button>
-                        )}
                       </div>
-                      {/* Wszystkie czynności widoczne, pogrupowane: rozpoczęcie punktu, dyskusja i głosowania, usunięcie (ikona z prawej). */}
-                      <div className="d-flex flex-wrap align-items-center gap-2 mt-2">
-                    {a.status !== "CURRENT" && state.status !== "CLOSED" && (
-                      <button
-                        className="btn btn-sm btn-outline-primary"
-                        onClick={() =>
-                          act(`/api/agenda/${a.id}/start`, undefined,
-                            a.status === "COMPLETED"
-                              ? { title: "Otworzyć punkt ponownie?", message: "Punkt został już zakończony. Punkty zakończone wcześniej można zakończyć ponownie po skończeniu pracy.", confirmLabel: "Otwórz ponownie" }
-                              : undefined,
-                            "POST",
-                            a.status === "PAUSED" ? "Punkt został wznowiony." : "Punkt został rozpoczęty.")
-                        }
-                      >
-                        {a.status === "PAUSED" ? "Wznów" : a.status === "COMPLETED" ? "Otwórz ponownie" : "Rozpocznij"}
-                      </button>
-                    )}
-                    {state.status !== "CLOSED" && a.status !== "CURRENT" && a.status !== "COMPLETED" && !a.hasRun && (
-                      <button
-                        className="btn btn-sm btn-outline-secondary"
-                        title="Zmień status na zakończony bez otwierania punktu i bez wpisywania godzin"
-                        onClick={() => act(`/api/agenda/${a.id}/manual-completion`, { action: "mark" }, {
-                          title: "Oznaczyć punkt jako zakończony?",
-                          message: "Punkt otrzyma status „zakończony” bez zarejestrowanego przebiegu - godziny otwarcia i zamknięcia pozostaną puste. Czynność zostanie zapisana w dzienniku. Oznaczenie można cofnąć.",
-                          confirmLabel: "Oznacz jako zakończony",
-                        }, "POST", "Punkt oznaczono jako zakończony.")}
-                      >
-                        Oznacz jako zakończony
-                      </button>
-                    )}
-                    {state.status !== "CLOSED" && a.manuallyCompleted && a.status === "COMPLETED" && (
-                      <button
-                        className="btn btn-sm btn-outline-secondary"
-                        onClick={() => act(`/api/agenda/${a.id}/manual-completion`, { action: "unmark" }, {
-                          title: "Cofnąć oznaczenie zakończenia?",
-                          message: "Punkt wróci do stanu „oczekuje”. Godziny pozostaną puste.",
-                          confirmLabel: "Cofnij oznaczenie",
-                        }, "POST", "Cofnięto oznaczenie zakończenia.")}
-                      >
-                        Cofnij oznaczenie
-                      </button>
-                    )}
-                    {state.status !== "CLOSED" && (
-                    <div className="btn-group btn-group-sm" role="group" aria-label={`Dyskusja i głosowania: punkt ${a.unnumbered ? a.title : a.number}`}>
-                    {(() => {
-                      const sl = state.speakerLists?.find((x) => x.agendaItemId === a.id);
-                      const on = sl?.selfSignupEnabled ?? false;
-                      return (
-                        <button
-                          className={`btn btn-sm${on ? " btn-outline-danger" : ""}`}
-                          title={on ? "Zapisy uczestników włączone - kliknij, aby wyłączyć" : "Włącz zapisy uczestników do dyskusji w tym punkcie (także przed jego rozpoczęciem)"}
-                          onClick={async () => {
-                            if (sl) {
-                              await fetch(`/api/speakerlists/${sl.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ selfSignupEnabled: !on }) });
-                            } else {
-                              await fetch(`/api/agenda/${a.id}/speakerlist`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ selfSignupEnabled: true }) });
-                            }
-                            refetch();
-                          }}
-                        >
-                          {on ? "Zapisy: wł." : "Zapisy"}
-                        </button>
-                      );
-                    })()}
-                    {a.status === "PENDING" && a.id !== state.currentAgendaItemId && (() => {
-                      const sl = state.speakerLists?.find((x) => x.agendaItemId === a.id);
-                      if (!sl) return null;
-                      const n = sl.entries.filter((e) => e.status === "WAITING").length;
-                      return (
-                        <button
-                          className="btn btn-sm"
-                          onClick={() => setSignupsItemId(a.id)}
-                          title="Podgląd zapisów do tego punktu: kolejność, usuwanie, dopisywanie"
-                          aria-label={`Zapisani do punktu ${a.unnumbered ? a.title : a.number}: ${n}`}
-                        >
-                          Zapisani: {n}
-                        </button>
-                      );
-                    })()}
-                    {a.status !== "COMPLETED" && (
-                      <button
-                        className="btn btn-sm"
-                        title="Zaplanuj głosowanie do tego punktu (zapis w stanie 'Przygotowane', uruchamia ręcznie)"
-                        onClick={() => {
-                          setPlanningItem({ id: a.id, title: a.title });
-                          setComposerMode("plan");
-                        }}
-                      >
-                        + Głosowanie
-                      </button>
-                    )}
-                    </div>
-                    )}
-                      </div>
+                      {/* Jedna czynność główna na wierzchu; pozostałe (zapisy, planowanie głosowania, oznaczenie zakończenia, usunięcie) w menu „Więcej”. */}
+                      {state.status !== "CLOSED" && (() => {
+                        const sl = state.speakerLists?.find((x) => x.agendaItemId === a.id);
+                        const signupOn = sl?.selfSignupEnabled ?? false;
+                        const waiting = a.status === "PENDING" && a.id !== state.currentAgendaItemId && sl ? sl.entries.filter((e) => e.status === "WAITING").length : 0;
+                        const label = a.unnumbered ? a.title : a.number;
+                        const canMark = a.status !== "CURRENT" && a.status !== "COMPLETED" && !a.hasRun;
+                        const canUnmark = a.manuallyCompleted && a.status === "COMPLETED";
+                        return (
+                          <div className="d-flex flex-wrap align-items-center gap-2 mt-2">
+                            {a.status !== "CURRENT" && (
+                              <button
+                                className={`btn btn-sm ${a.status === "COMPLETED" ? "" : "btn-outline-primary"}`}
+                                onClick={() =>
+                                  act(`/api/agenda/${a.id}/start`, undefined,
+                                    a.status === "COMPLETED" ? { title: "Otworzyć punkt ponownie?", confirmLabel: "Otwórz ponownie" } : undefined,
+                                    "POST",
+                                    a.status === "PAUSED" ? "Punkt został wznowiony." : "Punkt został rozpoczęty.")
+                                }
+                              >
+                                {a.status === "PAUSED" ? "Wznów" : a.status === "COMPLETED" ? "Otwórz ponownie" : "Rozpocznij"}
+                              </button>
+                            )}
+                            {waiting > 0 && (
+                              <button className="btn btn-sm" onClick={() => setSignupsItemId(a.id)} aria-label={`Zapisani do punktu ${label}: ${waiting}`}>
+                                Zapisani: {waiting}
+                              </button>
+                            )}
+                            {signupOn && <span className="small text-danger">Zapisy otwarte</span>}
+                            <div className="dropdown ms-auto">
+                              <button className="btn btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label={`Więcej czynności: punkt ${label}`}>
+                                Więcej
+                              </button>
+                              <ul className="dropdown-menu dropdown-menu-end">
+                                <li>
+                                  <button type="button" className="dropdown-item" onClick={async () => {
+                                    if (sl) await fetch(`/api/speakerlists/${sl.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ selfSignupEnabled: !signupOn }) });
+                                    else await fetch(`/api/agenda/${a.id}/speakerlist`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ selfSignupEnabled: true }) });
+                                    refetch();
+                                  }}>
+                                    {signupOn ? "Zamknij zapisy do dyskusji" : "Otwórz zapisy do dyskusji"}
+                                  </button>
+                                </li>
+                                {sl && waiting === 0 && a.status === "PENDING" && (
+                                  <li><button type="button" className="dropdown-item" onClick={() => setSignupsItemId(a.id)}>Zapisani do dyskusji</button></li>
+                                )}
+                                {a.status !== "COMPLETED" && (
+                                  <li><button type="button" className="dropdown-item" onClick={() => { setPlanningItem({ id: a.id, title: a.title }); setComposerMode("plan"); }}>Zaplanuj głosowanie</button></li>
+                                )}
+                                {canMark && (
+                                  <li>
+                                    <button type="button" className="dropdown-item" onClick={() => act(`/api/agenda/${a.id}/manual-completion`, { action: "mark" }, {
+                                      title: "Oznaczyć punkt jako zakończony?",
+                                      message: "Punkt otrzyma status „zakończony” bez godzin otwarcia i zamknięcia. Oznaczenie można cofnąć.",
+                                      confirmLabel: "Oznacz jako zakończony",
+                                    }, "POST", "Punkt oznaczono jako zakończony.")}>
+                                      Oznacz jako zakończony
+                                    </button>
+                                  </li>
+                                )}
+                                {canUnmark && (
+                                  <li>
+                                    <button type="button" className="dropdown-item" onClick={() => act(`/api/agenda/${a.id}/manual-completion`, { action: "unmark" }, {
+                                      title: "Cofnąć oznaczenie zakończenia?",
+                                      message: "Punkt wróci do stanu „oczekuje”.",
+                                      confirmLabel: "Cofnij oznaczenie",
+                                    }, "POST", "Cofnięto oznaczenie zakończenia.")}>
+                                      Cofnij oznaczenie zakończenia
+                                    </button>
+                                  </li>
+                                )}
+                                {a.status !== "CURRENT" && (
+                                  <>
+                                    <li><hr className="dropdown-divider" /></li>
+                                    <li>
+                                      <button type="button" className="dropdown-item text-danger" onClick={() => act(`/api/agenda/${a.id}`, undefined, {
+                                        title: "Usunąć punkt?",
+                                        message: `Punkt „${a.title.length > 80 ? a.title.slice(0, 80) + "…" : a.title}” zostanie usunięty z porządku obrad. Głosowania tego punktu zostaną zachowane jako głosowania bez punktu.`,
+                                        confirmLabel: "Usuń punkt",
+                                        danger: true,
+                                      }, "DELETE", "Punkt został usunięty.")}>
+                                        Usuń punkt
+                                      </button>
+                                    </li>
+                                  </>
+                                )}
+                              </ul>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </li>

@@ -127,7 +127,6 @@ export function SettingsForm({ initial }: { initial: Settings }) {
           <div className="col-12">
             <label className="form-label" htmlFor="set-org">Nazwa organizacji</label>
             <input id="set-org" className="form-control" value={s.organizationName} onChange={(e) => update("organizationName", e.target.value)} />
-            <div className="form-text">Wyświetlana w nagłówkach raportów i protokołów.</div>
           </div>
           <div className="col-12">
             <Check id="set-groups" checked={s.groupsEnabled} onChange={(v) => update("groupsEnabled", v)}
@@ -238,7 +237,7 @@ export function SettingsForm({ initial }: { initial: Settings }) {
                 Biały (bez koloru)
               </button>
             </div>
-            <div className="form-text">Domyślnie ciemny morski granat. Biały = pasek bez koloru.</div>
+            <div className="form-text">Biały = pasek bez koloru.</div>
           </div>
 
           <div className="col-12">
@@ -327,7 +326,6 @@ export function SettingsForm({ initial }: { initial: Settings }) {
             <select id="set-ofont" className="form-select" value={s.overlayFont} onChange={(e) => update("overlayFont", e.target.value)}>
               {PRESENTATION_FONTS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
             </select>
-            <div className="form-text">Niezależna od czcionki prezentacji.</div>
           </div>
           <div className="col-12 col-md-6">
             <label className="form-label" htmlFor="set-ores">Wyniki głosowania na transmisji</label>
@@ -335,7 +333,6 @@ export function SettingsForm({ initial }: { initial: Settings }) {
               <option value="BARS">Poziome paski (podsuma)</option>
               <option value="BOARD">Tablica jak na prezentacji</option>
             </select>
-            <div className="form-text">Sposób pokazywania wyników po zamknięciu głosowania.</div>
           </div>
           <div className="col-12 col-md-6">
             <label className="form-label" htmlFor="set-otiming">Tablica na transmisji - kiedy</label>
@@ -593,7 +590,6 @@ function BoardSection({ s, update, pending }: {
             <label className="form-label" htmlFor="board-text">Tekst pod logo</label>
             <textarea id="board-text" className="form-control" rows={4} maxLength={600}
               value={s.boardText ?? ""} onChange={(e) => update("boardText", e.target.value)} />
-            <div className="form-text">Każdy wiersz pola to osobny wiersz na planszy. Zwykły tekst (bez formatowania).</div>
           </div>
 
           <div>
@@ -619,7 +615,6 @@ function BoardSection({ s, update, pending }: {
               fontFamily={fontStack(s.boardFont ?? s.presentationFont)}
             />
           </div>
-          <div className="form-text">Podgląd w proporcjach ekranu 16:9 - ten sam układ co na prezentacji.</div>
         </div>
       </div>
     </Section>

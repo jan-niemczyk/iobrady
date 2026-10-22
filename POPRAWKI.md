@@ -1603,3 +1603,37 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
 - [x] Etykieta wyniku sprawdzenia obecności: „Kworum potwierdzone” (zamiast „Kworum jest”) - widok publiczny,
       strona radnego, widok przewodniczącego, raporty i dziennik. Usunięty prefiks „Przedmiot głosowania:”
       przed nazwą głosowania (lista, szczegóły, okno wyników radnego).
+
+## ABJ. Korespondencja, zawiadomienia, edytor tekstu, wydruki
+
+- [x] **Panel radnego**: pole tytułu na całą szerokość, wybór współautorów jako lista z wyszukiwaniem
+      i polami wyboru (zamiast podpowiedzi), osobna klasa `.pt-field-input` (kolizja z `.pt-input`).
+- [x] **Trwałe usuwanie** spraw (operator: każda widoczna sprawa; autor: własny szkic; osoba spoza autorów
+      dostaje 404) i informacji (każdy stan), z plikami i powiadomieniami. Numer = max+1 pod blokadą: usunięcie
+      ostatniej sprawy zwalnia numer, wcześniejszej zostawia lukę.
+- [x] **Logo w zawiadomieniach**: SVG i WEBP były pomijane w DOCX - konwersja do PNG (`sharp` ^0.35.5,
+      `lib/rasterImage.ts`), także w PDF.
+- [x] **Numeracja pism w sprawie**: `InquiryLetter.seq` nadawany przy złożeniu pod blokadą sprawy (wcześniej
+      kolejność z dat - odpowiedź z samą datą lub antydatowana wypadała jako pismo 1). Uzupełnienie istniejących
+      danych w `scripts/post-migrate.ts`.
+- [x] **Konta odpowiadających**: rola `RESPONDER`, `InquiryAddressee.responderUserId`; proxy przepuszcza tylko
+      `/odpowiedzi`, `/api/responder`, konto i sesję (reszta API 403); dostęp do sprawy wyłącznie przez
+      przypisanego adresata; konta wyłączone z list uczestników, grup i adresatów.
+- [ ] **Karty głosowania w Bootstrapie**: przygotowany projekt do zatwierdzenia, bez zmian w kodzie.
+- [x] **Mniej przycisków i objaśnień**: wiersz punktu porządku - jedna czynność główna i menu **Więcej**
+      (zapisy, planowanie głosowania, oznaczenie zakończenia, usunięcie); usunięte zbędne opisy pól.
+- [x] **Funkcje z grup**: funkcja z członkostwa w grupie posiedzenia (w terminie posiedzenia) na liście mówców,
+      wnioskach formalnych, ekranie i transmisji; `User.functionTitle` zostaje jako funkcja domyślna.
+- [x] **Zawiadomienia**: układ według wzoru, PDF obok DOCX, papier firmowy (obraz strony) z marginesami,
+      numer posiedzenia rzymski/arabski i zmienne `numer_posiedzenia_rzymski`/`_arabski`.
+- [x] **Raport wystąpień**: kolejność „nazwisko imię” zgodna z nagłówkiem, poprawiona linia w PDF.
+- [x] **Edytor WYSIWYG** (`components/RichEditor.tsx`) w dużych polach - zapis w ograniczonym znaczniku, ten sam
+      w podglądzie, DOCX i PDF; wklejanie jako zwykły tekst.
+- [x] **Wydruki wyłącznie w czerni** (PDF i DOCX: tekst, linie, tła).
+- [x] **PDF interpelacji**: układ pisma urzędowego, numer pisma w sprawie, oznaczenie projektu bez szarego
+      znaku wodnego, zestawienie sprawy i każde pismo od nowej strony.
+- [x] **Informacje**: PDF ewidencji otwarć; bez historii wersji (`InfoPostVersion` usunięty w `pre-push.sql`),
+      dziennik bez tytułów i treści (dotychczasowe wpisy oczyszczone w `post-migrate.ts`).
+- Testy: nowy `tests/e2e/correspondence.spec.ts` (w CI). Przebieg: e2e 41/41, sondy 45/45, `tsc`, build.
+- Schemat: pola opcjonalne, nowa wartość enuma; usunięcie tabeli wersji jawnie w `pre-push.sql`.
+

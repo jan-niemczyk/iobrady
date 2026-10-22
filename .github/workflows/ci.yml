@@ -75,5 +75,7 @@ jobs:
         run: E2E_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/info.spec.ts --reporter=line
       - name: Interpelacje i zapytania
         run: E2E_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/inquiries.spec.ts --reporter=line
+      - name: Usuwanie i numeracja, konta odpowiadających, funkcje z grup
+        run: E2E_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/correspondence.spec.ts --reporter=line
       - if: failure()
         run: tail -200 next.log

@@ -703,9 +703,8 @@ function UserModal({ user, groups, onClose, onSave, onDelete, pending }: {
           <input id="um-email" type="email" className="form-control" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="col-12">
-          <label className="form-label" htmlFor="um-func">Funkcja <span className="fw-normal text-body-secondary">(opcjonalnie)</span></label>
+          <label className="form-label" htmlFor="um-func">Funkcja domyślna <span className="fw-normal text-body-secondary">(gdy grupa posiedzenia nie określa funkcji)</span></label>
           <input id="um-func" className="form-control" placeholder="np. Przewodniczący, Wiceprzewodnicząca" value={functionTitle} onChange={(e) => setFunctionTitle(e.target.value)} />
-          <div className="form-text">Pokazywana na liście mówców, prezentacji i transmisji.</div>
         </div>
         <div className="col-12">
           <div className="form-check">
