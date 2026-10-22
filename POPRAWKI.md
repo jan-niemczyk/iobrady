@@ -1619,7 +1619,12 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
 - [x] **Konta odpowiadających**: rola `RESPONDER`, `InquiryAddressee.responderUserId`; proxy przepuszcza tylko
       `/odpowiedzi`, `/api/responder`, konto i sesję (reszta API 403); dostęp do sprawy wyłącznie przez
       przypisanego adresata; konta wyłączone z list uczestników, grup i adresatów.
-- [ ] **Karty głosowania w Bootstrapie**: przygotowany projekt do zatwierdzenia, bez zmian w kodzie.
+- [x] **Karty głosowania w Bootstrapie** (projekt zatwierdzony): zwykłe, tajne, lista, pakiet, kworum, PIN
+      i komunikaty „Twój głos” na klasach Bootstrapa (btn, card, list-group, btn-check, badge, alert), wygląd
+      jak dotychczas. Osobny arkusz `src/app/ballot-bootstrap.css` z `src/styles/ballot-bootstrap.scss`,
+      zawężony do `.bs-ballot` przez `scripts/build-ballot-css.mjs` (zagnieżdżenie w Sass psuło selektory
+      z rodzicem, np. `.btn-check:checked + .btn`). Tryb czarny przez `data-bs-theme` na karcie. Logika,
+      skróty i etykiety bez zmian.
 - [x] **Mniej przycisków i objaśnień**: wiersz punktu porządku - jedna czynność główna i menu **Więcej**
       (zapisy, planowanie głosowania, oznaczenie zakończenia, usunięcie); usunięte zbędne opisy pól.
 - [x] **Funkcje z grup**: funkcja z członkostwa w grupie posiedzenia (w terminie posiedzenia) na liście mówców,
@@ -1643,7 +1648,8 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
       sondy 45/45, `tsc`, build.
 - Schemat: pola opcjonalne, nowa wartość enuma; usunięcie tabeli wersji jawnie w `pre-push.sql`.
 - [x] **Tło panelu radnego** jak u operatora (`#F5F7FA`; panel radnego nie ładuje arkusza Bootstrapa, więc
-      dziedziczył białe `--color-paper`). Tryb czarny bez zmian.
+      dziedziczył białe `--color-paper`) - także pełnoekranowy widok głosowania (`--pt-page-bg`).
+      Tryb czarny bez zmian.
 - [x] **Papier firmowy - stopka różnej wysokości**: przy papierze margines dolny oznacza wysokość stopki papieru
       (strefa wolna). Stopka dokumentu (tekst, numeracja) stoi tuż nad nią, treść kończy się nad stopką
       dokumentu - w PDF i DOCX (`footer` = wysokość stopki papieru). Podgląd: pełna strona A4 z przerywanymi

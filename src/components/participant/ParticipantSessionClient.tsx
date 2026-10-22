@@ -6,6 +6,7 @@ import { VoteErrorBoundary } from "./VoteErrorBoundary";
 import { ask, notify, notifyFailure, readUserError } from "@/lib/feedback";
 import type { AttendanceStatus, VoteType, VoteVisibility, MajorityType, MajorityKind, MajorityBase, VoteChoice } from "@prisma/client";
 import { IconBackspace, IconCheck, IconChevronDown, IconClose } from "@/components/ui/Icon";
+import "@/app/ballot-bootstrap.css";
 
 export interface ActiveVote {
   id: string;
@@ -670,23 +671,25 @@ export function VoteBallot({ vote, onCast }: { vote: ActiveVote; onCast: () => v
   }
 
   const isList = vote.type === "LIST";
+  const bsTheme = useBsTheme();
 
   return (
-    <div className="card slide-in" style={{ borderColor: "var(--color-live)", borderWidth: 2 }}>
-      <div className="px-5 py-3 border-b flex items-center justify-between" style={{ background: "var(--color-no-bg)", borderColor: "var(--color-live)" }}>
-        <span className="pill pill-live" style={{ fontSize: 13 }}>
+    <div className="bs-ballot slide-in">
+    <div className="card vote-card" data-bs-theme={bsTheme}>
+      <div className="card-header py-2">
+        <span className="badge rounded-pill live-pill">
           Trwa głosowanie - {vote.visibility === "SECRET" ? "tajne" : "jawne"}
         </span>
       </div>
-      <div className="p-6">
+      <div className="card-body p-4">
         {vote.agendaItemTitle && (
-          <div className="mb-1" style={{ fontSize: 13, color: "var(--color-ink-3)" }}>
+          <div className="small text-body-secondary mb-1">
             {vote.agendaItemNumber ? `Punkt ${vote.agendaItemNumber}. ` : ""}{vote.agendaItemTitle}
           </div>
         )}
-        <h2 style={{ fontSize: 22, lineHeight: 1.2 }} className="mb-2">{vote.title}</h2>
+        <h2 className="vote-title fw-medium mb-3">{vote.title}</h2>
         {vote.description && (
-          <p className="text-sm mb-5" style={{ color: "var(--color-ink-2)" }}>{vote.description}</p>
+          <p className="small text-body-secondary mb-3">{vote.description}</p>
         )}
 
         {(() => {
@@ -737,69 +740,56 @@ export function VoteBallot({ vote, onCast }: { vote: ActiveVote; onCast: () => v
           );
         })()}
 
-        <span className="sr-only" role="status" aria-live="polite">{sending ? "Wysyłanie głosu" : ""}</span>
-        {error && (
-          <div role="alert" className="mt-4 px-3 py-2 text-sm" style={{ background: "var(--color-no-bg)", border: "1px solid var(--color-no)", color: "var(--color-no)" }}>
-            {error}
-          </div>
-        )}
+        <span className="visually-hidden" role="status" aria-live="polite">{sending ? "Wysyłanie głosu" : ""}</span>
+        {error && <div role="alert" className="alert alert-danger small py-2 px-3 mt-3 mb-0">{error}</div>}
 
         {vote.alreadyVoted && vote.visibility === "OPEN" && vote.myChoice && vote.type !== "QUORUM" && (
-          <div
-            className="mt-5 px-4 py-3 text-center"
-            style={{
-              border: "2px solid var(--color-ink)",
-              background: vote.myChoice === "YES" ? "var(--color-yes-bg)"
-                : vote.myChoice === "NO" ? "var(--color-no-bg)"
-                : "var(--color-abstain-bg)",
-            }}
-          >
-            <div className="eyebrow" style={{ fontSize: 10 }}>Twój głos</div>
-            <div className="text-lg font-medium" style={{
-              color: vote.myChoice === "YES" ? "var(--color-yes)"
-                : vote.myChoice === "NO" ? "var(--color-no)"
-                : "var(--color-abstain)",
-            }}>
+          <div className={`text-center border border-2 border-dark rounded-1 px-3 py-3 mt-4 ${vote.myChoice === "YES" ? "bg-success-subtle" : vote.myChoice === "NO" ? "bg-danger-subtle" : "bg-warning-subtle"}`}>
+            <div className="small text-body-secondary">Twój głos</div>
+            <div className={`fs-5 fw-medium ${vote.myChoice === "YES" ? "text-success" : vote.myChoice === "NO" ? "text-danger" : "text-warning-emphasis"}`}>
               {vote.myChoice === "YES" ? "ZA" : vote.myChoice === "NO" ? "PRZECIW" : "WSTRZYMAŁEŚ SIĘ"}
             </div>
-            <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>
+            <p className="small text-body-secondary mt-1 mb-0">
               {vote.voteIsFinal ? "Głos jest ostateczny - nie można go zmienić." : "Możesz zmienić swój głos do czasu zamknięcia głosowania."}
             </p>
           </div>
         )}
 
         {vote.alreadyVoted && vote.visibility === "OPEN" && isList && (
-          <div
-            className="mt-5 px-4 py-3 text-center"
-            style={{ border: "2px solid var(--color-ink)", background: "var(--color-yes-bg)" }}
-          >
-            <div className="eyebrow" style={{ fontSize: 10 }}>Twój głos</div>
-            <div className="text-lg font-medium" style={{ color: "var(--color-yes)" }}>
-              Głos został oddany
-            </div>
-            <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>
+          <div className="text-center border border-2 border-dark rounded-1 bg-success-subtle px-3 py-3 mt-4">
+            <div className="small text-body-secondary">Twój głos</div>
+            <div className="fs-5 fw-medium text-success">Głos został oddany</div>
+            <p className="small text-body-secondary mt-1 mb-0">
               {vote.voteIsFinal ? "Głos jest ostateczny - nie można go zmienić." : "Możesz zmienić swój wybór do czasu zamknięcia głosowania."}
             </p>
           </div>
         )}
 
         {vote.alreadyVoted && vote.visibility === "SECRET" && (
-          <div
-            className="mt-5 px-4 py-3 text-center"
-            style={{ border: "2px solid var(--color-ink)", background: "var(--color-paper-2)" }}
-          >
-            <div className="eyebrow" style={{ fontSize: 10 }}>Głosowanie tajne</div>
-            <div className="text-lg font-medium" style={{ color: "var(--color-ink)" }}>
-              Twój głos został oddany
-            </div>
-            <p className="text-xs mt-1" style={{ color: "var(--color-ink-3)" }}>
-              Wybór pozostaje anonimowy i nie jest nigdzie zapisywany.
-            </p>
+          <div className="text-center border border-2 border-dark rounded-1 bg-body-tertiary px-3 py-3 mt-4">
+            <div className="small text-body-secondary">Głosowanie tajne</div>
+            <div className="fs-5 fw-medium">Twój głos został oddany</div>
+            <p className="small text-body-secondary mt-1 mb-0">Wybór pozostaje anonimowy i nie jest nigdzie zapisywany.</p>
           </div>
         )}
       </div>
     </div>
+    </div>
   );
+}
+
+/** Motyw Bootstrapa karty zgodny z trybem panelu (atrybut data-theme na <html>, przełącznik „Tryb czarny”). */
+function useBsTheme(): "light" | "dark" {
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  useEffect(() => {
+    const el = document.documentElement;
+    const read = () => setTheme(el.getAttribute("data-theme") === "dark" ? "dark" : "light");
+    read();
+    const mo = new MutationObserver(read);
+    mo.observe(el, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => mo.disconnect();
+  }, []);
+  return theme;
 }
 
 function StandardBallot({
@@ -814,9 +804,9 @@ function StandardBallot({
   pending: boolean;
 }) {
   const buttons: { choice: VoteChoice; label: string; cls: string }[] = [
-    { choice: "YES", label: "Za", cls: "btn-yes" },
-    { choice: "NO", label: "Przeciw", cls: "btn-no" },
-    { choice: "ABSTAIN", label: "Wstrzymuję się", cls: "btn-abstain" },
+    { choice: "YES", label: "Za", cls: "btn-success" },
+    { choice: "NO", label: "Przeciw", cls: "btn-danger" },
+    { choice: "ABSTAIN", label: "Wstrzymuję się", cls: "btn-warning" },
   ];
   // Skróty: Z/P/W oddają głos od razu (auto-wysłanie). N - głos nieważny (tajne).
   const canVote = !pending && !locked;
@@ -830,9 +820,7 @@ function StandardBallot({
     { key: "o", enabled: canVote && secret, action: () => onInvalid(), description: "Głos nieważny (obecny)" },
   ], [canVote, secret]);
   return (
-    <div className="grid grid-cols-1 gap-3">
-      <div className="text-xs mb-1" style={{ color: "var(--color-ink-3)" }}>
-      </div>
+    <div className="d-grid gap-2">
       {buttons.map((b) => {
         // W głosowaniu TAJNYM nigdy nie pokazujemy który przycisk został wybrany
         // (brak ptaszka, brak obramówki). W jawnym - pokazujemy.
@@ -842,12 +830,7 @@ function StandardBallot({
             key={b.choice}
             disabled={pending || locked}
             onClick={() => cast(b.choice)}
-            className={`btn ${b.cls} btn-xl`}
-            style={{
-              outline: isMine ? "3px solid var(--color-ink)" : undefined,
-              outlineOffset: 2,
-              opacity: pending ? 0.7 : 1,
-            }}
+            className={`btn ${b.cls} btn-vote${isMine ? " btn-mine" : ""}`}
           >
             {b.label}{isMine && !pending && <> <IconCheck size={20} strokeWidth={2.4} /></>}{pending && !secret && sentChoice === b.choice && " - wysyłanie…"}
           </button>
@@ -859,14 +842,13 @@ function StandardBallot({
         <button
           disabled={pending || locked}
           onClick={onInvalid}
-          className="btn btn-xl"
-          style={{ opacity: pending ? 0.7 : 1 }}
+          className="btn btn-outline-dark btn-vote"
           title="Oddaj głos nieważny (liczy się obecność, głos nie jest ważny)"
         >
           Obecny
         </button>
       )}
-      {pending && secret && <div aria-hidden="true" className="text-sm text-center" style={{ color: "var(--color-ink-2)" }}>Wysyłanie głosu…</div>}
+      {pending && secret && <div aria-hidden="true" className="small text-center text-body-secondary">Wysyłanie głosu…</div>}
     </div>
   );
 }
@@ -927,48 +909,49 @@ function ListBallot({
 
   return (
     <div>
-      <p className="text-xs mb-3" style={{ color: "var(--color-ink-3)" }}>
+      <p className="small text-body-secondary mb-3">
         Wybierz {min === max ? `dokładnie ${min}` : `od ${min} do ${max}`} opcji. <strong>Niezaznaczenie = głos przeciw danemu kandydatowi.</strong>
       </p>
-      <ul className="border border-[var(--color-rule)] divide-y divide-[var(--color-rule-soft)]">
+      <ul className="list-group border border-dark rounded-1">
         {options.map((o, i) => {
           const checked = selectedIds.includes(o.id);
           const disabled = locked || (!checked && selectedIds.length >= max);
           const isActive = i === activeIdx;
           return (
-            <li key={o.id} style={{ outline: isActive ? "2px solid var(--color-accent)" : "none", outlineOffset: -2 }}>
+            <li key={o.id} className={`list-group-item p-0 border-0 border-bottom${checked ? " list-group-item-success" : ""}${isActive ? " ballot-item-active" : ""}`}>
               <label
-                className={`flex items-center gap-3 px-4 py-3 cursor-pointer ${disabled ? "opacity-40" : "hover:bg-[var(--color-paper-2)]"}`}
-                style={{ background: checked ? "var(--color-yes-bg)" : undefined }}
+                className={`d-flex align-items-center gap-3 px-3 py-2 w-100 ${disabled ? "opacity-50" : ""}`}
+                style={{ cursor: disabled ? "default" : "pointer", minHeight: 52 }}
                 onClick={() => setActiveIdx(i)}
               >
                 <input
                   type="checkbox"
+                  className="form-check-input ballot-check"
                   checked={checked}
                   disabled={disabled}
                   onChange={() => toggle(o.id)}
-                  style={{ width: 20, height: 20 }}
                 />
-                <span className="mono text-xs" style={{ color: "var(--color-ink-3)", width: 24 }}>{o.order}.</span>
-                <span className="text-base flex-1">{o.label}</span>
-                {checked && <span className="pill pill-ok" style={{ fontSize: 10 }}>ZA</span>}
-                {!checked && <span className="pill pill-bad" style={{ fontSize: 10 }}>PRZECIW</span>}
+                <span className="small text-body-secondary font-monospace" style={{ width: 24 }}>{o.order}.</span>
+                <span className="flex-grow-1">{o.label}</span>
+                {checked
+                  ? <span className="badge text-bg-success">ZA</span>
+                  : <span className="badge border border-danger text-danger bg-danger-subtle fw-normal">PRZECIW</span>}
               </label>
             </li>
           );
         })}
       </ul>
 
-      <div className="flex items-center justify-between mt-4 text-xs" style={{ color: "var(--color-ink-3)" }}>
+      <div className="d-flex align-items-center justify-content-between mt-3 small text-body-secondary">
         <span>
-          Zaznaczono: <span className="mono">{selectedIds.length}</span> / {max}
+          Zaznaczono: <span className="font-monospace">{selectedIds.length}</span> / {max}
           {remaining > 0 && ` (pozostało ${remaining})`}
         </span>
-        {tooFew && <span style={{ color: "var(--color-no)" }}>Wymagane co najmniej {min}</span>}
+        {tooFew && <span className="text-danger">Wymagane co najmniej {min}</span>}
       </div>
 
       <button
-        className="btn btn-primary btn-lg w-full mt-4"
+        className="btn btn-dark btn-vote w-100 mt-3"
         disabled={pending || tooFew || locked}
         onClick={onCast}
       >
@@ -1197,21 +1180,16 @@ function QuorumBallot({
     { key: "Enter", enabled: canConfirm, action: onCast, description: "Potwierdź obecność (kworum)" },
   ], [canConfirm]);
   return (
-    <div className="grid grid-cols-1 gap-3">
+    <div className="d-grid gap-2">
       <button
         disabled={pending || confirmed}
         onClick={onCast}
-        className="btn btn-yes btn-xl"
-        style={{
-          outline: confirmed ? "3px solid var(--color-ink)" : undefined,
-          outlineOffset: 2,
-          opacity: pending ? 0.6 : 1,
-        }}
+        className={`btn btn-success btn-vote text-uppercase${confirmed ? " btn-mine" : ""}`}
       >
-        {confirmed ? <>Obecność potwierdzona <IconCheck size={18} /></> : "OBECNY"}
+        {confirmed ? <>Obecność potwierdzona <IconCheck size={18} /></> : "Obecny"}
       </button>
       {confirmed && (
-        <p className="text-xs text-center" style={{ color: "var(--color-ink-3)" }}>
+        <p className="small text-center text-body-secondary mb-0">
           Twoja obecność została odnotowana. Możesz zaczekać na zakończenie głosowania.
         </p>
       )}
@@ -1385,28 +1363,24 @@ function PinGate({ voteId, onAuthorized }: { voteId: string; onAuthorized: () =>
 
   return (
     <div className="text-center">
-      <p className="text-sm mb-4" style={{ color: "var(--color-ink-2)" }}>
+      <p className="small text-body-secondary mb-4">
         Wprowadź 4-cyfrowy PIN wyświetlony na sali, aby odblokować głosowanie.
       </p>
-      <div className="flex justify-center gap-3 mb-5">
+      <div className="d-flex justify-content-center gap-3 mb-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} style={{
-            width: 44, height: 54, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 28, fontWeight: 700, border: "2px solid var(--color-rule)",
-            background: pin.length > i ? "var(--color-paper-2)" : "transparent",
-          }}>
+          <div key={i} className={`pin-cell d-flex align-items-center justify-content-center${pin.length > i ? " bg-body-tertiary" : ""}`}>
             {pin.length > i ? "-" : ""}
           </div>
         ))}
       </div>
-      {error && <div className="mb-3 text-sm" style={{ color: "var(--color-no)" }}>{error}</div>}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, maxWidth: 280, margin: "0 auto" }}>
+      {error && <div className="small text-danger mb-3">{error}</div>}
+      <div className="pin-pad">
         {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((d) => (
-          <button key={d} type="button" className="btn btn-lg" disabled={pending} onClick={() => press(d)} style={{ fontSize: 22, padding: "14px 0" }}>{d}</button>
+          <button key={d} type="button" className="btn btn-outline-secondary" disabled={pending} onClick={() => press(d)}>{d}</button>
         ))}
-        <button type="button" className="btn btn-lg" disabled={pending} onClick={backspace} style={{ fontSize: 18, padding: "14px 0" }} aria-label="Usuń ostatnią cyfrę"><IconBackspace size={22} /></button>
-        <button type="button" className="btn btn-lg" disabled={pending} onClick={() => press("0")} style={{ fontSize: 22, padding: "14px 0" }}>0</button>
-        <button type="button" className="btn btn-lg" disabled style={{ padding: "14px 0", visibility: "hidden" }}></button>
+        <button type="button" className="btn btn-outline-secondary" disabled={pending} onClick={backspace} aria-label="Usuń ostatnią cyfrę"><IconBackspace size={22} /></button>
+        <button type="button" className="btn btn-outline-secondary" disabled={pending} onClick={() => press("0")}>0</button>
+        <span aria-hidden="true" />
       </div>
     </div>
   );
@@ -1460,43 +1434,31 @@ function PackageBallot({
     { key: "Enter", enabled: !pending && canSend, action: () => onCast(Object.entries(choices).map(([optionId, choice]) => ({ optionId, choice }))), description: "Wyślij pakiet" },
   ], [pending, canSend, activeIdx, JSON.stringify(choices), vote.options.map((o) => o.id).join(",")]);
 
-  const CHOICE_META: { key: VoteChoice; label: string; color: string; bg: string }[] = [
-    { key: "YES", label: "ZA", color: "var(--color-yes)", bg: "var(--color-yes-bg)" },
-    { key: "NO", label: "PRZECIW", color: "var(--color-no)", bg: "var(--color-no-bg)" },
-    { key: "ABSTAIN", label: "WSTRZYMUJĘ SIĘ", color: "var(--color-abstain)", bg: "var(--color-abstain-bg)" },
+  const CHOICE_META: { key: VoteChoice; label: string; cls: string }[] = [
+    { key: "YES", label: "Za", cls: "btn-outline-success" },
+    { key: "NO", label: "Przeciw", cls: "btn-outline-danger" },
+    { key: "ABSTAIN", label: "Wstrzymuję się", cls: "btn-outline-warning" },
   ];
 
   return (
     <div>
-      <div className="text-xs mb-3" style={{ color: "var(--color-ink-3)" }}>
-      </div>
-      <div className="flex flex-col gap-4">
+      <div className="vstack gap-3">
         {vote.options.map((o, idx) => (
-          <div key={o.id} className="pb-3" style={{ borderBottom: idx < vote.options.length - 1 ? "1px solid var(--color-rule-soft)" : "none", outline: idx === activeIdx ? "2px solid var(--color-accent)" : "none", outlineOffset: 4, borderRadius: idx === activeIdx ? 4 : undefined }}>
-            <div className="mb-2" style={{ fontWeight: 600 }}>
+          <div key={o.id} className={`pb-3${idx < vote.options.length - 1 ? " border-bottom" : ""}${idx === activeIdx ? " ballot-item-active" : ""}`}>
+            <div className="fw-semibold mb-2">
               {o.positionNumber ? `${o.positionNumber}. ` : `${idx + 1}. `}{o.label}
             </div>
-            {o.description && <div className="text-sm mb-2" style={{ color: "var(--color-ink-2)" }}>{o.description}</div>}
-            <div className="grid grid-cols-3 gap-2">
+            {o.description && <div className="small text-body-secondary mb-2">{o.description}</div>}
+            <div className="row g-2" role="radiogroup" aria-label={`Głos: pozycja ${o.positionNumber ?? idx + 1}`}>
               {CHOICE_META.map((m) => {
                 const active = choices[o.id] === m.key;
+                const inputId = `pkg-${o.id}-${m.key}`;
                 return (
-                  <button
-                    key={m.key}
-                    type="button"
-                    disabled={pending}
-                    onClick={() => set(o.id, m.key)}
-                    className="btn"
-                    style={{
-                      padding: "12px 4px", fontSize: 12, fontWeight: 700,
-                      // Zaznaczone „wstrzymuję się”: żółty Bootstrapa z czarnym napisem, jak przycisk zwykłego głosowania.
-                      border: `2px solid ${active && m.key === "ABSTAIN" ? "#FFC107" : m.color}`,
-                      background: active ? (m.key === "ABSTAIN" ? "#FFC107" : m.color) : m.bg,
-                      color: active ? (m.key === "ABSTAIN" ? "#000" : "#fff") : m.color,
-                    }}
-                  >
-                    {m.label}
-                  </button>
+                  <div key={m.key} className="col-4">
+                    {/* Ponowny klik w zaznaczoną pozycję odznacza ją - obsługa w onClick, nie onChange. */}
+                    <input type="radio" className="btn-check" id={inputId} name={`pkg-${o.id}`} checked={active} disabled={pending} onChange={() => {}} onClick={() => set(o.id, m.key)} />
+                    <label className={`btn ${m.cls} btn-pkg w-100 h-100 d-flex align-items-center justify-content-center`} htmlFor={inputId}>{m.label}</label>
+                  </div>
                 );
               })}
             </div>
@@ -1505,19 +1467,19 @@ function PackageBallot({
       </div>
 
       <button
-        className="btn btn-primary btn-lg w-full mt-5"
+        className={`btn ${canSend ? "btn-dark" : "btn-secondary"} btn-vote w-100 mt-4`}
         disabled={pending || !canSend}
         onClick={() => onCast(Object.entries(choices).map(([optionId, choice]) => ({ optionId, choice })))}
       >
         {pending ? "Wysyłam…" : vote.alreadyVoted ? "Aktualizuj głosy" : "Zatwierdź i wyślij głosy"}
       </button>
       {!canSend && requireAll && (
-        <p className="text-xs mt-2 text-center" style={{ color: "var(--color-ink-3)" }}>
+        <p className="small text-center text-body-secondary mt-2 mb-0">
           Oddaj głos na wszystkie pozycje ({answered}/{vote.options.length}).
         </p>
       )}
       {secret && (
-        <button type="button" className="btn w-full mt-2" disabled={pending} onClick={onInvalid} style={{ fontSize: 12 }}>
+        <button type="button" className="btn btn-outline-dark btn-sm w-100 mt-2" disabled={pending} onClick={onInvalid}>
           Obecny (głos nieważny)
         </button>
       )}
@@ -1780,7 +1742,7 @@ function ActiveVotesOverlay({ showMeetingNames }: { showMeetingNames: boolean })
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "var(--color-paper)", overflowY: "auto", padding: "20px 16px" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "var(--pt-page-bg, var(--color-paper))", overflowY: "auto", padding: "20px 16px" }}>
       <div className="max-w-[720px] mx-auto">
         <div className="flex items-center justify-between mb-2">
           <div className="eyebrow" style={{ color: "var(--color-seal)", fontSize: 12 }}>

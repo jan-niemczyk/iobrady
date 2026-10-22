@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build:bootstrap": "sass src/styles/bootstrap-scoped.scss:src/app/bootstrap-scoped.css --style=compressed --load-path=node_modules",
+    "build:bootstrap": "sass src/styles/bootstrap-scoped.scss:src/app/bootstrap-scoped.css --style=compressed --load-path=node_modules && node scripts/build-ballot-css.mjs",
     "build": "npm run build:bootstrap && prisma generate && next build",
     "start": "next start",
     "prisma:migrate": "prisma migrate deploy",

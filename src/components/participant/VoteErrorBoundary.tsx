@@ -47,7 +47,7 @@ export class VoteErrorBoundary extends Component<
       );
       if (!this.props.fullScreen) return box;
       return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "var(--color-paper)", overflowY: "auto", padding: "20px 16px" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "var(--pt-page-bg, var(--color-paper))", overflowY: "auto", padding: "20px 16px" }}>
           <div style={{ maxWidth: 720, margin: "0 auto" }}>{box}</div>
         </div>
       );

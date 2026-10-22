@@ -1,0 +1,84 @@
+// Bootstrap 5.3 wyłącznie dla kart do głosowania (panel radnego i wyświetlacz mini).
+//
+// Panel radnego nie ładuje pełnego Bootstrapa (bootstrap-scoped.scss). Ten arkusz kompiluje
+// scripts/build-ballot-css.mjs, który poprzedza każdy selektor klasą .bs-ballot (:root -> .bs-ballot),
+// więc reguły nie dotykają niczego poza kartą. Motyw ciemny: data-bs-theme="dark" wewnątrz .bs-ballot.
+// Kompilacja: `npm run build:bootstrap`. Sass bez zagnieżdżania - zagnieżdżony Bootstrap psuje
+// selektory z odwołaniem do rodzica (np. .btn-check:checked + .btn).
+
+// Paleta głosowania - te same wartości co w globals.css (za / przeciw / wstrzymuję się).
+$primary: #1E4171;
+$secondary: #5B6B80;
+$success: #15803D;
+$danger: #DC2626;
+$warning: #FFC107;
+$info: #0369A1;
+$light: #F1F5F9;
+$dark: #0F172A;
+$body-color: #0F172A;
+$body-secondary-color: #5B6B80;
+$border-color: #E2E8F0;
+$font-family-sans-serif: "Inter", -apple-system, system-ui, "Segoe UI", sans-serif;
+$font-size-base: 1rem;
+$headings-font-weight: 500;
+$btn-font-weight: 600;
+$enable-dark-mode: true;
+$color-mode-type: data;
+$min-contrast-ratio: 3;
+
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+@import "bootstrap/scss/utilities";
+@import "bootstrap/scss/root";
+@import "bootstrap/scss/forms";
+@import "bootstrap/scss/buttons";
+@import "bootstrap/scss/card";
+@import "bootstrap/scss/list-group";
+@import "bootstrap/scss/badge";
+@import "bootstrap/scss/alert";
+@import "bootstrap/scss/grid";
+@import "bootstrap/scss/helpers";
+@import "bootstrap/scss/utilities/api";
+
+// ─── elementy karty (jedyne uzupełnienia ponad Bootstrapa) ─────────────
+.vote-card {
+  --bs-card-border-color: #E11D48;
+  --bs-card-border-width: 2px;
+  color: var(--bs-body-color);
+  font-family: var(--bs-body-font-family);
+  > .card-header { background: #FEE2E2; border-bottom-color: #E11D48; }
+}
+.live-pill {
+  color: #E11D48; border: 1px solid #E11D48; background: #FFFFFF; font-weight: 500; font-size: .8125rem;
+  &::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #E11D48; opacity: .6; margin-right: 6px; vertical-align: 1px; }
+}
+.vote-title { font-size: 1.375rem; line-height: 1.2; }
+.btn-vote { --bs-btn-padding-y: 1.35rem; --bs-btn-font-size: 1.15rem; }
+// Wybrany głos (jawne): obwódka jak dotychczas.
+.btn-mine { outline: 3px solid var(--bs-emphasis-color); outline-offset: 2px; }
+// Pakiet: jasne tła niezaznaczonych pozycji, wersaliki.
+.btn-pkg { font-weight: 700; text-transform: uppercase; font-size: .75rem; padding: .75rem .25rem; border-width: 2px; }
+.btn-outline-success.btn-pkg { --bs-btn-bg: #DCFCE7; }
+.btn-outline-danger.btn-pkg { --bs-btn-bg: #FEE2E2; }
+.btn-outline-warning.btn-pkg { --bs-btn-bg: #FEF9C3; --bs-btn-color: #A16207; --bs-btn-border-color: #CA8A04; }
+.btn-check:checked + .btn-outline-warning.btn-pkg { --bs-btn-active-color: #000000; }
+.ballot-item-active { outline: 2px solid var(--bs-primary); outline-offset: 4px; border-radius: 4px; }
+.list-group-item.ballot-item-active { outline-offset: -2px; border-radius: 0; }
+.ballot-check { width: 1.25rem; height: 1.25rem; margin: 0; flex-shrink: 0; }
+.pin-cell { width: 44px; height: 54px; border-radius: 10px; font-size: 28px; font-weight: 700; border: 2px solid var(--bs-border-color); }
+.pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 280px; margin: 0 auto; }
+.pin-pad .btn { font-size: 1.375rem; padding: .875rem 0; }
+
+// Motyw ciemny (atrybut na samej karcie).
+.vote-card[data-bs-theme="dark"] {
+  --bs-body-bg: #000000;
+  background: #0B0D10;
+  > .card-header { background: #2A0A12; }
+  .live-pill { background: #000000; }
+  .btn-outline-success.btn-pkg { --bs-btn-bg: #052E16; }
+  .btn-outline-danger.btn-pkg { --bs-btn-bg: #450A0A; }
+  .btn-outline-warning.btn-pkg { --bs-btn-bg: #422006; --bs-btn-color: #FDE047; }
+}

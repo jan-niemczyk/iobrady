@@ -708,5 +708,6 @@ textarea.pt-field-input { min-height: 8rem; line-height: 1.5; resize: vertical; 
 
 /* Tło strony jak w panelu operatora (bootstrap-scoped.scss: body #F5F7FA) - pasek górny i panele
    pozostają białe. Arkusz Bootstrapa nie jest tu ładowany, więc kolor ustawiony osobno. */
-.pt-shell { background: #F5F7FA; }
-[data-theme="dark"] .pt-shell { background: #000000; }
+:root { --pt-page-bg: #F5F7FA; }
+[data-theme="dark"] { --pt-page-bg: #000000; }
+.pt-shell { background: var(--pt-page-bg); }
