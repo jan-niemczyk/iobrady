@@ -273,7 +273,7 @@ export function SettingsForm({ initial }: { initial: Settings }) {
                 }}>Usuń logo</button>
               )}
             </div>
-            <div className="form-text">Logo zastępuje pionowy pasek akcentu w nagłówku. PNG/JPG/SVG/WEBP, max 2 MB. Zapisywane na serwerze.</div>
+            <div className="form-text">PNG/JPG/SVG/WEBP, maks. 2 MB.</div>
           </div>
 
           <div className="col-12">
@@ -310,7 +310,7 @@ export function SettingsForm({ initial }: { initial: Settings }) {
                 }}>Usuń białe logo</button>
               )}
             </div>
-            <div className="form-text">Używane automatycznie tam, gdzie tło jest ciemne: nagłówek w ciemnym kolorze, przerwa, komunikat, plansza reprezentacyjna (logo organizacji), ekrany przerwy na transmisji. Bez tego pliku wszędzie jest logo powyżej. PNG/SVG/WEBP z przezroczystością, maks. 2 MB.</div>
+            <div className="form-text">Na ciemnym tle. Bez tego pliku - logo powyżej. PNG/SVG/WEBP z przezroczystością, maks. 2 MB.</div>
           </div>
         </div>
       </Section>
@@ -517,7 +517,7 @@ function BoardSection({ s, update, pending }: {
                 <button type="button" className="btn btn-outline-danger" disabled={disabled} onClick={() => removeFile("background")}>Usuń zdjęcie</button>
               )}
             </div>
-            <div className="form-text">JPG, PNG lub WEBP, maks. 8 MB. Zdjęcie jest wyświetlane w skali szarości pod nakładką w kolorze nagłówka. Bez zdjęcia - jednolite tło.</div>
+            <div className="form-text">JPG, PNG lub WEBP, maks. 8 MB.</div>
           </div>
 
           <fieldset>
@@ -546,7 +546,7 @@ function BoardSection({ s, update, pending }: {
                 {s.boardLogoUrl && (
                   <button type="button" className="btn btn-sm btn-outline-danger" disabled={disabled} onClick={() => removeFile("logo")}>Usuń logo</button>
                 )}
-                <div className="form-text w-100 mt-0">PNG/WEBP/SVG z przezroczystością lub JPG, maks. 2 MB. Proporcje i kolory logo pozostają bez zmian.</div>
+                <div className="form-text w-100 mt-0">PNG/WEBP/SVG z przezroczystością lub JPG, maks. 2 MB.</div>
               </div>
             )}
           </fieldset>
@@ -575,7 +575,6 @@ function BoardSection({ s, update, pending }: {
                 />
               </div>
             )}
-            <div className="form-text">Zbyt jasny kolor jest automatycznie przyciemniany, żeby biały tekst był czytelny.</div>
           </fieldset>
 
           <div>
@@ -599,7 +598,6 @@ function BoardSection({ s, update, pending }: {
             </label>
             <input id="board-opacity" type="range" className="form-range" min={0} max={100} step={5}
               value={s.boardOverlayOpacity} onChange={(e) => update("boardOverlayOpacity", Number(e.target.value))} />
-            <div className="form-text">Dotyczy tylko tła ze zdjęciem; logo i tekst pozostają bez zmian.</div>
           </div>
         </div>
 
@@ -831,7 +829,6 @@ function InquiriesSection({ s, update }: {
           );
         })}
       </div>
-      <div className="form-text">Bez reguły termin można wpisać ręcznie przy przekazaniu albo pozostawić nieustalony.</div>
     </Section>
   );
 }

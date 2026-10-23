@@ -87,7 +87,6 @@ export function OrgUnitsManagerClient({ users, initialSelectedId }: { users: Use
       <PageHeader
         kicker="Osoby i grupy"
         title="Grupy organizacyjne"
-        description="Organy, komisje i zespoły z własnym składem, funkcjami i okresami członkostwa. Posiedzenie przypisujesz do jednej lub kilku grup - skład wczytuje się do posiedzenia, a operator może go zmienić. Przynależność do klubów i kół jest osobną funkcją."
         actions={<>
           <Link className="btn btn-outline-secondary" href="/clubs">Kluby i koła</Link>
           <Link className="btn btn-outline-secondary" href="/notice-templates">Szablony dokumentów</Link>
@@ -139,7 +138,7 @@ export function OrgUnitsManagerClient({ users, initialSelectedId }: { users: Use
 
         <div className="col-12 col-lg-8 col-xxl-9">
           {!detail ? (
-            <div className="card"><div className="card-body text-body-secondary py-4 text-center">Wybierz grupę z listy albo utwórz nową.</div></div>
+            <div className="card"><div className="card-body text-body-secondary py-4 text-center">Nie wybrano grupy.</div></div>
           ) : (
             <UnitEditor key={detail.id} unit={detail} units={units} users={users} pending={pending} call={call} />
           )}
@@ -249,7 +248,7 @@ function UnitEditor({ unit, units, users, pending, call }: {
             )}
           </>}
         />
-        {members.length === 0 ? <div className="card-body text-body-secondary">Skład jest pusty. Dodaj osoby poniżej.</div> : (
+        {members.length === 0 ? <div className="card-body text-body-secondary">Skład jest pusty.</div> : (
           <div className="table-responsive">
             <table className="table table-sm align-middle mb-0">
               <thead>
@@ -323,7 +322,7 @@ function UnitEditor({ unit, units, users, pending, call }: {
 
       <div className="card">
         <CardHeader title="Posiedzenia przypisane do grupy" />
-        {unit.meetings.length === 0 ? <div className="card-body text-body-secondary">Brak przypisanych posiedzeń. Grupę przypisujesz przy tworzeniu posiedzenia albo w jego składzie.</div> : (
+        {unit.meetings.length === 0 ? <div className="card-body text-body-secondary">Brak przypisanych posiedzeń.</div> : (
           <ul className="list-group list-group-flush">
             {unit.meetings.map(({ meeting }) => (
               <li key={meeting.id} className="list-group-item d-flex flex-wrap justify-content-between gap-2">

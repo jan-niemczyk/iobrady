@@ -71,7 +71,6 @@ export default async function NewMeetingPage() {
       <PageHeader
         kicker="Posiedzenia"
         title="Nowe posiedzenie"
-        description="Po utworzeniu posiedzenie ma status „Przygotowane”. Punkty porządku obrad, uczestników i głosowania dodajesz w panelu posiedzenia."
       />
 
       <form action={createMeeting} className="card">
@@ -106,7 +105,7 @@ export default async function NewMeetingPage() {
             </div>
             {orgUnits.length > 0 && (
               <fieldset className="col-12">
-                <legend className="form-label fs-6 mb-1">Grupy organizacyjne <span className="text-body-secondary fw-normal">(skład zostanie wczytany - można go potem zmienić)</span></legend>
+                <legend className="form-label fs-6 mb-1">Grupy organizacyjne</legend>
                 <div className="d-flex flex-wrap gap-3">
                   {orgUnits.map((u) => (
                     <div key={u.id} className="form-check">
@@ -115,7 +114,6 @@ export default async function NewMeetingPage() {
                     </div>
                   ))}
                 </div>
-                <div className="form-text">Wspólne posiedzenie: zaznacz kilka grup - osoba należąca do kilku z nich zostanie dodana raz.</div>
               </fieldset>
             )}
             <div className="col-12">

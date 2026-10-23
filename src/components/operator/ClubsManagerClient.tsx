@@ -37,7 +37,6 @@ export function ClubsManagerClient({ initial, groupsEnabled }: { initial: Club[]
       <PageHeader
         kicker="Osoby i grupy"
         title="Kluby i koła"
-        description="Przynależność klubowa osoby - używana w zestawieniach głosowań według klubów i na prezentacji. To funkcja niezależna od grup organizacyjnych (organów, komisji, zespołów). Osoby przypisujesz do klubu w module Uczestnicy."
         actions={<><Link className="btn btn-outline-secondary" href="/participants">Uczestnicy</Link><Link className="btn btn-outline-secondary" href="/groups">Grupy organizacyjne</Link></>}
       />
       {!groupsEnabled && (

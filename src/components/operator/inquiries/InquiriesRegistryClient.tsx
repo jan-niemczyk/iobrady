@@ -158,7 +158,6 @@ function ExternalForm({ enabled, units, users }: { enabled: boolean; units: { id
     <div className="card">
       <CardHeader title="Pismo otrzymane poza aplikacją" />
       <div className="card-body row g-3">
-        <div className="col-12"><div className="form-text mt-0">Autorem sprawy pozostaje rzeczywisty autor pisma; operator jest zapisywany jako osoba wprowadzająca. To nie jest złożenie w imieniu autora.</div></div>
         <div className="col-6 col-md-3"><label className="form-label" htmlFor="ex-kind">Rodzaj</label><select id="ex-kind" className="form-select" value={kind} onChange={(e) => setKind(e.target.value)}><option value="INTERPELLATION">Interpelacja</option><option value="QUESTION">Zapytanie</option></select></div>
         <div className="col-6 col-md-3"><label className="form-label" htmlFor="ex-rec">Data wpływu</label><input id="ex-rec" type="date" className="form-control" value={receivedAt} onChange={(e) => setReceivedAt(e.target.value)} /></div>
         <div className="col-6 col-md-3"><label className="form-label" htmlFor="ex-ld">Data pisma <span className="text-body-secondary fw-normal">(opcjonalnie)</span></label><input id="ex-ld" type="date" className="form-control" value={letterDate} onChange={(e) => setLetterDate(e.target.value)} /></div>
@@ -235,7 +234,6 @@ function Grants({ units, users }: { units: { id: string; name: string }[]; users
     <div className="card">
       <CardHeader title="Prawo „Składanie interpelacji i zapytań”" />
       <div className="card-body">
-        <p className="small text-body-secondary">Prawo nadaje się indywidualnie. Nie wynika z roli radnego, członkostwa w organie, posiadania konta ani wskazania jako współautor. Nadania i odebrania są zapisywane w dzienniku.</p>
         <div className="row g-2 align-items-end mb-3">
           <div className="col-12 col-md-5"><label className="form-label" htmlFor="gr-user">Osoba</label><select id="gr-user" className="form-select" value={userId} onChange={(e) => setUserId(e.target.value)}><option value="">Wybierz…</option>{users.map((u) => <option key={u.id} value={u.id}>{u.sortName}</option>)}</select></div>
           <div className="col-12 col-md-4"><label className="form-label" htmlFor="gr-unit">Zakres (organ)</label><select id="gr-unit" className="form-select" value={orgUnitId} onChange={(e) => setOrgUnitId(e.target.value)}><option value="">Cała jednostka</option>{units.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></div>

@@ -19,7 +19,6 @@ export default async function ArchivePage() {
       <PageHeader
         kicker="Archiwum"
         title="Zakończone posiedzenia"
-        description="Posiedzenia zakończone, zarchiwizowane lub anulowane."
       />
 
       <div className="card">

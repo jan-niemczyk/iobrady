@@ -33,7 +33,7 @@ export function NoticesListClient({ meeting, notices, templates }: {
       <PageHeader
         kicker={<Link href={`/meetings/${meeting.id}`} className="d-inline-flex align-items-center gap-1"><IconArrowLeft size={14} /> Posiedzenie nr {meeting.number}</Link>}
         title="Zawiadomienia"
-        description={`${meeting.name}. Zawiadomienie to edytowalny dokument DOCX z kopią porządku obrad - zmiany w nim nie zmieniają porządku posiedzenia. Wygenerowanie dokumentu nie oznacza jego wysłania.`}
+        description={meeting.name}
       />
       <div className="card mb-3">
         <CardHeader title="Utwórz zawiadomienie" />

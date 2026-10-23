@@ -198,7 +198,6 @@ function Addressees({ v, ro, busy, call }: { v: InquiryView; ro: boolean; busy: 
           <button className="btn btn-sm btn-outline-secondary text-nowrap" disabled={busy || !add.name.trim()} onClick={async () => { if (await call(`/api/inquiries/${v.id}/addressees`, json("POST", add), "Dodano adresata.")) setAdd({ name: "", institution: "" }); }}>Dodaj</button>
         </div>
       )}
-      <div className="card-body pt-0 small text-body-secondary">Zapis przekazania w aplikacji nie potwierdza wysyłki ani doręczenia - to jawny wpis czynności wykonanej poza aplikacją.</div>
     </div>
   );
 }
@@ -217,7 +216,6 @@ function Publication({ v, call, busy }: { v: InquiryView; call: (url: string, in
             ? <button className="btn btn-sm btn-outline-danger" disabled={busy} onClick={() => call(`/api/inquiries/${v.id}/publication`, json("PATCH", { published: false }), "Wycofano z publikacji.")}>Wycofaj z publikacji</button>
             : <button className="btn btn-sm btn-primary" disabled={busy || !v.registeredAt} onClick={() => call(`/api/inquiries/${v.id}/publication`, json("PATCH", { published: true, publicTitle: title }), "Opublikowano sprawę.")}>Opublikuj sprawę</button>}
         </div>
-        <div className="text-body-secondary">Pisma publikuje się osobno, przy każdym piśmie - w wersji publicznej (treść lub plik zanonimizowany). Wewnętrzny oryginał nie jest udostępniany.</div>
       </div>
     </div>
   );

@@ -114,7 +114,7 @@ export function NoticeRecipientsEditor({ meetingId, value, onChange }: { meeting
           <div className="fw-semibold">Adresaci dokumentu: {value.length} <span className="text-body-secondary fw-normal small">(dokumenty imienne: {value.length})</span></div>
           {value.length > 0 && <button type="button" className="btn btn-sm btn-link text-danger" onClick={() => onChange([])}>Usuń wszystkich</button>}
         </div>
-        {value.length === 0 ? <p className="text-body-secondary small">Brak adresatów. Dokument ogólny można wygenerować bez adresatów.</p> : (
+        {value.length === 0 ? <p className="text-body-secondary small">Brak adresatów.</p> : (
           <div className="d-flex flex-column gap-2 overflow-auto" style={{ maxHeight: 520 }}>
             {value.map((r, i) => (
               <details key={r.key} className="border rounded p-2">
@@ -127,7 +127,6 @@ export function NoticeRecipientsEditor({ meetingId, value, onChange }: { meeting
                     <div key={k} className="col-12 col-md-6"><label className="form-label small mb-0" htmlFor={`nr-${i}-${k}`}>{l}</label><input id={`nr-${i}-${k}`} className="form-control form-control-sm" value={r[k]} onChange={(e) => onChange(value.map((x, j) => (j === i ? { ...x, [k]: e.target.value } : x)))} /></div>
                   ))}
                   <div className="col-12"><label className="form-label small mb-0" htmlFor={`nr-${i}-addr`}>Adres</label><textarea id={`nr-${i}-addr`} className="form-control form-control-sm" rows={2} value={r.address} onChange={(e) => onChange(value.map((x, j) => (j === i ? { ...x, address: e.target.value } : x)))} /></div>
-                  <div className="col-12 form-text">Zmiana dotyczy tylko tego dokumentu - słownik pozostaje bez zmian.</div>
                 </div>
               </details>
             ))}

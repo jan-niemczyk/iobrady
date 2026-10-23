@@ -22,7 +22,6 @@ export default async function MeetingsListPage({ searchParams }: { searchParams:
     <PageContainer size="lg">
       <PageHeader
         title="Posiedzenia"
-        description="Wszystkie posiedzenia, od najnowszych."
         actions={<Link href="/meetings/new" className="btn btn-primary">+ Nowe posiedzenie</Link>}
       />
 

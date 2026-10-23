@@ -83,8 +83,7 @@ export function NoticeTemplatesClient({ units, logoUrl }: { units: { id: string;
   if (editing) {
     return (
       <PageContainer size="xl">
-        <PageHeader title={editing.id ? "Edycja szablonu zawiadomienia" : "Nowy szablon zawiadomienia"}
-          description="Szablon zawiera stałe elementy dokumentu. Datę pisma, znak sprawy, porządek obrad i adresatów uzupełnia się w konkretnym zawiadomieniu." />
+        <PageHeader title={editing.id ? "Edycja szablonu zawiadomienia" : "Nowy szablon zawiadomienia"} />
         <div className="row g-3">
           <div className="col-12 col-xxl-6">
             <div className="card mb-3">
@@ -121,7 +120,7 @@ export function NoticeTemplatesClient({ units, logoUrl }: { units: { id: string;
   const visible = (list ?? []).filter((t) => t.active !== showArchived);
   return (
     <PageContainer size="lg">
-      <PageHeader title="Szablony dokumentów" description="Nazwane szablony tekstów zawiadomień. Szablon domyślny jest podpowiadany przy tworzeniu zawiadomienia dla posiedzeń jednostki albo przypisanej grupy." />
+      <PageHeader title="Szablony dokumentów" />
       <div className="d-flex flex-wrap gap-2 mb-3">
         <button className="btn btn-primary" onClick={() => setEditing({ id: null, name: "", description: "", orgUnitId: "", content: { ...EMPTY_CONTENT } })}>Nowy szablon</button>
         <div className="btn-group" role="group" aria-label="Widok">

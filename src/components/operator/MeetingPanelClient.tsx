@@ -846,7 +846,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                 </>
               ) : (
                 <div className="text-sm text-body-secondary">
-                  Żaden punkt nie jest rozpatrywany. Wybierz punkt z porządku obrad poniżej.
+                  Żaden punkt nie jest rozpatrywany.
                 </div>
               )}
             </div>
@@ -1022,12 +1022,7 @@ export function MeetingPanelClient({ initial }: { initial: MeetingClientState })
                 }
               />
               <div className="card-body text-body-secondary">
-                <p className="mb-1">Brak aktywnego głosowania.</p>
-                <p className="small mb-0">
-                  {currentItem
-                    ? "Utwórz głosowanie do bieżącego punktu lub jako ad hoc."
-                    : "Możesz utworzyć głosowanie ad hoc - niezwiązane z punktem porządku."}
-                </p>
+                <p className="mb-0">Brak aktywnego głosowania.</p>
               </div>
             </div>
           )}
@@ -1478,7 +1473,7 @@ function VotePlannerCard({
         </div>
         {mode === "agenda" ? (
           agenda.length === 0 ? (
-            <p className="text-body-secondary small mb-0">Dodaj najpierw punkty porządku obrad powyżej.</p>
+            <p className="text-body-secondary small mb-0">Brak punktów porządku obrad.</p>
           ) : (
             <div className="list-group mb-3" style={{ maxHeight: 260, overflowY: "auto" }}>
               {agenda.map((a) => (
@@ -2127,7 +2122,6 @@ function VoteComposerModal({
                 <div>
                   <label className="form-label" htmlFor="vc-context">Kontekst w raporcie (opcjonalnie)</label>
                   <input id="vc-context" className="form-control" placeholder="np. Wniosek zgłoszony w pkt 4" value={contextLabel} onChange={(e) => setContextLabel(e.target.value)} />
-                  <div className="form-text">Zastępuje nazwę posiedzenia w nagłówku raportu tego głosowania.</div>
                 </div>
               )}
 
@@ -2331,9 +2325,6 @@ function VoteComposerModal({
                         );
                       })}
                     </div>
-                  )}
-                  {excludedIds.length > 0 && (
-                    <div className="form-text">Wyłączone osoby nie będą widoczne w snapshocie uprawnionych ani w mianowniku większości.</div>
                   )}
                 </div>
               )}
@@ -3002,7 +2993,7 @@ function EditVoteModal({
               onChange={(e) => setContext(e.target.value)}
               placeholder="np. Wniosek zgłoszony w pkt 4 (puste = nazwa posiedzenia)"
             />
-            <div className="form-text">Zastępuje nazwę posiedzenia w raporcie tego głosowania. Puste pole = użyj nazwy posiedzenia.</div>
+            <div className="form-text">Puste pole = nazwa posiedzenia.</div>
           </div>
         )}
         <div className="d-flex gap-2 justify-content-end">

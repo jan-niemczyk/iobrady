@@ -1682,4 +1682,9 @@ BR-4 - uprawnienia operatora do głosów jawnych bez zmian; BR-5 - przewodniczą
 - [x] **Next.js 16.4.2**: 16.4.0 miał krytyczne podatności (GHSA-2464-fhr4-w9xw, GHSA-673q-mjm6-r5xr - RCE,
       GHSA-p3m5-59mp-jv5r - DoS); build zatrzymywał się na ostrzeżeniu. `npm audit`: 0 podatności.
 - Testy: e2e 41/41, sondy 45/45, `tsc`, build.
+- [x] **Usunięte opisy objaśniające** (panel operatora): opisy pod nagłówkami stron (goście, kontakty, grupy, kluby,
+      Informacje, szablony, zawiadomienia, posiedzenia, archiwum, nowe posiedzenie, Ustawienia, raport obecności),
+      zachęty w pustych stanach („Wybierz punkt… poniżej”, „Możesz utworzyć głosowanie ad hoc…”), objaśnienia
+      w interpelacjach, zawiadomieniach i Ustawieniach. Zostały limity plików, reguły pól i informacje o stanie.
+      Status informacji bez „wersja N” (historii wersji już nie ma).
 

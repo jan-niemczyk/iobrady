@@ -49,7 +49,6 @@ export function ContactsManagerClient() {
       <PageHeader
         kicker="Osoby i grupy"
         title="Kontakty"
-        description="Osoby i instytucje bez konta w systemie - adresaci zawiadomień i pism. Uczestników (konta) i gości wybierasz przy adresowaniu bezpośrednio. Zmiana kontaktu nie zmienia dokumentów już utworzonych."
         actions={<><button className="btn btn-primary" onClick={() => setEdit({ ...EMPTY })}><IconPlus /> Nowy kontakt</button><Link className="btn btn-outline-secondary" href="/guests">Goście</Link></>}
       />
       <div className="card">

@@ -28,8 +28,7 @@ export default async function AttendanceSummaryPage({ searchParams }: { searchPa
 
   return (
     <PageContainer size="xl">
-      <PageHeader kicker="Raporty" title="Raport zbiorczy obecności"
-        description="Frekwencja = obecności / (obecności + stwierdzone nieobecności). „Brak danych” nie jest nieobecnością. Domyślnie tylko posiedzenia zakończone - anulowane i przyszłe nie tworzą nieobecności; posiedzenie wspólne kilku grup liczone jest raz." />
+      <PageHeader kicker="Raporty" title="Raport zbiorczy obecności" />
       <form className="card mb-3" method="get">
         <div className="card-body row g-3 align-items-end">
           <div className="col-6 col-md-2"><label className="form-label" htmlFor="ra-od">Od</label><input id="ra-od" type="date" name="od" className="form-control" defaultValue={f.from ?? ""} /></div>
@@ -62,7 +61,6 @@ export default async function AttendanceSummaryPage({ searchParams }: { searchPa
                   </div>
                 ))}
               </div>
-              <div className="form-text">Przy wybranej grupie osoba jest objęta raportem tylko w okresie członkostwa (jeśli został zapisany).</div>
             </fieldset>
           )}
           <div className="col-12 d-flex gap-2">
@@ -72,7 +70,7 @@ export default async function AttendanceSummaryPage({ searchParams }: { searchPa
         </div>
       </form>
 
-      {!summary ? <p className="text-body-secondary">Wybierz filtry i kliknij „Pokaż raport”.</p> : (
+      {!summary ? null : (
         <div className="card">
           <CardHeader
             title={<>Zestawienie <span className="text-body-secondary fw-normal">({summary.rows.length} os., {summary.meetings.length} posiedzeń)</span></>}

@@ -143,7 +143,6 @@ export function NoticeEditorClient({ meetingId, noticeId, logoUrl }: { meetingId
                       <button type="button" className="btn btn-sm btn-outline-primary mt-2" onClick={reimport}>Pobierz porządek ponownie z posiedzenia</button>
                     </div>
                   )}
-                  <p className="small text-body-secondary">Zmiany dotyczą tylko tego zawiadomienia. Porządek posiedzenia edytujesz w panelu posiedzenia.</p>
                   <NoticeAgendaEditor items={agenda} onChange={mark(setAgenda)} />
                 </>
               )}

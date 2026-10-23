@@ -153,7 +153,7 @@ export function InfoEditorClient({ id, units, users }: { id: string | null; unit
       <PageHeader
         kicker={<Link href="/info" className="d-inline-flex align-items-center gap-1"><IconArrowLeft size={14} /> Informacje</Link>}
         title={id ? form.title || "Informacja" : "Nowa informacja"}
-        description={loaded ? `${INFO_STATUS_LABEL[status]} - wersja ${loaded.version}${loaded.publishedAt ? ` - opublikowano ${dt(loaded.publishedAt)}` : ""}${loaded.author ? ` - autor: ${loaded.author}` : ""}${loaded.editor && loaded.editor !== loaded.author ? `, ostatnia zmiana: ${loaded.editor}` : ""}` : "Szkic nie jest widoczny dla odbiorców do czasu publikacji."}
+        description={loaded ? `${INFO_STATUS_LABEL[status]}${loaded.publishedAt ? ` - opublikowano ${dt(loaded.publishedAt)}` : ""}${loaded.author ? ` - autor: ${loaded.author}` : ""}${loaded.editor && loaded.editor !== loaded.author ? `, ostatnia zmiana: ${loaded.editor}` : ""}` : "Szkic nie jest widoczny dla odbiorców do czasu publikacji."}
       />
       {id && (
         <ul className="nav nav-tabs mb-3">

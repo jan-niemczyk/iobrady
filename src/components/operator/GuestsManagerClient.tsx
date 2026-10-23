@@ -45,7 +45,6 @@ export function GuestsManagerClient({ initialGuests }: { initialGuests: Guest[] 
       <PageHeader
         kicker="Katalog"
         title="Katalog gości"
-        description="Goście to osoby zabierające głos bez konta i bez prawa głosu (np. dyrektorzy wydziałów, zaproszeni eksperci). Katalog pozwala szybko dodać ich do listy mówców na posiedzeniu."
         actions={<button className="btn btn-primary" onClick={() => { setAdding(true); setEditing(null); }}>+ Dodaj gościa</button>}
       />
 

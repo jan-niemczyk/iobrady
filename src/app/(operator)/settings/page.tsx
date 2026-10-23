@@ -17,7 +17,6 @@ export default async function SettingsPage() {
       <PageHeader
         kicker="Konfiguracja"
         title="Ustawienia globalne"
-        description="Wartości domyślne stosowane przy tworzeniu nowych posiedzeń."
       />
       <SettingsForm initial={{
         organizationName: s.organizationName,

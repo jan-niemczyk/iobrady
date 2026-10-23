@@ -34,7 +34,7 @@ export function InfoListOperatorClient() {
 
   return (
     <PageContainer size="lg">
-      <PageHeader title="Informacje" description="Komunikaty i dokumenty stałe dla radnych, niezależne od posiedzeń. Informacje są wewnętrzne - nie trafiają do widoku publicznego." />
+      <PageHeader title="Informacje" />
       <div className="d-flex flex-wrap gap-2 mb-3">
         <Link className="btn btn-primary" href="/info/nowa">Nowa informacja</Link>
         <div className="btn-group" role="group" aria-label="Status">
